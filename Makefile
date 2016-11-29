@@ -50,10 +50,10 @@ lint:
 	flake8 hub2lab-hook tests
 
 test:
-	py.test --cov=hub2lab-hook --cov-report=html --cov-report=term-missing  --verbose tests
+	py.test --cov=hub2labhook --cov-report=html --cov-report=term-missing  --verbose tests
 
 test-all:
-	py.test --cov=hub2lab-hook --cov-report=html --cov-report=term-missing  --verbose tests
+	py.test --cov=hub2labhook --cov-report=html --cov-report=term-missing  --verbose tests
 
 tox:
 	tox
@@ -85,7 +85,6 @@ dist: clean
 	ls -l dist
 
 install: clean
-	pip install -r requirements.txt
 	python setup.py install
 
 flake8:

@@ -13,6 +13,10 @@ with open('README.md') as readme_file:
 
 requirements = [
     'futures',
+    'requests',
+    'flask',
+    'Flask>=0.10.1',
+    'flask-cors',
 ]
 
 test_requirements = [

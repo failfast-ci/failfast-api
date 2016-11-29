@@ -5,6 +5,7 @@ class GithubEvent(object):
     def __init__(self, event, headers):
         self.event = event
         self.headers = headers
+        self._refname = None
 
     @property
     def ref(self):
@@ -13,20 +14,28 @@ class GithubEvent(object):
         elif self.event_type == "pull_request":
             ref = self.event['pull_request']['head']['ref']
         else:
-            raise Unsupported("unsupported event: %s" % self.event_type,
-                              {"event": self.event_type})
+            self._raise_unsupported()
         return ref
 
-    def ref_name(self):
-        return self.ref.split("/")[-1]
+    def _parse_ref(self, ref):
+        for header in ["refs/tags/", "refs/heads/"]:
+            if str.startswith(str(ref), header):
+                return ref.split(header)[1]
+        return ref
+
+    @property
+    def refname(self):
+        if not self._refname:
+            self._refname = self._parse_ref(self.ref)
+        if self.event_type == "push":
+            return self._refname
+        elif self.event_type == "pull_request":
+            return "pr:%s:%s" % (self.event['pull_request']['head']['repo']['full_name'],
+                                 self._refname)
 
     @property
     def event_type(self):
-        return self.headers.get("HTTP_X_GITHUB_EVENT", "push")
-
-    @property
-    def uuid(self):
-        return self.headers.get("HTTP_X_REQUEST_ID", None)
+        return self.headers.get("X-GITHUB-EVENT", "push")
 
     @property
     def head_sha(self):
@@ -35,12 +44,18 @@ class GithubEvent(object):
         elif self.event_type == "pull_request":
             sha = self.event['pull_request']['head']['sha']
         else:
-            raise Unsupported("unsupported event: %s" % self.event_type,
-                              {"event": self.event_type})
+            self._raise_unsupported()
         return sha
+
+    def _raise_unsupported(self):
+        raise Unsupported("unsupported event: %s" % self.event_type,
+                          {"event": self.event_type})
 
     @property
     def repo(self):
+        if self.event_type not in ["push", "pull_request"]:
+            self._raise_unsupported()
+
         return self.event['repository']['full_name']
 
     @property
@@ -50,20 +65,8 @@ class GithubEvent(object):
         elif self.event_type == "pull_request":
             user = self.event['pull_request']['user']['login']
         else:
-            raise Unsupported("unsupported event: %s" % self.event_type,
-                              {"event": self.event_type})
+            self._raise_unsupported()
         return user
 
     def istag(self):
         return "tags" in self.ref
-
-    def to_dict(self):
-        details = {
-            "repo": self.repo,
-            "sha": self.head_sha,
-            "ref": self.ref,
-            "istag": self.istag(),
-            "refname": self.ref_name(),
-            "user": self.user
-        }
-        return details

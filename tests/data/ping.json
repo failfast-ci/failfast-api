@@ -1,0 +1,23 @@
+{
+  "zen": "Speak like a human.",
+  "hook_id": 10904816,
+  "hook": {
+    "type": "Integration",
+    "id": 10904816,
+    "name": "web",
+    "active": true,
+    "events": [
+      "pull_request",
+      "push",
+      "status"
+    ],
+    "config": {
+      "content_type": "json",
+      "insecure_ssl": "0",
+      "url": "https://hook.kpm.sh/events_handler"
+    },
+    "updated_at": "2016-11-28T13:32:22Z",
+    "created_at": "2016-11-28T13:32:22Z",
+    "integration_id": 737
+  }
+}
