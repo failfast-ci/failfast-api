@@ -24,14 +24,30 @@ class GithubEvent(object):
         return ref
 
     @property
+    def pr_id(self):
+        if self.event_type != "pull_request":
+            return "N/A"
+        return self.event['number']
+
+    @property
     def refname(self):
+        if self.event_type not in ["push", "pull_request"]:
+            self._raise_unsupported()
+
         if not self._refname:
             self._refname = self._parse_ref(self.ref)
+
+        return self._refname
+
+    @property
+    def target_refname(self):
         if self.event_type == "push":
-            return self._refname
+            return self.ref
         elif self.event_type == "pull_request":
-            return "pr:%s:%s" % (self.event['pull_request']['head']['repo']['full_name'],
-                                 self._refname)
+            return "pr-%s-%s" % (self.pr_id,
+                                 self.refname)
+        else:
+            self._raise_unsupported()
 
     @property
     def event_type(self):

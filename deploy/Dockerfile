@@ -16,4 +16,4 @@ RUN pip install pip -U
 RUN pip install gunicorn -U \
   && python setup.py install
 
-CMD ["hub2lab-hook"]
+CMD ["./run-server"]
