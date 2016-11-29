@@ -32,10 +32,11 @@ setup(
     author_email='2t.antoine@gmail.com',
     url='https://github.com/ant31/hub2lab-hook',
     packages=[
-        'hub2lab-hook'
+        'hub2labhook',
+        "hub2labhook.api"
     ],
-    package_dir={'hub2lab-hook':
-                 'hub2lab-hook'},
+    package_dir={'hub2labhook':
+                 'hub2labhook'},
     include_package_data=True,
     install_requires=requirements,
     license="Apache License version 2",
