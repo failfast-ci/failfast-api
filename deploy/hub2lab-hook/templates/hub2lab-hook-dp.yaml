@@ -1,0 +1,39 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: {{appname}}
+  name: {{appname}}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: {{appname}}
+    spec:
+      containers:
+        - name: {{appname}}
+          image: {{image}}
+          imagePullPolicy: Always
+          command:
+            - gunicorn
+            - {{appname}}.api.wsgi:app
+            - -b
+            - :5000
+            - --threads
+            - "1"
+            - -w
+            - "4"
+            - --timeout
+            - "240"
+          ports:
+            - name: {{appname}}
+              protocol: TCP
+              containerPort: 5000
+          livenessProbe:
+            httpGet:
+              path: /version
+              port: 5000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
