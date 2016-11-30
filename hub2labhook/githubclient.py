@@ -71,7 +71,7 @@ class GithubClient(object):
                        "Accept": 'application/vnd.github.machine-man-preview+json',
                        'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
                        'Authorization': "Bearer %s" % jwt_token()}
-            path = "https://api.github.com/installations/%s/access_tokens" % INSTALLATION_ID
+            path = "https://api.github.com/installations/%s/access_tokens" % self.installation_id
             resp = requests.post(path, headers=headers)
             resp.raise_for_status()
             self._token = resp.json()['token']
