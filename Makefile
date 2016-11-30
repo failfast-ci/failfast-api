@@ -99,14 +99,12 @@ pylint:
 coveralls: test
 	coveralls
 
-dockerfile: dist
-	cp deploy/Dockerfile dist
-	docker build --build-arg version=$(VERSION) -t quay.io/ant31/hub2lab-hook:v$(VERSION) dist/
+dockerfile: clean
+	docker build -t quay.io/ant31/hub2lab-hook:v$(VERSION) .
 
-dockerfile-canary: dist
-	cp deploy/Dockerfile dist
-	docker build --build-arg version=$(VERSION) -t quay.io/ant31/hub2lab-hook:canary dist/
-	docker push quay.io/kubespray/kpm:canary
+dockerfile-canary: clean
+	docker build -t quay.io/ant31/hub2lab-hook:canary .
+	docker push quay.io/ant31/hub2lab-hook:canary
 
 dockerfile-push: dockerfile
 	docker push quay.io/ant31/hub2lab-hook:v$(VERSION)
