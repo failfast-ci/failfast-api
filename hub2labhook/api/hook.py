@@ -12,7 +12,7 @@ from hub2labhook.exception import (Hub2LabException,
 
 hook_app = Blueprint('registry', __name__,)
 
-3
+
 @hook_app.errorhandler(Unsupported)
 @hook_app.errorhandler(UnauthorizedAccess)
 @hook_app.errorhandler(Hub2LabException)
@@ -40,7 +40,7 @@ def github_event():
 @hook_app.route("/api/v1/github_status", methods=['POST'], strict_slashes=False)
 def github_status():
     params = getvalues()
-    githubclient = GithubClient()
+    githubclient = GithubClient(installation_id=params['installation_id'])
     delay = params.get('delay', 0)
     return jsonify(githubclient.update_github_status(params['gitlab_project_id'],
                                                      params['gitlab_build_id'],
