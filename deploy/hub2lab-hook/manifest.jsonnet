@@ -18,7 +18,7 @@ kpm.package({
       ingress_class: "nginx",
       ingress_host: "hub2lab-hook.kpmhub.com",
       namespace: 'default',
-      image: "quay.io/ant31/hub2lab-hook:master",
+      image: "quay.io/ant31/hub2lab-hook:canary",
       svc_type: "LoadBalancer",
       appname: "hub2lab-hook",
       svc_port: 5000,
@@ -26,9 +26,9 @@ kpm.package({
       trigger: "changeme",
       token: "changeme",
       repo: "changeme",
-      integration_pem: "changeme"
-      integration_id: "743"
-      installation_id: "3709"
+      integration_pem: "changeme",
+      integration_id: "743",
+      installation_id: "3709",
     },
 
     resources: [

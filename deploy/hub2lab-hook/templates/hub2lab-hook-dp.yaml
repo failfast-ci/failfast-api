@@ -42,9 +42,9 @@ spec:
             - name: GITHUB_INTEGRATION_PEM
               value: {{integration_pem}}
             - name: GITHUB_INTEGRATION_ID
-              value: {{integration_id}}
+              value: "{{integration_id}}"
             - name: GITHUB_INSTALLATION_ID
-              value: {{installation_id}}
+              value: "{{installation_id}}"
           livenessProbe:
             httpGet:
               path: /version
