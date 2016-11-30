@@ -17,7 +17,8 @@ requirements = [
     'flask',
     'Flask>=0.10.1',
     'flask-cors',
-    'PyJWT'
+    'PyJWT',
+    'cryptography',
 ]
 
 test_requirements = [
