@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: hub2lab
+  annotations:
+    kubernetes.io/ingress.class: {{ingress_class}}
+    kubernetes.io/tls-acme: "true"
+
+spec:
+  tls:
+  - hosts:
+    - {{ ingress_host }}
+    secretName: {{name}}-tls
+  rules:
+  - host: {{ ingress_host }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{appname}}
+          servicePort: {{svc_port}}

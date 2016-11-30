@@ -15,25 +15,39 @@ kpm.package({
     },
 
     variables: {
-      appname: "hub2lab-hook",
+      ingress_class: "nginx",
+      ingress_host: "hub2lab-hook.kpmhub.com",
       namespace: 'default',
-      image: "quay.io/ant31/hub2lab-hook:v0.0.1",
+      image: "quay.io/ant31/hub2lab-hook:master",
       svc_type: "LoadBalancer",
+      appname: "hub2lab-hook",
+      svc_port: 5000,
+
+      trigger: "changeme",
+      token: "changeme",
+      repo: "changeme",
     },
 
     resources: [
       {
         file: "hub2lab-hook-dp.yaml",
         template: (importstr "templates/hub2lab-hook-dp.yaml"),
-        name: "hub2lab-hook",
+        name: $.variables.appname,
         type: "deployment",
       },
 
       {
         file: "hub2lab-hook-svc.yaml",
         template: (importstr "templates/hub2lab-hook-svc.yaml"),
-        name: "hub2lab-hook",
+        name: $.variables.appname,
         type: "service",
+      },
+
+      {
+        file: "hub2lab-hook-ingress.yaml",
+        template: (importstr "templates/ingress.yaml"),
+        name: $.variables.appname,
+        type: "ingress",
       }
       ],
 

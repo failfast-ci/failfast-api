@@ -33,6 +33,6 @@ def test_pr_event(pr_data, pr_headers):
     assert ge.head_sha == "aeee076b6504df51a60deab0d119be9a3bcabf9e"
     assert ge.istag() is False
     assert ge.ref == "master"
-    assert ge.refname == "pr:ant31/jenkinstest:master"
+    assert ge.refname == "master"
     assert ge.repo =="ant31/jenkinstest"
     assert ge.user == "ant31"

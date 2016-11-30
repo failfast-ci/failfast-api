@@ -18,19 +18,26 @@ spec:
           imagePullPolicy: Always
           command:
             - gunicorn
-            - {{appname}}.api.wsgi:app
+            - hub2labhook.api.wsgi:app
             - -b
             - :5000
-            - --threads
-            - "1"
+            - --timeout
+            - "120"
             - -w
             - "4"
-            - --timeout
-            - "240"
+            - "--reload"
           ports:
             - name: {{appname}}
               protocol: TCP
               containerPort: 5000
+          env:
+            - name: GITLAB_TRIGGER
+              value: {{trigger}}
+            - name: GITLAB_REPO
+              value: {{repo}}
+            - name: GITLAB_TOKEN
+              value: {{token}}
+
           livenessProbe:
             httpGet:
               path: /version

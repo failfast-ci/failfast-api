@@ -1,23 +1,15 @@
 import json
-import os
 import requests
 
 import hub2labhook
+from hub2labhook.utils import getenv
 
 
 class GitlabClient(object):
     def __init__(self, endpoint=None, token=None):
-        self.gitlab_token = self._getenv(token, "GITLAB_TOKEN")
-        self.endpoint = self._getenv(endpoint, "GITLAB_API", "https://gitlab.com")
+        self.gitlab_token = getenv(token, "GITLAB_TOKEN")
+        self.endpoint = getenv(endpoint, "GITLAB_API", "https://gitlab.com")
         self._headers = None
-
-    def _getenv(self, value, envname, default=None):
-        if not value:
-            if default:
-                value = os.getenv(envname, default)
-            else:
-                value = os.environ[envname]
-        return value
 
     @property
     def headers(self):
@@ -27,13 +19,18 @@ class GitlabClient(object):
                              'PRIVATE-TOKEN': self.gitlab_token}
         return self._headers
 
-    def get_project_id(self, project_name=None):
-        build_project = self._getenv(project_name, "GITLAB_REPO")
-        namespace, name = build_project.split("/")
-        path = self.endpoint + "/api/v3/projects/%s%%2f%s" % (namespace, name)
+    def get_project(self, project_id):
+        path = self.endpoint + "/api/v3/projects/%s" % (project_id)
         resp = requests.get(path, headers=self.headers, timeout=5)
         resp.raise_for_status()
-        return resp.json()['id']
+        return resp.json()
+
+    def get_project_id(self, project_name=None):
+        build_project = getenv(project_name, "GITLAB_REPO")
+        namespace, name = build_project.split("/")
+        project_path = "%s%%2f%s" % (namespace, name)
+        project = self.get_project(project_path)
+        return project['id']
 
     def trigger_pipeline(self, gevent, gitlab_project=None,
                          trigger_token=None, branch="master"):
@@ -49,8 +46,8 @@ class GitlabClient(object):
             'TARGET_REPO_NAME': gevent.repo}
 
         project_id = self.get_project_id(gitlab_project)
-        project_branch = self._getenv(branch, "GITLAB_BRANCH")
-        trigger_token = self._getenv(trigger_token, 'GITLAB_TRIGGER')
+        project_branch = getenv(branch, "GITLAB_BRANCH")
+        trigger_token = getenv(trigger_token, 'GITLAB_TRIGGER')
 
         body = {"token": trigger_token,
                 "ref": project_branch,
@@ -59,9 +56,19 @@ class GitlabClient(object):
         resp = requests.post(path,
                              data=json.dumps(body),
                              headers=self.headers,
-                             timeout=5)
-        print resp.content
-        print variables
+                             timeout=10)
         resp.raise_for_status()
 
+        return resp.json()
+
+    def get_build_status(self, project_id, build_id):
+        path = self.endpoint + "/api/v3/projects/%s/builds/%s" % (project_id, build_id)
+        resp = requests.get(path, headers=self.headers, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+
+    def get_pipeline_status(self, project_id, pipeline_id):
+        path = self.endpoint + "/api/v3/projects/%s/pipelines/%s" % (project_id, pipeline_id)
+        resp = requests.get(path, headers=self.headers, timeout=10)
+        resp.raise_for_status()
         return resp.json()
