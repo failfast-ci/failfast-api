@@ -9,7 +9,7 @@ kpm.package({
       name: "ant31/hub2lab-hook",
       expander: "jinja2",
       author: "Antoine Legrand",
-      version: "0.0.1-1",
+      version: "0.0.2-1",
       description: "hub2lab-hook",
       license: "Apache 2.0",
     },
@@ -26,6 +26,9 @@ kpm.package({
       trigger: "changeme",
       token: "changeme",
       repo: "changeme",
+      integration_pem: "changeme"
+      integration_id: "743"
+      installation_id: "3709"
     },
 
     resources: [

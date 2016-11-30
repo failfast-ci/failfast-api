@@ -37,7 +37,14 @@ spec:
               value: {{repo}}
             - name: GITLAB_TOKEN
               value: {{token}}
-
+            - name: GITHUB_CONTEXT
+              value: 'gitlab-ci'
+            - name: GITHUB_INTEGRATION_PEM
+              value: {{integration_pem}}
+            - name: GITHUB_INTEGRATION_ID
+              value: {{integration_id}}
+            - name: GITHUB_INSTALLATION_ID
+              value: {{installation_id}}
           livenessProbe:
             httpGet:
               path: /version
