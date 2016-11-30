@@ -13,6 +13,22 @@ from hub2labhook.exception import (Hub2LabException,
 hook_app = Blueprint('registry', __name__,)
 
 
+@hook_app.before_request
+def pre_request_logging():
+    jsonbody = request.get_json(force=True, silent=True)
+    values = request.values.to_dict()
+    if jsonbody:
+        values.update(jsonbody)
+
+    current_app.logger.info("request", extra={
+        "remote_addr": request.remote_addr,
+        "http_method": request.method,
+        "original_url": request.url,
+        "path": request.path,
+        "data":  values,
+        "headers": dict(request.headers.to_list())})
+
+
 @hook_app.errorhandler(Unsupported)
 @hook_app.errorhandler(UnauthorizedAccess)
 @hook_app.errorhandler(Hub2LabException)
@@ -40,6 +56,7 @@ def github_event():
 @hook_app.route("/api/v1/github_status", methods=['POST'], strict_slashes=False)
 def github_status():
     params = getvalues()
+    print params
     githubclient = GithubClient(installation_id=params['installation_id'])
     delay = params.get('delay', 0)
     return jsonify(githubclient.update_github_status(params['gitlab_project_id'],
