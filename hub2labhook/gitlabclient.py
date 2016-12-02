@@ -1,3 +1,5 @@
+import base64
+import time
 import json
 import requests
 
@@ -21,7 +23,7 @@ class GitlabClient(object):
 
     def get_project(self, project_id):
         path = self.endpoint + "/api/v3/projects/%s" % (project_id)
-        resp = requests.get(path, headers=self.headers, timeout=5)
+        resp = requests.get(path, headers=self.headers, timeout=10)
         resp.raise_for_status()
         return resp.json()
 
@@ -72,3 +74,67 @@ class GitlabClient(object):
         resp = requests.get(path, headers=self.headers, timeout=10)
         resp.raise_for_status()
         return resp.json()
+
+    def get_namespace_id(self, namespace):
+        path = self.endpoint + "/api/v3/namespaces"
+        params = {'search': namespace}
+        resp = requests.get(path, headers=self.headers, params=params, timeout=10)
+        resp.raise_for_status()
+        return resp.json()[0]['id']
+
+    def get_or_create_project(self, project_name, namespace=None):
+        group_name = getenv(namespace, "HUB2LAB_NAMESPACE", "hub2lab-ci")
+        project_path = "%s%%2f%s" % (group_name, project_name)
+        path = self.endpoint + "/api/v3/projects/%s" % (project_path)
+        resp = requests.get(path, headers=self.headers, timeout=10)
+        if resp.status_code == 200:
+            return resp.json()
+        group_id = self.get_namespace_id(group_name)
+        path = self.endpoint + "/api/v3/projects"
+        body = {
+            "name":  project_name,
+            "namespace_id": group_id,
+            "issues_enabled": False,
+            "merge_requests_enabled": False,
+            "builds_enabled": True,
+            "wiki_enabled": False,
+            "snippets_enabled": False,
+            "container_registry_enabled": False,
+            "shared_runners_enabled": False,
+            "public": True,
+            "visibility_level": 20,
+            "public_builds": True,
+            }
+        resp = requests.post(path, data=json.dumps(body),
+                             headers=self.headers, timeout=60)
+        resp.raise_for_status()
+        return resp.json()
+
+    def push_file(self, project_id, file_path,
+                  file_content, branch, message):
+        path = self.endpoint + "/api/v3/projects/%s/repository/files" % (project_id)
+        body = {"file_path": file_path,
+                "branch_name": branch,
+                "encoding": "base64",
+                "content": base64.b64encode(file_content),
+                "commit_message": message}
+
+        resp = requests.post(path, data=json.dumps(body), headers=self.headers, timeout=30)
+        resp.raise_for_status()
+        return resp.json()
+
+    def initialize_project(self, project_name, namespace=None):
+        project = self.get_or_create_project(project_name, namespace)
+        branch = "master"
+        branch_path = self.endpoint + "/api/v3/projects/%s/repository/branches/%s" % (project['id'], branch)
+        resp = requests.get(branch_path, headers=self.headers, timeout=30)
+        if resp.status_code == 404:
+            self.push_file(project['id'],
+                           file_path="README.md",
+                           file_content="# %s" % project_name,
+                           branch="master",
+                           message="init readme")
+            time.sleep(1)
+        resp = requests.put(branch_path + "/unprotect", headers=self.headers, timeout=30)
+        resp.raise_for_status()
+        return project

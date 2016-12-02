@@ -94,7 +94,7 @@ coveralls: test
 	coveralls
 
 pylint:
-	pylint --rcfile=~/.pylintrc hub2lab-hook
+	pylint --rcfile=.pylintrc hub2lab-hook
 
 coveralls: test
 	coveralls

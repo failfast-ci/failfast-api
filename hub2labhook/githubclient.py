@@ -17,6 +17,8 @@ INSTALLATION_ID = '3709'
 STATUS_MAP = {"running": "pending",
               "failed": "failure",
               "success": "success",
+              "skipped": "failure",
+              "unknown": "error",
               "canceled": "error",
               "created": "pending",
               "running": "pending"}
