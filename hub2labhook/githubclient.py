@@ -120,3 +120,13 @@ class GithubClient(object):
         resp = requests.post(path, data=json.dumps(body), headers=self.headers, timeout=5)
         resp.raise_for_status()
         return resp.json()
+
+    def fetch_file(self, repo, file_path, ref="master"):
+        path = "https://api.github.com/repos/%s/contents/%s" % (repo, file_path)
+        resp = requests.get(path, headers=self.headers, params={'ref': ref}, timeout=30)
+        resp.raise_for_status()
+        content = resp.json()
+        filecontent = content['content']
+        if content['encoding'] == "base64":
+            filecontent = base64.b64decode(filecontent)
+        return filecontent

@@ -56,7 +56,6 @@ def github_event():
 @hook_app.route("/api/v1/github_status", methods=['POST'], strict_slashes=False)
 def github_status():
     params = getvalues()
-    print params
     githubclient = GithubClient(installation_id=params['installation_id'])
     delay = params.get('delay', 0)
     return jsonify(githubclient.update_github_status(params['gitlab_project_id'],

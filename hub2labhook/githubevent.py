@@ -30,6 +30,10 @@ class GithubEvent(object):
         return self.event['number']
 
     @property
+    def installation_id(self):
+        return self.event['installation']['id']
+
+    @property
     def refname(self):
         if self.event_type not in ["push", "pull_request"]:
             self._raise_unsupported()
@@ -73,6 +77,12 @@ class GithubEvent(object):
             self._raise_unsupported()
 
         return self.event['repository']['full_name']
+
+    @property
+    def pr_repo(self):
+        if self.event_type not in ["pull_request"]:
+            self._raise_unsupported()
+        return self.event['pull_request']['head']['repo']['full_name']
 
     @property
     def user(self):
