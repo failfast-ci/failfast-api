@@ -30,6 +30,22 @@ class GithubEvent(object):
         return self.event['number']
 
     @property
+    def commit_message(self):
+        if self.event_type == "push":
+            ref = self.event['head_commit']['message']
+        elif self.event_type == "pull_request":
+            ref = self.event['pull_request']['title']
+        else:
+            self._raise_unsupported()
+        return ref
+
+    @property
+    def clone_url(self):
+        if self.event_type not in ["push", "pull_request"]:
+            self._raise_unsupported()
+        return self.event['repository']['clone_url']
+
+    @property
     def installation_id(self):
         return self.event['installation']['id']
 

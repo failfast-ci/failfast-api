@@ -1,6 +1,6 @@
 from flask import jsonify, request, Blueprint, current_app
 from hub2labhook.githubevent import GithubEvent
-from hub2labhook.gitlabclient import GitlabClient
+from hub2labhook.pipeline import Pipeline
 from hub2labhook.githubclient import GithubClient
 from hub2labhook.api.app import getvalues
 from hub2labhook.exception import (Hub2LabException,
@@ -49,8 +49,8 @@ def test_error():
 def github_event():
     params = getvalues()
     gevent = GithubEvent(params, request.headers)
-    gitlabclient = GitlabClient()
-    return jsonify(gitlabclient.trigger_pipeline(gevent))
+    pipeline = Pipeline(gevent)
+    return jsonify(pipeline.trigger_pipeline())
 
 
 @hook_app.route("/api/v1/github_status", methods=['POST'], strict_slashes=False)

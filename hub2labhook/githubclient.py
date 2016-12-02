@@ -9,6 +9,7 @@ import requests
 import hub2labhook
 from hub2labhook.gitlabclient import GitlabClient
 from hub2labhook.utils import getenv
+from hub2labhook.exception import ResourceNotFound
 
 
 INTEGRATION_PEM = base64.b64decode(os.environ['GITHUB_INTEGRATION_PEM'])
@@ -130,3 +131,16 @@ class GithubClient(object):
         if content['encoding'] == "base64":
             filecontent = base64.b64decode(filecontent)
         return filecontent
+
+    def get_ci_file(self, source_repo):
+        content = None
+        for filepath in [".gitlab-ci.yml", ".failfast-ci.jsonnet"]:
+            try:
+                content = self.fetch_file(source_repo, filepath, ref=ge.ref)
+                return {"content": content,
+                        "file": filepath}
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code != 404:
+                    raise e
+        if content is None:
+            raise ResourceNotFound("no .gitlab-ci.yml or .failfail-ci.jsonnet")
