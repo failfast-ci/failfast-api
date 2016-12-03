@@ -132,11 +132,11 @@ class GithubClient(object):
             filecontent = base64.b64decode(filecontent)
         return filecontent
 
-    def get_ci_file(self, source_repo):
+    def get_ci_file(self, source_repo, ref):
         content = None
         for filepath in [".gitlab-ci.yml", ".failfast-ci.jsonnet"]:
             try:
-                content = self.fetch_file(source_repo, filepath, ref=ge.ref)
+                content = self.fetch_file(source_repo, filepath, ref=ref)
                 return {"content": content,
                         "file": filepath}
             except requests.exceptions.HTTPError as e:

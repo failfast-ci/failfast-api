@@ -128,6 +128,11 @@ class GitlabClient(object):
 
     def push_file(self, project_id, file_path,
                   file_content, branch, message):
+        branch_path = self.endpoint + "/api/v3/projects/%s/repository/branches" % project_id
+        branch_body = {'branch_name': branch, 'ref': "_failfastci"}
+        resp = requests.post(branch_path,
+                             params=branch_body,
+                             headers=self.headers, timeout=30)
         path = self.endpoint + "/api/v3/projects/%s/repository/files" % (project_id)
         body = {"file_path": file_path,
                 "branch_name": branch,
@@ -151,8 +156,14 @@ class GitlabClient(object):
                            branch="master",
                            message="init readme")
             time.sleep(1)
-        resp = requests.put(branch_path + "/unprotect", headers=self.headers, timeout=30)
-        resp.raise_for_status()
+            resp = requests.put(branch_path + "/unprotect", headers=self.headers, timeout=30)
+            resp.raise_for_status()
+            branch_path = self.endpoint + "/api/v3/projects/%s/repository/branches" % project['id']
+            branch_body = {'branch_name': "_failfastci", 'ref': "master"}
+            resp = requests.post(branch_path,
+                                 params=branch_body,
+                                 headers=self.headers, timeout=30)
+
         return project
 
     def trigger_build(self, gitlab_project, variables={}, trigger_token=None, branch=None):
