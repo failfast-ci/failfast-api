@@ -20,6 +20,7 @@ requirements = [
     'PyJWT',
     'gitpython',
     'cryptography',
+    'celery'
 ]
 
 test_requirements = [

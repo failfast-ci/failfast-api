@@ -10,3 +10,4 @@ requests-mock
 tox>=2.1.1
 sphinxcontrib-napoleon
 gunicorn>=0.19
+ipython
