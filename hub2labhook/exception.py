@@ -44,3 +44,8 @@ class UnauthorizedAccess(Hub2LabException):
 class Unsupported(Hub2LabException):
     status_code = 501
     errorcode = "unsupported"
+
+
+class Unexpected(Hub2LabException):
+    status_code = 500
+    errorcode = "unexpected-error"

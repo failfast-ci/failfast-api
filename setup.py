@@ -18,6 +18,7 @@ requirements = [
     'Flask>=0.10.1',
     'flask-cors',
     'PyJWT',
+    'gitpython',
     'cryptography',
 ]
 

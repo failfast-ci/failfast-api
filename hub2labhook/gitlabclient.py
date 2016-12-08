@@ -99,7 +99,7 @@ class GitlabClient(object):
         return resp.json()[0]['id']
 
     def get_or_create_project(self, project_name, namespace=None):
-        group_name = getenv(namespace, "HUB2LAB_NAMESPACE", "failfast-ci")
+        group_name = getenv(namespace, "FAILFASTCI_NAMESPACE", "failfast-ci")
         project_path = "%s%%2f%s" % (group_name, project_name)
         path = self.endpoint + "/api/v3/projects/%s" % (project_path)
         resp = requests.get(path, headers=self.headers, timeout=10)
@@ -127,20 +127,24 @@ class GitlabClient(object):
         return resp.json()
 
     def push_file(self, project_id, file_path,
-                  file_content, branch, message):
+                  file_content, branch, message,
+                  force=True):
         branch_path = self.endpoint + "/api/v3/projects/%s/repository/branches" % project_id
         branch_body = {'branch_name': branch, 'ref': "_failfastci"}
         resp = requests.post(branch_path,
                              params=branch_body,
                              headers=self.headers, timeout=30)
+
         path = self.endpoint + "/api/v3/projects/%s/repository/files" % (project_id)
         body = {"file_path": file_path,
                 "branch_name": branch,
                 "encoding": "base64",
                 "content": base64.b64encode(file_content),
                 "commit_message": message}
-
         resp = requests.post(path, data=json.dumps(body), headers=self.headers, timeout=30)
+        if resp.status_code == 400:
+            resp = requests.put(path, data=json.dumps(body), headers=self.headers, timeout=30)
+
         resp.raise_for_status()
         return resp.json()
 
