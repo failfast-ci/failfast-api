@@ -1,8 +1,8 @@
 FROM alpine:3.3
 
 ARG version=0.0.1
-ARG workdir=/opt
-RUN apk --update add python py-pip openssl ca-certificates git
+ARG workdir=/opt/failfast-ci
+RUN apk --update add bash python py-pip openssl ca-certificates git
 RUN apk --update add --virtual build-dependencies python-dev build-base wget openssl-dev libffi-dev
 RUN pip install pip -U
 
