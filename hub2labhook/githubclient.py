@@ -44,7 +44,7 @@ def jwt_token():
         "iss": INTEGRATION_ID
     }
 
-    return jwt.encode(payload, INTEGRATION_PEM, algorithm='RS256')
+    return jwt.encode(payload, INTEGRATION_PEM, algorithm='RS256').decode("utf-8")
 
 
 def get_integration_pem():

@@ -1,7 +1,7 @@
+import yaml
 import tempfile
 import os
 import uuid
-import yaml
 from hub2labhook.githubclient import GithubClient
 from hub2labhook.gitlabclient import GitlabClient
 from hub2labhook.exception import Unexpected

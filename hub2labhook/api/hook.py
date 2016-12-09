@@ -10,6 +10,9 @@ from hub2labhook.exception import (Hub2LabException,
                                    Unsupported)
 
 
+import hub2labhook.jobs.tasks as tasks
+
+
 hook_app = Blueprint('registry', __name__,)
 
 
@@ -48,9 +51,10 @@ def test_error():
 @hook_app.route("/api/v1/github_event", methods=['POST'], strict_slashes=False)
 def github_event():
     params = getvalues()
-    gevent = GithubEvent(params, request.headers)
-    pipeline = Pipeline(gevent)
-    return jsonify(pipeline.trigger_pipeline())
+    if request.headers.get("X-GITHUB-EVENT", "push") not in ['push', "pull_request"]:
+        return jsonify({'ignored': True})
+    job = tasks.pipeline.delay(params, dict(request.headers.to_list()))
+    return jsonify({'job_id': job.id})
 
 
 @hook_app.route("/api/v1/github_status", methods=['POST'], strict_slashes=False)

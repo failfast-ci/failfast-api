@@ -13,14 +13,18 @@ with open('README.md') as readme_file:
 
 requirements = [
     'futures',
+    'celery[redis]',
+    'iziconf',
     'requests',
     'flask',
     'Flask>=0.10.1',
     'flask-cors',
     'PyJWT',
+    'PyYaml',
     'gitpython',
     'cryptography',
-    'celery'
+    'celery',
+    'flower'
 ]
 
 test_requirements = [
@@ -41,7 +45,8 @@ setup(
     url='https://github.com/ant31/hub2lab-hook',
     packages=[
         'hub2labhook',
-        "hub2labhook.api"
+        "hub2labhook.api",
+        "hub2labhook.jobs"
     ],
     package_dir={'hub2labhook':
                  'hub2labhook'},
@@ -50,6 +55,10 @@ setup(
     license="Apache License version 2",
     zip_safe=False,
     keywords=['hub2lab-hook'],
+    dependency_links=[
+        "https://github.com/mher/flower/zipball/master#egg=flower-1.0.0"
+        "https://github.com/ant31/iziconf/zipball/master#egg=flower-0.0.3"
+    ],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
