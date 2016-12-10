@@ -22,9 +22,9 @@ spec:
               protocol: TCP
               containerPort: 5000
           env:
-            - name: CELERY_BACKEND_URL
+            - name: CELERY_BACKEND
               value: {{celery_backend}}
-            - name: CELERY_BROKER_URL
+            - name: CELERY_BROKER
               value: {{celery_broker}}
             - name: GITLAB_USER
               value: {{gitlab_user}}
