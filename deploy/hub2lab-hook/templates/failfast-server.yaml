@@ -15,36 +15,32 @@ spec:
       containers:
         - name: {{appname}}
           image: {{image}}
-          imagePullPolicy: Always
           command:
-            - gunicorn
-            - hub2labhook.api.wsgi:app
-            - -b
-            - :5000
-            - --timeout
-            - "120"
-            - -w
-            - "4"
-            - "--reload"
+            - ./run-server.sh
           ports:
             - name: {{appname}}
               protocol: TCP
               containerPort: 5000
           env:
-            - name: GITLAB_TRIGGER
-              value: {{trigger}}
-            - name: GITLAB_REPO
-              value: {{repo}}
-            - name: GITLAB_TOKEN
-              value: {{token}}
+            - name: CELERY_BACKEND_URL
+              value: {{celery_backend}}
+            - name: CELERY_BROKER_URL
+              value: {{celery_broker}}
+            - name: GITLAB_USER
+              value: {{gitlab_user}}
             - name: GITHUB_CONTEXT
-              value: 'gitlab-ci'
+              value: {{github_context}}
+            - name: GITLAB_API
+              value: "https://gitlab.com"
+            - name: FAILFASTCI_NAMESPACE
+              value: {{gitlab_namespace}}
             - name: GITHUB_INTEGRATION_PEM
-              value: {{integration_pem}}
+              valueFrom:
+                secretKeyRef:
+                  name: {{appname}}
+                  key: integration_pem
             - name: GITHUB_INTEGRATION_ID
               value: "{{integration_id}}"
-            - name: GITHUB_INSTALLATION_ID
-              value: "{{installation_id}}"
           livenessProbe:
             httpGet:
               path: /version

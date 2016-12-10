@@ -11,5 +11,8 @@ spec:
     - port: 5000
       targetPort: 5000
       name: {{appname}}
+    - port: 5555
+      targetPort: 5555
+      name: flower
   selector:
     k8s-app: {{appname}}

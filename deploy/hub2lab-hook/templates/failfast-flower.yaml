@@ -1,0 +1,40 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: ff-flower
+  name: ff-flower
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: ff-flower
+    spec:
+      containers:
+        - name: ff-flower
+          image: {{image}}
+          imagePullPolicy: Always
+          command:
+            - celery
+            - flower
+            - --persistent
+            - --db=/data/flower.db
+            - --broker={{celery_broker}}
+          ports:
+            - name: ff-flower
+              protocol: TCP
+              containerPort: 5555
+          env:
+            - name: CELERY_BACKEND_URL
+              value: {{celery_backend}}
+            - name: CELERY_BROKER_URL
+              value: {{celery_broker}}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pvc-flower-1

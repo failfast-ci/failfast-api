@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: hub2lab
+  name: ff-flower
   annotations:
     kubernetes.io/ingress.class: nginx
     kubernetes.io/tls-acme: "true"
@@ -9,17 +9,13 @@ metadata:
 spec:
   tls:
   - hosts:
-    - jobs.failfast-ci.io
-    secretName: failfast-ci-tls
+    - ff-flower.failfast-ci.io
+    secretName: ff-flower-tls
   rules:
-  - host: jobs.failfast-ci.io
+  - host: ff-flower.failfast-ci.io
     http:
       paths:
       - path: /
-        backend:
-          serviceName: {{appname}}
-          servicePort: 5000
-      - path: /tasks
         backend:
           serviceName: ff-flower
           servicePort: 5555

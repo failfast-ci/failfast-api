@@ -1,0 +1,28 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: redis
+  name: redis
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:3
+          ports:
+            - name: redis
+              protocol: TCP
+              containerPort: 6379
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pvc-redis-1

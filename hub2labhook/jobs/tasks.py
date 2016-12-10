@@ -10,5 +10,5 @@ from .job_base import JobBase
 @app.task(bind=True, base=JobBase, retry=3)
 def pipeline(self, event, headers):
     gevent = GithubEvent(event, headers)
-    pipeline = Pipeline(gevent)
-    return pipeline.trigger_pipeline()
+    build = Pipeline(gevent)
+    return build.trigger_pipeline()
