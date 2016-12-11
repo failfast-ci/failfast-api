@@ -1,11 +1,11 @@
-FROM alpine:3.3
+FROM python:3.5
 
 ARG version=0.1.0
 ARG workdir=/opt/failfast-ci
-RUN apk --update add bash python py-pip openssl ca-certificates git
-RUN apk --update add --virtual build-dependencies python-dev build-base wget openssl-dev libffi-dev
+RUN apt-get update -y
+RUN apt-get install bash openssl ca-certificates git wget -y
 RUN pip install pip -U
-
+RUN pip install jsonnet -U
 RUN rm -rf $workdir
 RUN mkdir -p $workdir
 ADD . $workdir
