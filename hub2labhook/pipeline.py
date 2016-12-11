@@ -69,7 +69,7 @@ class Pipeline(object):
             path = os.path.join(repo_path, ".gitlab-ci.yml")
             with open(path, 'w') as gitlabcifile:
                 gitlabcifile.write(yaml.safe_dump(content))
-            gitbin.commit("-a", "-m", "update cifile")
+            gitbin.commit("-a", "-m", "update cifile", "--author='Failfast-ci Bot <failfastci-bot@failfast-ci.io>'")
             gitbin.push("target", 'HEAD:%s' % gevent.target_refname, "-f")
             return {'pushed': gevent.target_refname}
         else:
