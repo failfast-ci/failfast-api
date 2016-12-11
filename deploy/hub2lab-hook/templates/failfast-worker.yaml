@@ -35,6 +35,8 @@ spec:
               value: "https://gitlab.com"
             - name: FAILFASTCI_NAMESPACE
               value: {{gitlab_namespace}}
+            - name: GITLAB_TOKEN
+              value: {{gitlab_token}}
             - name: GITHUB_INTEGRATION_PEM
               valueFrom:
                 secretKeyRef:

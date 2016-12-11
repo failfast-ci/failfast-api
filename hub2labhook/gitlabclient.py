@@ -73,11 +73,12 @@ class GitlabClient(object):
             resp = requests.get(path)
             action = "post"
             if resp.status_code == 200:
+                if resp.json()['value'] == value:
+                    continue
                 action = "put"
             body = {"key": key, "value": value}
             resp = getattr(requests, action)(path, data=json.dumps(body), headers=self.headers)
             resp.raise_for_status()
-
 
     def get_build_status(self, project_id, build_id):
         path = self.endpoint + "/api/v3/projects/%s/builds/%s" % (project_id, build_id)

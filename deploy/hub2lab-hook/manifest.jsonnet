@@ -24,7 +24,7 @@ kpm.package({
       svc_port: 5000,
 
       gitlab_user: "failfastci-bot",
-      gitlab_token: "",
+      gitlab_token: "azSYob1pZ_cyAgZkjbe-",
       gitlab_namespace: "failfast-ci",
       github_context: "gitlab-ci",
       integration_id: "743",
