@@ -1,4 +1,5 @@
 from __future__ import absolute_import, unicode_literals
+import requests
 
 from hub2labhook.githubevent import GithubEvent
 from hub2labhook.githubclient import STATUS_MAP, CONTEXT, GithubClient
@@ -76,5 +77,5 @@ def update_github_statuses(self, trigger):
         if pending:
             raise self.retry(countdown=15)
         return resp
-    except:
-        raise self.retry(countdown=15, max_retry=10)
+    except requests.exceptions.HTTPError as exc:
+        raise self.retry(countdown=30, max_retry=10, exc=exc)

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: ff-flower
-          image: {{image}}
+          image: "quay.io/ant31/hub2lab-hook:v0.0.1"
           imagePullPolicy: Always
           command:
             - celery

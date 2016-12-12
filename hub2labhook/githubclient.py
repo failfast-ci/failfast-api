@@ -18,6 +18,7 @@ STATUS_MAP = {"running": "pending",
               "skipped": "failure",
               "unknown": "error",
               "canceled": "error",
+              "pending": "pending",
               "created": "pending",
               "running": "pending"}
 CONTEXT = os.getenv("GITHUB_CONTEXT", "gitlab-ci")
