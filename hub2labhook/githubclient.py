@@ -1,5 +1,3 @@
-import time
-from threading import Thread
 import json
 import os
 import datetime
@@ -7,7 +5,6 @@ import base64
 import jwt
 import requests
 import hub2labhook
-from hub2labhook.gitlabclient import GitlabClient
 from hub2labhook.utils import getenv
 from hub2labhook.exception import ResourceNotFound
 
@@ -24,17 +21,6 @@ STATUS_MAP = {"running": "pending",
               "created": "pending",
               "running": "pending"}
 CONTEXT = os.getenv("GITHUB_CONTEXT", "gitlab-ci")
-
-
-class DelayedRequest(Thread):
-    def __init__(self, delay, func):
-        Thread.__init__(self)
-        self.delay = delay
-        self.func = func
-
-    def run(self):
-        time.sleep(self.delay)
-        self.func()
 
 
 def jwt_token():
@@ -80,43 +66,7 @@ class GithubClient(object):
             self._token = resp.json()['token']
         return self._token
 
-    def update_github_status(self, gitlab_project_id, build_id, github_repo, delay=0):
-        descriptions = {"pending": "Build in-progress",
-                        "success": "Build success",
-                        "error": "Build in error or canceled",
-                        "failure": "Build failed"}
-
-        gitlabclient = GitlabClient()
-        project = gitlabclient.get_project(gitlab_project_id)
-        project_url = project['web_url']
-
-        def _request():
-            build = gitlabclient.get_build_status(gitlab_project_id, build_id)
-            sha = build['commit']['id']
-
-            build_body = {"state": STATUS_MAP[build['status']],
-                          "target_url": project_url + "/builds/%s" % build_id,
-                          "description": descriptions[STATUS_MAP[build['status']]],
-                          "context": "%s/%s/%s" % (CONTEXT, build['stage'], build['name'])}
-
-            pipeline_body = {"state": STATUS_MAP[build['pipeline']['status']],
-                             "target_url": project_url + "/pipelines/%s" % build['pipeline']['id'],
-                             "description": descriptions[STATUS_MAP[build['pipeline']['status']]],
-                             "context": "%s/pipeline" % CONTEXT}
-
-            resp = []
-            resp.append(self._post_status(pipeline_body, github_repo, sha))
-            resp.append(self._post_status(build_body, github_repo, sha))
-            return resp
-
-        if delay:
-            thread = DelayedRequest(delay=delay, func=_request)
-            thread.start()
-            return {"update queued": delay}
-        else:
-            return _request()
-
-    def _post_status(self, body, github_repo, sha):
+    def post_status(self, body, github_repo, sha):
         path = "https://api.github.com/repos/%s/commits/%s/statuses" % (github_repo, sha)
         resp = requests.post(path, data=json.dumps(body), headers=self.headers, timeout=5)
         resp.raise_for_status()

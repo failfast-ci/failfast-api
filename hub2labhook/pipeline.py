@@ -73,7 +73,13 @@ class Pipeline(object):
             gitbin.config("--global", "user.email", "failfastci-bot@failfast-ci.io")
             gitbin.commit("-a", "-m", "update .gitlab-ci.yml")
             gitbin.push("target", 'HEAD:%s' % gevent.target_refname, "-f")
-            return {'pushed': gevent.target_refname}
+            ci_sha = str(gitbin.rev_parse('HEAD'))
+            return {'sha': gevent.head_sha,
+                    'ci_sha': ci_sha,
+                    'ci_ref': gevent.target_refname,
+                    'ci_project_id': ci_project['id'],
+                    'installation_id': gevent.installation_id,
+                    'github_repo': gevent.repo}
         else:
             """ Push only the .failfast-ci.yaml and set token to clone """
             tokenkey = "GH_TOKEN_%s" % str.upper(uuid.uuid4().hex)

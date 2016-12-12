@@ -1,4 +1,3 @@
-import yaml
 import base64
 import time
 import json
@@ -37,35 +36,6 @@ class GitlabClient(object):
         project = self.get_project(project_path)
         return project['id']
 
-    def trigger_pipeline(self, gevent, gitlab_project=None,
-                         trigger_token=None, branch="master"):
-
-        variables = {
-            'EVENT': gevent.event_type,
-            'PR_ID': str(gevent.pr_id),
-            'SHA': gevent.head_sha,
-            'SOURCE_REF': gevent.refname,
-            'TARGET_REF': gevent.target_refname,
-            'REF_NAME': gevent.refname,
-            'SOURCE_REPO_NAME': gevent.repo,
-            'TARGET_REPO_NAME': gevent.repo}
-
-        project_id = self.get_project_id(gitlab_project)
-        project_branch = getenv(branch, "GITLAB_BRANCH")
-        trigger_token = getenv(trigger_token, 'GITLAB_TRIGGER')
-
-        body = {"token": trigger_token,
-                "ref": project_branch,
-                "variables": variables}
-        path = self.endpoint + "/api/v3/projects/%s/trigger/builds" % project_id
-        resp = requests.post(path,
-                             data=json.dumps(body),
-                             headers=self.headers,
-                             timeout=10)
-        resp.raise_for_status()
-
-        return resp.json()
-
     def set_variables(self, project_id, variables):
         path = self.endpoint + "/api/v3/projects/%s/variables" % project_id
         for key, value in variables.iteritems():
@@ -82,6 +52,12 @@ class GitlabClient(object):
 
     def get_build_status(self, project_id, build_id):
         path = self.endpoint + "/api/v3/projects/%s/builds/%s" % (project_id, build_id)
+        resp = requests.get(path, headers=self.headers, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+
+    def get_builds(self, project_id, sha):
+        path = self.endpoint + "/api/v3/projects/%s/repository/commits/%s/builds" % (project_id, sha)
         resp = requests.get(path, headers=self.headers, timeout=10)
         resp.raise_for_status()
         return resp.json()
@@ -171,7 +147,7 @@ class GitlabClient(object):
 
         return project
 
-    def trigger_build(self, gitlab_project, variables={}, trigger_token=None, branch=None):
+    def trigger_build(self, gitlab_project, variables={}, trigger_token=None, branch="master"):
         project_id = self.get_project_id(gitlab_project)
         project_branch = getenv(branch, "GITLAB_BRANCH")
         trigger_token = getenv(trigger_token, 'GITLAB_TRIGGER')
@@ -186,3 +162,4 @@ class GitlabClient(object):
                              headers=self.headers,
                              timeout=10)
         resp.raise_for_status()
+        return resp.json()

@@ -53,16 +53,7 @@ def github_event():
     params = getvalues()
     if request.headers.get("X-GITHUB-EVENT", "push") not in ['push', "pull_request"]:
         return jsonify({'ignored': True})
-    job = tasks.pipeline.delay(params, dict(request.headers.to_list()))
+    task = tasks.pipeline.s(params, dict(request.headers.to_list()))
+    task.link(tasks.update_github_statuses.s())
+    job = task.delay()
     return jsonify({'job_id': job.id})
-
-
-@hook_app.route("/api/v1/github_status", methods=['POST'], strict_slashes=False)
-def github_status():
-    params = getvalues()
-    githubclient = GithubClient(installation_id=params['installation_id'])
-    delay = params.get('delay', 0)
-    return jsonify(githubclient.update_github_status(params['gitlab_project_id'],
-                                                     params['gitlab_build_id'],
-                                                     params['github_repo'],
-                                                     delay))

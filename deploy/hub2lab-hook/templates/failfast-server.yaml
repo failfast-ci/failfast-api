@@ -28,6 +28,8 @@ spec:
               value: {{celery_broker}}
             - name: GITLAB_USER
               value: {{gitlab_user}}
+            - name: GITLAB_TOKEN
+              value: {{gitlab_token}}
             - name: GITHUB_CONTEXT
               value: {{github_context}}
             - name: GITLAB_API
