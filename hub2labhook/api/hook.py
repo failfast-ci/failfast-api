@@ -51,8 +51,11 @@ def test_error():
 @hook_app.route("/api/v1/github_event", methods=['POST'], strict_slashes=False)
 def github_event():
     params = getvalues()
-    if request.headers.get("X-GITHUB-EVENT", "push") not in ['push', "pull_request"]:
+    event = request.headers.get("X-GITHUB-EVENT", "push")
+    if ((event not in ['push', "pull_request"]) or
+       (event == "pull_request" and params['action'] not in ['opened', 'reopened', 'synchronize'])):
         return jsonify({'ignored': True})
+
     task = tasks.pipeline.s(params, dict(request.headers.to_list()))
     task.link(tasks.update_github_statuses.s())
     job = task.delay()

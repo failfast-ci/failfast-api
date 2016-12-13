@@ -75,7 +75,7 @@ def update_github_statuses(self, trigger):
         for build in pipeline['builds']:
             resp.append(update_github_status(project, build, github_repo, sha, installation_id))
         if pending:
-            raise self.retry(countdown=15)
+            raise self.retry(countdown=30, max_retries=400)
         return resp
-    except requests.exceptions.HTTPError as exc:
-        raise self.retry(countdown=30, max_retry=10, exc=exc)
+    except requests.exceptions.RequestException as exc:
+        raise self.retry(countdown=30, max_retries=30, exc=exc)

@@ -4,7 +4,7 @@ from hub2labhook.exception import Unsupported
 class GithubEvent(object):
     def __init__(self, event, headers):
         self.event = event
-        self.headers = headers
+        self.headers = {str.upper(k): v for k, v in headers.items()}
         self._refname = None
 
     @property
