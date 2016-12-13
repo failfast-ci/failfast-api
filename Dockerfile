@@ -1,6 +1,6 @@
 FROM python:3.5
 
-ARG version=0.1.1
+ARG version=0.1.2
 ARG workdir=/opt/failfast-ci
 RUN apt-get update -y
 RUN apt-get install bash openssl ca-certificates git wget -y
