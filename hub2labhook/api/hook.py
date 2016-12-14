@@ -1,4 +1,5 @@
 from flask import jsonify, request, Blueprint, current_app
+import os
 from hub2labhook.githubevent import GithubEvent
 from hub2labhook.pipeline import Pipeline
 from hub2labhook.githubclient import GithubClient
@@ -52,7 +53,12 @@ def test_error():
 def github_event():
     params = getvalues()
     event = request.headers.get("X-GITHUB-EVENT", "push")
-    if ((event not in ['push', "pull_request"]) or
+    allowed_events = []
+    if os.getenv("BUILD_PULL_REQUEST", "true") == "true":
+        allowed_events.append("pull_request")
+    if os.getenv("BUILD_PUSH", "false") == "true":
+        allowed_events.append("push")
+    if ((event not in allowed_events) or
        (event == "pull_request" and params['action'] not in ['opened', 'reopened', 'synchronize'])):
         return jsonify({'ignored': True})
 
