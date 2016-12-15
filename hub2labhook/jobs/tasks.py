@@ -23,7 +23,6 @@ def update_github_status(project, build, github_repo, sha, installation_id):
                     "success": "Build success",
                     "error": "Build in error or canceled",
                     "failure": "Build failed"}
-    gitlabclient = GitlabClient()
     githubclient = GithubClient(installation_id)
     project_url = project['web_url']
     # sha = build['commit']['id']
@@ -56,6 +55,8 @@ def update_github_statuses(self, trigger):
         project = gitlabclient.get_project(gitlab_project_id)
         project_url = project['web_url']
         builds = gitlabclient.get_builds(project['id'], ci_sha)
+        if not builds:
+            raise self.retry(countdown=30, max_retries=30)
         for build in builds:
             pipeline_id = build['pipeline']['id']
             if pipeline_id not in pipelines:
@@ -63,19 +64,21 @@ def update_github_statuses(self, trigger):
                 pdict.update(build['pipeline'])
                 pipelines[pipeline_id] = pdict
             pipelines[pipeline_id]['builds'].append(build)
-        pipeline = pipelines[sorted(pipelines.keys())[-1]]
-        state = STATUS_MAP[pipeline['status']]
+        pipe = pipelines[sorted(pipelines.keys())[-1]]
+        state = STATUS_MAP[pipe['status']]
         pending = state == "pending"
         pipeline_body = {"state": state,
-                         "target_url": project_url + "/pipelines/%s" % pipeline['id'],
+                         "target_url": project_url + "/pipelines/%s" % pipe['id'],
                          "description": descriptions[state],
                          "context": "%s/pipeline" % CONTEXT}
         resp = []
         resp.append(githubclient.post_status(pipeline_body, github_repo, sha))
-        for build in pipeline['builds']:
+        for build in pipe['builds']:
             resp.append(update_github_status(project, build, github_repo, sha, installation_id))
         if pending:
             raise self.retry(countdown=30, max_retries=400)
         return resp
     except requests.exceptions.RequestException as exc:
+        raise self.retry(countdown=30, max_retries=30, exc=exc)
+    except Exception as exc:
         raise self.retry(countdown=30, max_retries=30, exc=exc)
