@@ -58,7 +58,7 @@ def github_event():
         allowed_events.append("pull_request")
 
     if ((os.getenv("BUILD_PUSH", "false") == "true") or
-        (event == "push" and event['ref'] == "refs/heads/master")):
+        (event == "push" and params['ref'] == "refs/heads/master")):
         allowed_events.append("push")
 
     if ((event not in allowed_events) or
