@@ -56,8 +56,11 @@ def github_event():
     allowed_events = []
     if os.getenv("BUILD_PULL_REQUEST", "true") == "true":
         allowed_events.append("pull_request")
-    if os.getenv("BUILD_PUSH", "false") == "true":
+
+    if ((os.getenv("BUILD_PUSH", "false") == "true") or
+        (event == "push" and event['ref'] == "refs/heads/master")):
         allowed_events.append("push")
+
     if ((event not in allowed_events) or
        (event == "pull_request" and params['action'] not in ['opened', 'reopened', 'synchronize'])):
         return jsonify({'ignored': True})
