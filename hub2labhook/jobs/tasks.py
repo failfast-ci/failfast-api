@@ -89,7 +89,8 @@ def update_github_statuses(self, trigger):
         resp = []
         resp.append(githubclient.post_status(pipeline_body, github_repo, sha))
         for build in pipe['builds']:
-            resp.append(update_github_status(project, build, github_repo, sha, installation_id))
+            if build['status'] not in ['skipped']:
+                resp.append(update_github_status(project, build, github_repo, sha, installation_id))
         if pending:
             raise self.retry(countdown=60)
         return resp

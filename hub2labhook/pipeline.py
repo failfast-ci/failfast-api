@@ -61,7 +61,7 @@ class Pipeline(object):
     def _append_update_stage(self, content):
         stage_name = "github-status-update"
         url = FAILFAST_API + "/api/v1/github_statuses"
-        params = json.dumps({"ci_project_id": "$CI_PROJECT_id",
+        params = json.dumps({"ci_project_id": "$CI_PROJECT_ID",
                              "ci_sha": "$CI_BUILD_REF",
                              "sha": "$SHA",
                              "github_repo": "$GITHUB_REPO",
@@ -71,8 +71,8 @@ class Pipeline(object):
             "image": "python:2.7",
             "stage": stage_name,
             "before_script": [],
-            "after_script": ["curl -XPOST %s -d '%s' || true" % (url, params)],
-            "script": ["echo curl -XPOST %s -d '%s' || true" % (url, params)],
+            "after_script": ["curl -XPOST %s -d \"%s\" || true" % (url, params.replace('"', '\\\"'))],
+            "script": ["echo curl -XPOST %s -d \"%s\" || true" % (url, params.replace('"', '\\\"'))],
             "tags": ["failfast-ci"],
             "when": "always"
             }
@@ -80,7 +80,7 @@ class Pipeline(object):
         content['report-status'] = job
 
     def _append_update_build(self, content):
-        params = json.dumps({"ci_project_id": "$CI_PROJECT_id",
+        params = json.dumps({"ci_project_id": "$CI_PROJECT_ID",
                              "ci_sha": "$CI_BUILD_REF",
                              "sha": "$SHA",
                              "build_id": "$CI_BUILD_ID",
@@ -88,7 +88,7 @@ class Pipeline(object):
                              "installation_id": "$GITHUB_INSTALLATION_ID",
                              "delay": 30})
         url = FAILFAST_API + "/api/v1/github_status"
-        task = "curl -XPOST %s -d '%s' || true" % (url, params)
+        task = "curl -XPOST %s -d \"%s\" || true" % (url, params.replace('"', '\\\"'))
         for key, job in content.items():
             if key in GITLAB_CI_KEYS:
                 continue
