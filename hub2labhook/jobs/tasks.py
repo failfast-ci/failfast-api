@@ -18,7 +18,6 @@ def pipeline(self, event, headers):
 
 
 def update_github_status(project, build, github_repo, sha, installation_id):
-
     descriptions = {"pending": "Build in-progress",
                     "success": "Build success",
                     "error": "Build in error or canceled",
@@ -32,6 +31,22 @@ def update_github_status(project, build, github_repo, sha, installation_id):
                   "description": descriptions[STATUS_MAP[build['status']]],
                   "context": "%s/%s/%s" % (CONTEXT, build['stage'], build['name'])}
     return githubclient.post_status(build_body, github_repo, sha)
+
+
+@app.task(bind=True, base=JobBase)
+def update_build_status(self, params):
+    try:
+        gitlab_project_id = params['ci_project_id']
+        github_repo = params['github_repo']
+        sha = params['sha']
+        installation_id = params['installation_id']
+        build_id = params['build_id']
+        gitlabclient = GitlabClient()
+        project = gitlabclient.get_project(gitlab_project_id)
+        build = gitlabclient.get_build(project['id'], build_id)
+        return update_github_status(project, build, github_repo, sha, installation_id)
+    except Exception as exc:
+        self.retry(countdown=60, exc=exc)
 
 
 @app.task(bind=True, base=JobBase)
@@ -56,7 +71,7 @@ def update_github_statuses(self, trigger):
         project_url = project['web_url']
         builds = gitlabclient.get_builds(project['id'], ci_sha)
         if not builds:
-            raise self.retry(countdown=30, max_retries=30)
+            raise self.retry(countdown=60)
         for build in builds:
             pipeline_id = build['pipeline']['id']
             if pipeline_id not in pipelines:
@@ -76,9 +91,9 @@ def update_github_statuses(self, trigger):
         for build in pipe['builds']:
             resp.append(update_github_status(project, build, github_repo, sha, installation_id))
         if pending:
-            raise self.retry(countdown=30, max_retries=400)
+            raise self.retry(countdown=60)
         return resp
     except requests.exceptions.RequestException as exc:
-        raise self.retry(countdown=30, max_retries=30, exc=exc)
+        raise self.retry(countdown=60, exc=exc)
     except Exception as exc:
-        raise self.retry(countdown=30, max_retries=30, exc=exc)
+        raise self.retry(countdown=60, exc=exc)

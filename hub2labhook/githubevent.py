@@ -39,6 +39,17 @@ class GithubEvent(object):
             self._raise_unsupported()
         return ref
 
+
+    @property
+    def commit_url(self):
+        if self.event_type == "push":
+            ref = self.event['head_commit']['url']
+        elif self.event_type == "pull_request":
+            ref = self.event['pull_request']['html_url']
+        else:
+            self._raise_unsupported()
+        return ref
+
     @property
     def clone_url(self):
         if self.event_type not in ["push", "pull_request"]:
@@ -112,3 +123,11 @@ class GithubEvent(object):
 
     def istag(self):
         return "tags" in self.ref
+
+    @property
+    def source_repo(self):
+        if self.pr_id == "N/A":
+            source_repo = self.repo
+        else:
+            source_repo = self.pr_repo
+        return source_repo

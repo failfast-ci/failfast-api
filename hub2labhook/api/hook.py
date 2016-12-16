@@ -68,4 +68,30 @@ def github_event():
     task = tasks.pipeline.s(params, dict(request.headers.to_list()))
     task.link(tasks.update_github_statuses.s())
     job = task.delay()
-    return jsonify({'job_id': job.id})
+    return jsonify({'job_id': job.id, 'params': params})
+
+
+@hook_app.route("/api/v1/github_status", methods=['POST'], strict_slashes=False)
+def github_status():
+    params = getvalues()
+    # gitlab_project_id = params['gitlab_project_id']
+    # gitlab_build_id = params['build_id']
+    # github_repo = params['github_repo']
+    # sha = params['sha']
+    # installation_id = params['installation_id']
+    delay = int(params.get('delay', 0))
+    job = tasks.update_build_status.apply_async((params,), countdown=delay)
+    return jsonify({'job_id': job.id, 'params': params})
+
+
+@hook_app.route("/api/v1/github_statuses", methods=['POST'], strict_slashes=False)
+def github_statuses():
+    params = getvalues()
+    # gitlab_project_id = params['gitlab_project_id']
+    # gitlab_build_id = params['build_id']
+    # github_repo = params['github_repo']
+    # sha = params['sha']
+    # installation_id = params['installation_id']
+    delay = int(params.get('delay', 0))
+    job = tasks.update_github_statuses.apply_async((params,), countdown=delay)
+    return jsonify({'job_id': job.id, 'params': params})

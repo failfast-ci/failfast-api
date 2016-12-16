@@ -21,3 +21,7 @@ class DelayedRequest(Thread):
     def run(self):
         time.sleep(self.delay)
         self.func()
+
+
+def clone_url_with_auth(base_url, auth):
+    return base_url.replace("https://", "https://%s@" % auth)

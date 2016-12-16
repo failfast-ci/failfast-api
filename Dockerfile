@@ -1,6 +1,6 @@
-FROM python:3.5
+FROM registry.gitlab.com/failfast-ci/hub2lab-hook:v0.1.4
 
-ARG version=0.1.5
+ARG version=0.2.0
 ARG workdir=/opt/failfast-ci
 RUN apt-get update -y
 RUN apt-get install bash openssl ca-certificates git wget -y
