@@ -37,7 +37,7 @@ test_requirements = [
 
 setup(
     name='hub2lab-hook',
-    version='0.2.0',
+    version='0.2.1',
     description="hub2lab-hook",
     long_description=readme,
     author="Antoine Legrand",
