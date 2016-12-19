@@ -1,0 +1,26 @@
+stages:
+  - build-image
+
+variables:
+  DOCKER_EMAIL: gitlab@kpm.sh
+  DOCKER_USERNAME: gitlab-ci-token
+  DOCKER_PASSWORD: $CI_BUILD_TOKEN
+  REGISTRY: registry.gitlab.com/failfast-ci/hub2lab-hook
+  REGISTRY_HOST: registry.gitlab.com
+
+cache:
+  paths:
+    - cache
+
+build_image:
+  stage: build-image
+  only:
+    - tags
+    - master
+  script:
+    - docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"  $REGISTRY_HOST
+    - docker build --no-cache -t $REGISTRY:$CI_BUILD_REF_NAME .
+    - docker push $REGISTRY:$CI_BUILD_REF_NAME
+  tags:
+    - kubespray
+    - shell
