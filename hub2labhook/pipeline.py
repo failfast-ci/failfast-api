@@ -90,11 +90,12 @@ class Pipeline(object):
         url = FAILFAST_API + "/api/v1/github_status"
         task = "curl -XPOST %s -d \"%s\" || true" % (url, params.replace('"', '\\\"'))
         for key, job in content.items():
-            if key in GITLAB_CI_KEYS:
+            if key in GITLAB_CI_KEYS or key[0] == ".":
                 continue
             if "after_script" not in job:
                 job['after_script'] = []
-            job['after_script'].append(task)
+            if task not in job:
+                job['after_script'].append(task)
 
     def trigger_pipeline(self):
         gevent = self.ghevent
