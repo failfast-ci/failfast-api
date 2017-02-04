@@ -1,0 +1,4 @@
+---
+celery:
+  broker: 'redis://'
+  backend: 'redis://'
