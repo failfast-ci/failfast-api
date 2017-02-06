@@ -3,7 +3,7 @@ import os
 
 class Config(object):
     """ Default configuration """
-    DEBUG = False
+    DEBUG = True
     GITLAB_TOKEN = os.getenv('GITLAB_TOKEN', "changeme")
     GITLAB_API = os.getenv('GITLAB_API', "https://gitlab.com")
 

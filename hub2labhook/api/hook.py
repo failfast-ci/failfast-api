@@ -51,14 +51,17 @@ def test_error():
 
 @hook_app.route("/api/v1/github_event", methods=['POST'], strict_slashes=False)
 def github_event():
+    print("here")
     params = getvalues()
     event = request.headers.get("X-GITHUB-EVENT", "push")
     allowed_events = []
+    print(params)
     if os.getenv("BUILD_PULL_REQUEST", "true") == "true":
         allowed_events.append("pull_request")
 
     if ((os.getenv("BUILD_PUSH", "false") == "true") or
-        (event == "push" and params['ref'] == "refs/heads/master")):
+        (event == "push" and
+         (params['ref'] == "refs/heads/master" or str.startswith(params['ref'], "refs/tags/")))):
         allowed_events.append("push")
 
     if ((event not in allowed_events) or
