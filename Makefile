@@ -100,11 +100,11 @@ coveralls: test
 	coveralls
 
 dockerfile: clean
-	docker build -t quay.io/ant31/hub2lab-hook:v$(VERSION) .
+	docker build -t registry.gitlab.com/failfast-ci/hub2lab-hook:v$(VERSION) .
 
 dockerfile-canary: clean
-	docker build -t quay.io/ant31/hub2lab-hook:canary .
-	docker push quay.io/ant31/hub2lab-hook:canary
+	docker build -t registry.gitlab.com/failfast-ci/hub2lab-hook:master .
+	docker push registry.gitlab.com/failfast-ci/hub2lab-hook:master
 
 dockerfile-push: dockerfile
-	docker push quay.io/ant31/hub2lab-hook:v$(VERSION)
+	docker push registry.gitlab.com/failfast-ci/hub2lab-hook:v$(VERSION)

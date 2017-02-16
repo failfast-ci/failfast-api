@@ -75,10 +75,12 @@ def update_github_statuses(self, trigger):
         for build in builds:
             pipeline_id = build['pipeline']['id']
             if pipeline_id not in pipelines:
-                pdict = {'builds': []}
+                pdict = {'builds': {}}
                 pdict.update(build['pipeline'])
                 pipelines[pipeline_id] = pdict
-            pipelines[pipeline_id]['builds'].append(build)
+            if build['name'] not in pipelines[pipeline_id]['builds']:
+                pipelines[pipeline_id]['builds'][build['name']] = []
+            pipelines[pipeline_id]['builds'][build['name']].append(build)
         pipe = pipelines[sorted(pipelines.keys())[-1]]
         state = STATUS_MAP[pipe['status']]
         pending = state == "pending"
@@ -88,7 +90,8 @@ def update_github_statuses(self, trigger):
                          "context": "%s/pipeline" % CONTEXT}
         resp = []
         resp.append(githubclient.post_status(pipeline_body, github_repo, sha))
-        for build in pipe['builds']:
+        for _, builds in pipe['builds'].items():
+            build = sorted(builds, key=lambda x: x['id'], reverse=True)[0]
             if build['status'] not in ['skipped', 'created']:
                 resp.append(update_github_status(project, build, github_repo, sha, installation_id))
         if pending:
