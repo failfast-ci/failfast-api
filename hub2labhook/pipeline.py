@@ -27,7 +27,7 @@ class Pipeline(object):
 
     def _parse_ci_file(self, content, filepath):
         if filepath == ".gitlab-ci.yml":
-            return yaml.load(content)
+            return yaml.safe_load(content)
 
     def _checkout_repo(self, gevent, repo_path):
         clone_url = clone_url_with_auth(gevent.clone_url, "bot:%s" % self.github.token)
@@ -88,14 +88,15 @@ class Pipeline(object):
                              "installation_id": "$GITHUB_INSTALLATION_ID",
                              "delay": 30})
         url = FAILFAST_API + "/api/v1/github_status"
-        task = "curl -XPOST %s -d \"%s\" || true" % (url, params.replace('"', '\\\"'))
+        task = "curl -m 45 --connect-timeout 45 -XPOST %s -d \"%s\" || true" % (url, params.replace('"', '\\\"'))
         for key, job in content.items():
             if key in GITLAB_CI_KEYS or key[0] == ".":
                 continue
             if "after_script" not in job:
                 job['after_script'] = []
             if task not in job:
-                job['after_script'].append(task)
+                if task not in job['after_script']:
+                    job['after_script'].append(task)
 
     def trigger_pipeline(self):
         gevent = self.ghevent
@@ -130,7 +131,7 @@ class Pipeline(object):
             # Full synchronize the repo
             path = os.path.join(repo_path, ".gitlab-ci.yml")
             with open(path, 'w') as gitlabcifile:
-                gitlabcifile.write(yaml.safe_dump(content, default_style='"'))
+                gitlabcifile.write(yaml.safe_dump(content, default_style='"', width=float("inf")))
             gitbin.commit("-a", "-m", "build %s \n\n @ %s" % (gevent.head_sha, gevent.commit_url))
             gitbin.push("target", 'HEAD:%s' % gevent.target_refname, "-f")
             ci_sha = str(gitbin.rev_parse('HEAD'))
@@ -143,7 +144,7 @@ class Pipeline(object):
         else:
             self.sync_only_ci_file(gevent, content, ci_project, ci_file)
 
-    #@TODO
+    # @TODO this is a partial implem
     def sync_only_ci_file(self, gevent, content, ci_project, ci_file):
         """ Push only the .failfast-ci.yaml and set token to clone """
         tokenkey = "GH_TOKEN_%s" % str.upper(uuid.uuid4().hex)
