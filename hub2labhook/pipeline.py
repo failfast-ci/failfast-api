@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import yaml
 import tempfile
@@ -7,7 +8,6 @@ from hub2labhook.githubclient import GithubClient
 from hub2labhook.gitlabclient import GitlabClient
 from hub2labhook.exception import Unexpected, ResourceNotFound
 from hub2labhook.utils import getenv, clone_url_with_auth
-from copy.deepcopy import deepcopy
 from git import Repo
 # from celery.contrib import rdb;rdb.set_trace()
 
