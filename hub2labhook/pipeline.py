@@ -7,7 +7,7 @@ from hub2labhook.githubclient import GithubClient
 from hub2labhook.gitlabclient import GitlabClient
 from hub2labhook.exception import Unexpected, ResourceNotFound
 from hub2labhook.utils import getenv, clone_url_with_auth
-
+from copy.deepcopy import deepcopy
 from git import Repo
 # from celery.contrib import rdb;rdb.set_trace()
 
@@ -61,18 +61,24 @@ class Pipeline(object):
     def _append_update_stage(self, content):
         stage_name = "github-status-update"
         url = FAILFAST_API + "/api/v1/github_statuses"
-        params = json.dumps({"ci_project_id": "$CI_PROJECT_ID",
-                             "ci_sha": "$CI_BUILD_REF",
-                             "sha": "$SHA",
-                             "github_repo": "$GITHUB_REPO",
-                             "installation_id": "$GITHUB_INSTALLATION_ID",
-                             "delay": 30})
+        update_status = {"ci_project_id": "$CI_PROJECT_ID",
+                         "ci_sha": "$CI_BUILD_REF",
+                         "sha": "$SHA",
+                         "github_repo": "$GITHUB_REPO",
+                         "installation_id": "$GITHUB_INSTALLATION_ID",
+                         "delay": 150}
+        update_status_30 = deepcopy(update_status)
+        update_status_30['delay'] = 30
+        params_150 = json.dumps(update_status)
+        params_30 = json.dumps(update_status_30)
         job = {
             "image": "python:2.7",
             "stage": stage_name,
             "before_script": [],
-            "after_script": ["curl -XPOST %s -d \"%s\" || true" % (url, params.replace('"', '\\\"'))],
-            "script": ["echo curl -XPOST %s -d \"%s\" || true" % (url, params.replace('"', '\\\"'))],
+            "after_script": ["curl -XPOST %s -d \"%s\" || true" % (url, params_30.replace('"', '\\\"')),
+                             "curl -XPOST %s -d \"%s\" || true" % (url, params_150.replace('"', '\\\"'))],
+            "script": ["echo curl -XPOST %s -d \"%s\" || true" % (url, params_30.replace('"', '\\\"')),
+                       "echo curl -XPOST %s -d \"%s\" || true" % (url, params_150.replace('"', '\\\"'))],
             "tags": ["failfast-ci"],
             "when": "always"
             }
@@ -86,7 +92,7 @@ class Pipeline(object):
                              "build_id": "$CI_BUILD_ID",
                              "github_repo": "$GITHUB_REPO",
                              "installation_id": "$GITHUB_INSTALLATION_ID",
-                             "delay": 30})
+                             "delay": 45})
         url = FAILFAST_API + "/api/v1/github_status"
         task = "curl -m 45 --connect-timeout 45 -XPOST %s -d \"%s\" || true" % (url, params.replace('"', '\\\"'))
         for key, job in content.items():
