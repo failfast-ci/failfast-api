@@ -13,6 +13,7 @@ cache:
     - cache
 
 build_image:
+  image: docker:git
   services:
      - docker:dind
   variables:
