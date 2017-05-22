@@ -13,6 +13,10 @@ cache:
     - cache
 
 build_image:
+  services:
+     - docker:dind
+  variables:
+    DOCKER_HOST: tcp://localhost:2375
   stage: build-image
   only:
     - tags
@@ -23,5 +27,4 @@ build_image:
     - docker build --no-cache -t $REGISTRY:$CI_BUILD_REF_NAME .
     - docker push $REGISTRY:$CI_BUILD_REF_NAME
   tags:
-    - kubespray
-    - shell
+    - kubernetes
