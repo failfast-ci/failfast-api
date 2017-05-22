@@ -9,6 +9,7 @@ from hub2labhook.gitlabclient import GitlabClient
 from hub2labhook.exception import Unexpected, ResourceNotFound
 from hub2labhook.utils import getenv, clone_url_with_auth
 from git import Repo
+from time
 # from celery.contrib import rdb;rdb.set_trace()
 
 
@@ -18,10 +19,10 @@ FAILFAST_API = os.getenv("FAILFAST_CI_API", "https://jobs.failfast-ci.io")
 GITLAB_CI_KEYS = set(["before_script", "image", "services", "after_script",
                       "variables", "stages", "types", "cache"])
 
+
 class Pipeline(object):
 
     def __init__(self, git_event):
-        self.gitlab = GitlabClient()
         self.ghevent = git_event
         self.github = GithubClient(installation_id=self.ghevent.installation_id)
 
@@ -31,7 +32,15 @@ class Pipeline(object):
 
     def _checkout_repo(self, gevent, repo_path):
         clone_url = clone_url_with_auth(gevent.clone_url, "bot:%s" % self.github.token)
-        gitbin = Repo.clone_from(clone_url, repo_path).git
+        try_count = 0
+        while tries < 3:
+            try:
+                time.sleep(1)
+                gitbin = Repo.clone_from(clone_url, repo_path).git
+                break
+            except:
+                try_count = try_count + 1
+
         gitbin.config("--local", "user.name", "FailFast-ci Bot")
         gitbin.config("--local", "user.email", "failfastci-bot@failfast-ci.io")
         if gevent.pr_id == "N/A":
@@ -113,6 +122,9 @@ class Pipeline(object):
         ci_file = self._get_ci_file(repo_path)
         content = self._parse_ci_file(ci_file['content'], ci_file['file'])
         namespace = content['variables'].get('FAILFASTCI_NAMESPACE', None)
+        gitlab_endpoint = content['variables'].get('GITLAB_URL', None)
+        self.gitlab = GitlabClient(gitlab_endpoint)
+
         ci_project = self.gitlab.initialize_project(gevent.repo.replace("/", "__"), namespace)
 
         clone_url = clone_url_with_auth(gevent.clone_url, "bot:%s" % self.github.token)
@@ -122,6 +134,7 @@ class Pipeline(object):
         variables = {'EVENT': gevent.event_type,
                      'PR_ID': str(gevent.pr_id),
                      'SHA': gevent.head_sha,
+                     'SHA8': gevent.head_sha[0:8],
                      'FAILFASTCI_STATUS_API': "https://jobs.failfast-ci.io/api/v1/github_status",
                      'SOURCE_REF': gevent.refname,
                      'REF_NAME': gevent.refname,
