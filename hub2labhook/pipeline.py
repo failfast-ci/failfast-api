@@ -1,3 +1,4 @@
+import time
 from copy import deepcopy
 import json
 import yaml
@@ -9,7 +10,7 @@ from hub2labhook.gitlabclient import GitlabClient
 from hub2labhook.exception import Unexpected, ResourceNotFound
 from hub2labhook.utils import getenv, clone_url_with_auth
 from git import Repo
-from time
+
 # from celery.contrib import rdb;rdb.set_trace()
 
 
