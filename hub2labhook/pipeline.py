@@ -34,13 +34,16 @@ class Pipeline(object):
     def _checkout_repo(self, gevent, repo_path):
         clone_url = clone_url_with_auth(gevent.clone_url, "bot:%s" % self.github.token)
         try_count = 0
-        while tries < 3:
+        while try_count < 3:
             try:
                 time.sleep(1)
                 gitbin = Repo.clone_from(clone_url, repo_path).git
                 break
             except:
                 try_count = try_count + 1
+                if try_count >= 3:
+                    raise
+
 
         gitbin.config("--local", "user.name", "FailFast-ci Bot")
         gitbin.config("--local", "user.email", "failfastci-bot@failfast-ci.io")
