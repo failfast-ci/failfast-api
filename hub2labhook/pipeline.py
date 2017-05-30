@@ -44,7 +44,7 @@ class Pipeline(object):
                 if try_count >= 3:
                     raise
 
-
+        gitbin.config("http.postBuffer", "1524288000")
         gitbin.config("--local", "user.name", "FailFast-ci Bot")
         gitbin.config("--local", "user.email", "failfastci-bot@failfast-ci.io")
         if gevent.pr_id == "N/A":
