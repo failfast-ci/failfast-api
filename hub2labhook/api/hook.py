@@ -51,7 +51,6 @@ def test_error():
 
 @hook_app.route("/api/v1/github_event", methods=['POST'], strict_slashes=False)
 def github_event():
-    print("here")
     params = getvalues()
     event = request.headers.get("X-GITHUB-EVENT", "push")
     allowed_events = []
@@ -72,6 +71,13 @@ def github_event():
     task.link(tasks.update_github_statuses.s())
     job = task.delay()
     return jsonify({'job_id': job.id, 'params': params})
+
+
+@hook_app.route("/api/v1/gitlab_event", methods=['POST', 'GET'], strict_slashes=False)
+def gitlab_event():
+    params = getvalues()
+    print(params)
+    return jsonify({'params': params})
 
 
 @hook_app.route("/api/v1/github_status", methods=['POST'], strict_slashes=False)
