@@ -54,7 +54,7 @@ def github_event():
     params = getvalues()
     event = request.headers.get("X-GITHUB-EVENT", "push")
     allowed_events = []
-    print(params)
+
     if os.getenv("BUILD_PULL_REQUEST", "true") == "true":
         allowed_events.append("pull_request")
 

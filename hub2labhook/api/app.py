@@ -1,3 +1,5 @@
+import sys
+import logging
 import os
 from flask import Flask, request
 from flask_cors import CORS
@@ -15,6 +17,8 @@ def create_app():
     app = Flask(__name__)
     CORS(app)
     setting = os.getenv('APP_ENV', "development")
+    app.logger.addHandler(logging.StreamHandler(sys.stdout))
+    app.logger.setLevel(logging.INFO)
     if setting != 'production':
         app.config.from_object('hub2labhook.api.config.DevelopmentConfig')
     else:
