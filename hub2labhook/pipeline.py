@@ -147,7 +147,6 @@ class Pipeline(object):
                      'SOURCE_REPO': clone_url}
 
         content['variables'].update(variables)
-        self._append_update_build(content)
         self._append_update_stage(content)
         if ('FAILFASTCI_SYNC_REPO' in content['variables'] and
            content['variables']['FAILFAST_SYNC_REPO'] == "true") or DEFAULT_MODE == "sync":
