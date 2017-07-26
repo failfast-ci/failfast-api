@@ -5,8 +5,8 @@ import yaml
 import tempfile
 import os
 import uuid
-from hub2labhook.githubclient import GithubClient
-from hub2labhook.gitlabclient import GitlabClient
+from hub2labhook.github.client import GithubClient
+from hub2labhook.gitlab.client import GitlabClient
 from hub2labhook.exception import Unexpected, ResourceNotFound
 from hub2labhook.utils import getenv, clone_url_with_auth
 from git import Repo
@@ -45,7 +45,7 @@ class Pipeline(object):
         gitbin.config("http.postBuffer", "1524288000")
         gitbin.config("--local", "user.name", "FailFast-ci Bot")
         gitbin.config("--local", "user.email", "failfastci-bot@failfast-ci.io")
-        if gevent.pr_id == "N/A":
+        if gevent.pr_id == "":
             gitbin.checkout(gevent.refname)
         else:
             pr_branch = "pr-%s" % gevent.pr_id
@@ -76,6 +76,7 @@ class Pipeline(object):
             "ci_project_id": "$CI_PROJECT_ID",
             "ci_sha": "$CI_BUILD_REF",
             "sha": "$SHA",
+            "ref": "$CI_COMMIT_REF_NAME",
             "github_repo": "$GITHUB_REPO",
             "installation_id": "$GITHUB_INSTALLATION_ID",
             "delay": 150}

@@ -14,17 +14,28 @@ API_VERSION = "/api/v4"
 
 
 class GitlabClient(object):
-    def __init__(self, endpoint=None, token=None):
+    def __init__(self, endpoint: str=None, token: str=None):
+        """
+        Creates a gitlab-client instance initialized with the private-token and endpoint urllib
+
+        Args:
+          endpoint (:obj:`str`): the gitlab instance url,
+                                 if `None` takes value from GITLAB_API env-var.
+          token (:obj:`str`): the private gitlab token,
+                              if `None` takes value from GITLAB_TOKEN env-var.
+        """
         self.gitlab_token = getenv(token, "GITLAB_TOKEN")
         self.endpoint = getenv(endpoint, "GITLAB_API", "https://gitlab.com")
         self._headers = None
         self.host = self.endpoint
 
     def _url(self, path):
+        """ Construct the url from a relative path """
         return self.endpoint + API_VERSION + path
 
     @property
     def headers(self):
+        """ Configure requests headers with the private token """
         if not self._headers:
             self._headers = {
                 'Content-Type': 'application/json',
@@ -33,12 +44,16 @@ class GitlabClient(object):
         return self._headers
 
     def get_project(self, project_id):
+        """ Returns the gitlab project dict
+            link: https://docs.gitlab.com/ce/api/projects.html#get-single-project
+        """
         path = self._url("/projects/%s" % project_id)
         resp = requests.get(path, headers=self.headers, timeout=GITLAB_TIMEOUT)
         resp.raise_for_status()
         return resp.json()
 
     def get_project_id(self, project_name=None):
+        """ Requests the project-id (int) from a project_name (str) """
         if isinstance(project_name, int):
             return project_name
         else:
@@ -49,6 +64,7 @@ class GitlabClient(object):
             return project['id']
 
     def set_variables(self, project_id, variables):
+        """ Create or update(if exists) pipeline variables """
         path = self._url("/projects/%s/variables" % self.get_project_id(project_id))
         for key, value in variables.iteritems():
             key_path = path + "/%s" % key
@@ -80,6 +96,14 @@ class GitlabClient(object):
                                                              pipeline_id))
         resp = requests.get(path, headers=self.headers, timeout=GITLAB_TIMEOUT)
         resp.raise_for_status()
+        return resp.json()
+
+    def get_pipelines(self, project_id, ref=None):
+        path = self._url("/projects/%s/pipelines/%s" % (self.get_project_id(project_id)))
+        params = {}
+        if ref:
+            params["ref"] = ref
+        resp = requests.get(path, headers=self.headers, params=params, timeout=GITLAB_TIMEOUT)
         return resp.json()
 
     def get_pipeline_status(self, project_id, pipeline_id):

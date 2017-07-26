@@ -26,7 +26,7 @@ class GithubEvent(object):
     @property
     def pr_id(self):
         if self.event_type != "pull_request":
-            return "N/A"
+            return ""
         return self.event['number']
 
     @property
@@ -38,7 +38,6 @@ class GithubEvent(object):
         else:
             self._raise_unsupported()
         return ref
-
 
     @property
     def commit_url(self):
@@ -126,7 +125,7 @@ class GithubEvent(object):
 
     @property
     def source_repo(self):
-        if self.pr_id == "N/A":
+        if self.pr_id == "":
             source_repo = self.repo
         else:
             source_repo = self.pr_repo

@@ -47,6 +47,10 @@ setup(
     packages=[
         'hub2labhook',
         "hub2labhook.api",
+        "hub2labhook.gitlab",
+        "hub2labhook.gitlab.models",
+        "hub2labhook.github",
+        "hub2labhook.github.models",
         "hub2labhook.jobs"
     ],
     package_dir={'hub2labhook':
