@@ -24,7 +24,8 @@ requirements = [
     'gitpython',
     'cryptography',
     'celery',
-    'flower'
+    'flower',
+    'mypy'
 ]
 
 test_requirements = [
