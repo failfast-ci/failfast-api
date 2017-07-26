@@ -1,8 +1,8 @@
 from flask import jsonify, request, Blueprint, current_app
 import os
-from hub2labhook.githubevent import GithubEvent
+from hub2labhook.github.models.event import GithubEvent
 from hub2labhook.pipeline import Pipeline
-from hub2labhook.githubclient import GithubClient
+from hub2labhook.github.client import GithubClient
 from hub2labhook.api.app import getvalues
 from hub2labhook.exception import (Hub2LabException,
                                    InvalidUsage,
