@@ -22,7 +22,7 @@ cache:
   script:
     - docker info
     - docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"  $REGISTRY_HOST
-    - docker build --no-cache -t $REGISTRY:$CI_BUILD_REF_NAME .
+    - docker build -t $REGISTRY:$CI_BUILD_REF_NAME .
     - docker push $REGISTRY:$CI_BUILD_REF_NAME
   tags:
     - kubernetes
