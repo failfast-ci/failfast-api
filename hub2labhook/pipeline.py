@@ -13,16 +13,14 @@ from git import Repo
 
 # from celery.contrib import rdb;rdb.set_trace()
 
-
 DEFAULT_MODE = "sync"
 FAILFAST_API = os.getenv("FAILFAST_CI_API", "https://jobs.failfast-ci.io")
 
-GITLAB_CI_KEYS = set(["before_script", "image", "services", "after_script",
-                      "variables", "stages", "types", "cache"])
+GITLAB_CI_KEYS = set([
+    "before_script", "image", "services", "after_script", "variables", "stages", "types", "cache"])
 
 
 class Pipeline(object):
-
     def __init__(self, git_event):
         self.ghevent = git_event
         self.github = GithubClient(installation_id=self.ghevent.installation_id)
@@ -54,8 +52,9 @@ class Pipeline(object):
             gitbin.fetch('origin', "pull/%s/head:%s" % (gevent.pr_id, pr_branch))
             gitbin.checkout(pr_branch)
         if not gitbin.rev_parse('HEAD') == gevent.head_sha:
-            raise Unexpected("git sha don't match",
-                             {'expected_sha': gevent.head_sha, 'sha': gitbin.rev_parse('HEAD')})
+            raise Unexpected("git sha don't match", {
+                'expected_sha': gevent.head_sha,
+                'sha': gitbin.rev_parse('HEAD')})
         return gitbin
 
     def _get_ci_file(self, repo_path):
@@ -66,48 +65,54 @@ class Pipeline(object):
                 continue
             with open(path, 'r') as f:
                 content = f.read()
-                return {"content": content,
-                        "file": filepath}
+                return {"content": content, "file": filepath}
         if content is None:
             raise ResourceNotFound("n o .gitlab-ci.yml or .failfail-ci.jsonnet")
 
     def _append_update_stage(self, content):
         stage_name = "github-status-update"
         url = FAILFAST_API + "/api/v1/github_statuses"
-        update_status = {"ci_project_id": "$CI_PROJECT_ID",
-                         "ci_sha": "$CI_BUILD_REF",
-                         "sha": "$SHA",
-                         "github_repo": "$GITHUB_REPO",
-                         "installation_id": "$GITHUB_INSTALLATION_ID",
-                         "delay": 150}
+        update_status = {
+            "ci_project_id": "$CI_PROJECT_ID",
+            "ci_sha": "$CI_BUILD_REF",
+            "sha": "$SHA",
+            "github_repo": "$GITHUB_REPO",
+            "installation_id": "$GITHUB_INSTALLATION_ID",
+            "delay": 150}
         update_status_30 = deepcopy(update_status)
         update_status_30['delay'] = 30
         params_150 = json.dumps(update_status)
         params_30 = json.dumps(update_status_30)
         job = {
-            "image": "python:2.7",
-            "stage": stage_name,
+            "image":
+                "python:2.7",
+            "stage":
+                stage_name,
             "before_script": [],
-            "after_script": ["curl -XPOST %s -d \"%s\" || true" % (url, params_30.replace('"', '\\\"')),
-                             "curl -XPOST %s -d \"%s\" || true" % (url, params_150.replace('"', '\\\"'))],
-            "script": ["echo curl -XPOST %s -d \"%s\" || true" % (url, params_30.replace('"', '\\\"')),
-                       "echo curl -XPOST %s -d \"%s\" || true" % (url, params_150.replace('"', '\\\"'))],
+            "after_script": [
+                "curl -XPOST %s -d \"%s\" || true" % (url, params_30.replace('"', '\\\"')),
+                "curl -XPOST %s -d \"%s\" || true" % (url, params_150.replace('"', '\\\"'))],
+            "script": [
+                "echo curl -XPOST %s -d \"%s\" || true" % (url, params_30.replace('"', '\\\"')),
+                "echo curl -XPOST %s -d \"%s\" || true" % (url, params_150.replace('"', '\\\"'))],
             "tags": ["failfast-ci"],
-            "when": "always"
-            }
+            "when":
+                "always"}
         content['stages'].append(stage_name)
         content['report-status'] = job
 
     def _append_update_build(self, content):
-        params = json.dumps({"ci_project_id": "$CI_PROJECT_ID",
-                             "ci_sha": "$CI_BUILD_REF",
-                             "sha": "$SHA",
-                             "build_id": "$CI_BUILD_ID",
-                             "github_repo": "$GITHUB_REPO",
-                             "installation_id": "$GITHUB_INSTALLATION_ID",
-                             "delay": 45})
+        params = json.dumps({
+            "ci_project_id": "$CI_PROJECT_ID",
+            "ci_sha": "$CI_BUILD_REF",
+            "sha": "$SHA",
+            "build_id": "$CI_BUILD_ID",
+            "github_repo": "$GITHUB_REPO",
+            "installation_id": "$GITHUB_INSTALLATION_ID",
+            "delay": 45})
         url = FAILFAST_API + "/api/v1/github_status"
-        task = "curl -m 45 --connect-timeout 45 -XPOST %s -d \"%s\" || true" % (url, params.replace('"', '\\\"'))
+        task = "curl -m 45 --connect-timeout 45 -XPOST %s -d \"%s\" || true" % (
+            url, params.replace('"', '\\\"'))
         for key, job in content.items():
             if key in GITLAB_CI_KEYS or key[0] == ".":
                 continue
@@ -131,25 +136,26 @@ class Pipeline(object):
 
         ci_project = self.gitlab.initialize_project(gevent.repo.replace("/", "__"), namespace)
 
-        clone_url = clone_url_with_auth(gevent.clone_url, "bot:%s" % self.github.token)
+        # @Todo(ant31) check if clone_url is required
+        # clone_url = clone_url_with_auth(gevent.clone_url, "bot:%s" % self.github.token)
         target_url = clone_url_with_auth(ci_project['http_url_to_repo'],
                                          "%s:%s" % (gitlab_user, self.gitlab.gitlab_token))
         gitbin.remote('add', 'target', target_url)
-        variables = {'EVENT': gevent.event_type,
-                     'PR_ID': str(gevent.pr_id),
-                     'SHA': gevent.head_sha,
-                     'SHA8': gevent.head_sha[0:8],
-                     'FAILFASTCI_STATUS_API': "https://jobs.failfast-ci.io/api/v1/github_status",
-                     'SOURCE_REF': gevent.refname,
-                     'REF_NAME': gevent.refname,
-                     'GITHUB_INSTALLATION_ID': str(gevent.installation_id),
-                     'GITHUB_REPO': gevent.repo,
-                     'SOURCE_REPO': clone_url}
+        variables = {
+            'EVENT': gevent.event_type,
+            'PR_ID': str(gevent.pr_id),
+            'SHA': gevent.head_sha,
+            'SHA8': gevent.head_sha[0:8],
+            'FAILFASTCI_STATUS_API': "https://jobs.failfast-ci.io/api/v1/github_status",
+            'SOURCE_REF': gevent.refname,
+            'REF_NAME': gevent.refname,
+            'GITHUB_INSTALLATION_ID': str(gevent.installation_id),
+            'GITHUB_REPO': gevent.repo}
 
         content['variables'].update(variables)
         self._append_update_stage(content)
         if ('FAILFASTCI_SYNC_REPO' in content['variables'] and
-           content['variables']['FAILFAST_SYNC_REPO'] == "true") or DEFAULT_MODE == "sync":
+                content['variables']['FAILFAST_SYNC_REPO'] == "true") or DEFAULT_MODE == "sync":
             # Full synchronize the repo
             path = os.path.join(repo_path, ".gitlab-ci.yml")
             with open(path, 'w') as gitlabcifile:
@@ -157,12 +163,13 @@ class Pipeline(object):
             gitbin.commit("-a", "-m", "build %s \n\n @ %s" % (gevent.head_sha, gevent.commit_url))
             gitbin.push("target", 'HEAD:%s' % gevent.target_refname, "-f")
             ci_sha = str(gitbin.rev_parse('HEAD'))
-            return {'sha': gevent.head_sha,
-                    'ci_sha': ci_sha,
-                    'ci_ref': gevent.target_refname,
-                    'ci_project_id': ci_project['id'],
-                    'installation_id': gevent.installation_id,
-                    'github_repo': gevent.repo}
+            return {
+                'sha': gevent.head_sha,
+                'ci_sha': ci_sha,
+                'ci_ref': gevent.target_refname,
+                'ci_project_id': ci_project['id'],
+                'installation_id': gevent.installation_id,
+                'github_repo': gevent.repo}
         else:
             self.sync_only_ci_file(gevent, content, ci_project, ci_file)
 
@@ -174,8 +181,6 @@ class Pipeline(object):
         ci_branch = gevent.refname
         content['variables'].update({'SOURCE_REPO': clone_url})
         self.gitlab.set_variables(ci_project['id'], {tokenkey: self.github.token})
-        return self.gitlab.push_file(project_id=ci_project['id'],
-                                     file_path=ci_file['file'],
-                                     file_content=yaml.safe_dump(content),
-                                     branch=ci_branch,
+        return self.gitlab.push_file(project_id=ci_project['id'], file_path=ci_file['file'],
+                                     file_content=yaml.safe_dump(content), branch=ci_branch,
                                      message=gevent.commit_message)
