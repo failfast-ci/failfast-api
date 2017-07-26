@@ -1,14 +1,13 @@
-FROM registry.gitlab.com/failfast-ci/hub2lab-hook:v0.1.4
+FROM python:3.6.2-alpine
 
-ARG version=0.2.8
-ARG workdir=/opt/failfast-ci
-RUN apt-get update -y
-RUN apt-get install bash openssl ca-certificates git wget -y
+ENV workdir=/opt/failfast-ci
+RUN apk --no-cache --update add openssl ca-certificates
+RUN apk --no-cache --update add --virtual build-dependencies \
+    libffi-dev build-base openssl-dev
 RUN pip install pip -U
-RUN pip install jsonnet -U
 RUN rm -rf $workdir
 RUN mkdir -p $workdir
-ADD . $workdir
+COPY . $workdir
 WORKDIR $workdir
 RUN pip install gunicorn -U && pip install -e .
 
