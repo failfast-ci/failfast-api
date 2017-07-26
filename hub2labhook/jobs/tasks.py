@@ -68,7 +68,9 @@ def update_github_statuses(self, trigger):
         pipelines = {}
         project = gitlabclient.get_project(gitlab_project_id)
         project_url = project['web_url']
-        pipelines = gitlabclient.get_pipelines(gitlab_project_id, ref=ref)
+        pipelines = gitlabclient.get_pipelines(int(gitlab_project_id), ref=ref)
+        if not pipelines:
+            raise self.retry(countdown=60)
         pipe = pipelines[0]
         state = STATUS_MAP[pipe['status']]
         pending = state == "pending"
