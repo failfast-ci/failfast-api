@@ -69,7 +69,7 @@ def update_github_statuses(self, trigger):
         pipelines = {}
         project = gitlabclient.get_project(gitlab_project_id)
         project_url = project['web_url']
-        builds = gitlabclient.get_jobs(project['id'], ci_sha)
+        builds = gitlabclient.get_statuses(project['id'], ci_sha)
         if not builds:
             raise self.retry(countdown=60)
         for build in builds:
