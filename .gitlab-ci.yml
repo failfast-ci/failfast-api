@@ -12,16 +12,13 @@ cache:
   paths:
     - cache
 
-build_image:
+.build_image: &buildimage
   image: docker:git
   services:
      - docker:dind
   variables:
     DOCKER_HOST: tcp://localhost:2375
   stage: build-image
-  only:
-    - tags
-    - master
   script:
     - docker info
     - docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"  $REGISTRY_HOST
@@ -29,3 +26,17 @@ build_image:
     - docker push $REGISTRY:$CI_BUILD_REF_NAME
   tags:
     - kubernetes
+
+build_image:
+  <<: *buildimage
+  only:
+    - tags
+    - master
+
+build_image_branche:
+  <<: *buildimage
+  when: manual
+  only:
+    - branches
+  except:
+    - master
