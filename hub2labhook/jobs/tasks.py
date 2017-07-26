@@ -1,13 +1,13 @@
 from __future__ import absolute_import, unicode_literals
 import requests
 
-from hub2labhook.githubevent import GithubEvent
-from hub2labhook.githubclient import STATUS_MAP, CONTEXT, GithubClient
-from hub2labhook.gitlabclient import GitlabClient
+from hub2labhook.github.models.event import GithubEvent
+from hub2labhook.github.client import STATUS_MAP, CONTEXT, GithubClient
+from hub2labhook.gitlab.client import GitlabClient
 from hub2labhook.pipeline import Pipeline
 
-from .runner import app
-from .job_base import JobBase
+from hub2labhook.jobs.runner import app
+from hub2labhook.jobs.job_base import JobBase
 
 
 @app.task(bind=True, base=JobBase)
@@ -69,7 +69,7 @@ def update_github_statuses(self, trigger):
         pipelines = {}
         project = gitlabclient.get_project(gitlab_project_id)
         project_url = project['web_url']
-        builds = gitlabclient.get_builds(project['id'], ci_sha)
+        builds = gitlabclient.get_jobs(project['id'], ci_sha)
         if not builds:
             raise self.retry(countdown=60)
         for build in builds:

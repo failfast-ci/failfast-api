@@ -1,0 +1,303 @@
+{
+    "builds": [
+        {
+            "created_at": "2017-05-31 20:28:01 UTC",
+            "stage": "integration",
+            "finished_at": "2017-05-31 20:53:32 UTC",
+            "status": "failed",
+            "id": 782,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "when": "on_success",
+            "user": {
+                "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+                "name": "Antoine Legrand",
+                "username": "antoine.legrand"
+            },
+            "started_at": "2017-05-31 20:49:26 UTC",
+            "manual": false,
+            "name": "e2e-demo",
+            "runner": {
+                "description": "quay-runner-1",
+                "active": true,
+                "is_shared": false,
+                "id": 2
+            }
+        },
+        {
+            "created_at": "2017-05-31 20:28:01 UTC",
+            "stage": "integration",
+            "finished_at": "2017-05-31 20:50:40 UTC",
+            "status": "failed",
+            "id": 780,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "when": "on_success",
+            "user": {
+                "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+                "name": "Antoine Legrand",
+                "username": "antoine.legrand"
+            },
+            "started_at": "2017-05-31 20:49:26 UTC",
+            "manual": false,
+            "name": "postgres",
+            "runner": {
+                "description": "quay-runner-1",
+                "active": true,
+                "is_shared": false,
+                "id": 2
+            }
+        },
+        {
+            "created_at": "2017-05-31 20:28:01 UTC",
+            "stage": "integration",
+            "finished_at": "2017-05-31 20:49:38 UTC",
+            "status": "failed",
+            "id": 781,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "when": "on_success",
+            "user": {
+                "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+                "name": "Antoine Legrand",
+                "username": "antoine.legrand"
+            },
+            "started_at": "2017-05-31 20:49:26 UTC",
+            "manual": false,
+            "name": "mysql",
+            "runner": {
+                "description": "quay-runner-1",
+                "active": true,
+                "is_shared": false,
+                "id": 2
+            }
+        },
+        {
+            "created_at": "2017-05-31 20:28:01 UTC",
+            "stage": "unit-tests",
+            "finished_at": "2017-05-31 20:49:25 UTC",
+            "status": "success",
+            "id": 776,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "when": "on_success",
+            "user": {
+                "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+                "name": "Antoine Legrand",
+                "username": "antoine.legrand"
+            },
+            "started_at": "2017-05-31 20:38:28 UTC",
+            "manual": false,
+            "name": "unit-tests",
+            "runner": {
+                "description": "quay-runner-1",
+                "active": true,
+                "is_shared": false,
+                "id": 2
+            }
+        },
+        {
+            "created_at": "2017-05-31 20:28:01 UTC",
+            "stage": "unit-tests",
+            "finished_at": "2017-05-31 20:43:27 UTC",
+            "status": "success",
+            "id": 777,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "when": "on_success",
+            "user": {
+                "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+                "name": "Antoine Legrand",
+                "username": "antoine.legrand"
+            },
+            "started_at": "2017-05-31 20:38:28 UTC",
+            "manual": false,
+            "name": "registry-tests",
+            "runner": {
+                "description": "quay-runner-1",
+                "active": true,
+                "is_shared": false,
+                "id": 2
+            }
+        },
+        {
+            "created_at": "2017-05-31 20:28:01 UTC",
+            "stage": "unit-tests",
+            "finished_at": "2017-05-31 20:40:26 UTC",
+            "status": "success",
+            "id": 778,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "when": "on_success",
+            "user": {
+                "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+                "name": "Antoine Legrand",
+                "username": "antoine.legrand"
+            },
+            "started_at": "2017-05-31 20:38:28 UTC",
+            "manual": false,
+            "name": "karma-tests",
+            "runner": {
+                "description": "quay-runner-1",
+                "active": true,
+                "is_shared": false,
+                "id": 2
+            }
+        },
+        {
+            "created_at": "2017-05-31 20:28:01 UTC",
+            "stage": "unit-tests",
+            "finished_at": "2017-05-31 20:38:35 UTC",
+            "status": "success",
+            "id": 779,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "when": "on_success",
+            "user": {
+                "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+                "name": "Antoine Legrand",
+                "username": "antoine.legrand"
+            },
+            "started_at": "2017-05-31 20:38:28 UTC",
+            "manual": false,
+            "name": "code-styles",
+            "runner": {
+                "description": "quay-runner-1",
+                "active": true,
+                "is_shared": false,
+                "id": 2
+            }
+        },
+        {
+            "created_at": "2017-05-31 20:35:06 UTC",
+            "stage": "docker-build",
+            "finished_at": "2017-05-31 20:38:27 UTC",
+            "status": "success",
+            "id": 793,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "when": "on_success",
+            "user": {
+                "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+                "name": "Antoine Legrand",
+                "username": "antoine.legrand"
+            },
+            "started_at": "2017-05-31 20:35:08 UTC",
+            "manual": false,
+            "name": "container-build",
+            "runner": {
+                "description": "gitlab-runner-docker",
+                "active": true,
+                "is_shared": false,
+                "id": 4
+            }
+        },
+        {
+            "created_at": "2017-05-31 20:28:01 UTC",
+            "stage": "docker-build",
+            "finished_at": "2017-05-31 20:28:24 UTC",
+            "status": "failed",
+            "id": 775,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "when": "on_success",
+            "user": {
+                "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+                "name": "Antoine Legrand",
+                "username": "antoine.legrand"
+            },
+            "started_at": "2017-05-31 20:28:02 UTC",
+            "manual": false,
+            "name": "container-build",
+            "runner": {
+                "description": "gitlab-runner-docker",
+                "active": true,
+                "is_shared": false,
+                "id": 4
+            }
+        },
+        {
+            "created_at": "2017-05-31 20:28:01 UTC",
+            "stage": "docker-build",
+            "finished_at": null,
+            "status": "manual",
+            "id": 774,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "when": "manual",
+            "user": {
+                "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+                "name": "Antoine Legrand",
+                "username": "antoine.legrand"
+            },
+            "started_at": null,
+            "manual": true,
+            "name": "container-base-build",
+            "runner": null
+        }
+    ],
+    "user": {
+        "avatar_url": "https://secure.gravatar.com/avatar/110ab381ebe852113f690a5fb33d27ec?s=80&d=identicon",
+        "name": "Antoine Legrand",
+        "username": "antoine.legrand"
+    },
+    "commit": {
+        "author": {
+            "email": "antoine.legrand@coreos.com",
+            "name": "Antoine Legrand"
+        },
+        "message": "Replace .gitlab-ci.yml",
+        "url": "https://gitlab.devtable.com/quay/coreos-inc__quay/commit/fa74cd664f4a2d86123b5c798808c9ae725a9995",
+        "id": "fa74cd664f4a2d86123b5c798808c9ae725a9995",
+        "timestamp": "2017-05-31T20:28:00+00:00"
+    },
+    "object_attributes": {
+        "sha": "fa74cd664f4a2d86123b5c798808c9ae725a9995",
+        "duration": 1102,
+        "finished_at": "2017-05-31 20:53:33 UTC",
+        "tag": false,
+        "created_at": "2017-05-31 20:28:01 UTC",
+        "stages": [
+            "docker-build",
+            "unit-tests",
+            "integration"
+        ],
+        "ref": "pr-2679-split-dockerfile",
+        "before_sha": "fa74cd664f4a2d86123b5c798808c9ae725a9995",
+        "id": 120,
+        "status": "failed"
+    },
+    "object_kind": "pipeline",
+    "project": {
+        "visibility_level": 10,
+        "namespace": "quay",
+        "web_url": "https://gitlab.devtable.com/quay/coreos-inc__quay",
+        "default_branch": "master",
+        "avatar_url": null,
+        "git_http_url": "https://gitlab.devtable.com/quay/coreos-inc__quay.git",
+        "description": "",
+        "name": "coreos-inc__quay",
+        "path_with_namespace": "quay/coreos-inc__quay",
+        "git_ssh_url": "git@gitlab.devtable.com:quay/coreos-inc__quay.git"
+    }
+}
