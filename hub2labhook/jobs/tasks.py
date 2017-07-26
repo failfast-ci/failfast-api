@@ -59,9 +59,8 @@ def update_github_statuses(self, trigger):
     gitlab_project_id = trigger['ci_project_id']
     github_repo = trigger['github_repo']
     sha = trigger['sha']
-    ci_sha = trigger['ci_sha']
     installation_id = trigger['installation_id']
-
+    ref = trigger['ci_ref']
     pending = False
     gitlabclient = GitlabClient()
     githubclient = GithubClient(installation_id=installation_id)
@@ -69,19 +68,8 @@ def update_github_statuses(self, trigger):
         pipelines = {}
         project = gitlabclient.get_project(gitlab_project_id)
         project_url = project['web_url']
-        builds = gitlabclient.get_statuses(project['id'], ci_sha)
-        if not builds:
-            raise self.retry(countdown=60)
-        for build in builds:
-            pipeline_id = build['pipeline']['id']
-            if pipeline_id not in pipelines:
-                pdict = {'builds': {}}
-                pdict.update(build['pipeline'])
-                pipelines[pipeline_id] = pdict
-            if build['name'] not in pipelines[pipeline_id]['builds']:
-                pipelines[pipeline_id]['builds'][build['name']] = []
-            pipelines[pipeline_id]['builds'][build['name']].append(build)
-        pipe = pipelines[sorted(pipelines.keys())[-1]]
+        pipelines = gitlabclient.get_pipelines(gitlab_project_id, ref=ref)
+        pipe = pipelines[0]
         state = STATUS_MAP[pipe['status']]
         pending = state == "pending"
         pipeline_body = {"state": state,
@@ -90,7 +78,16 @@ def update_github_statuses(self, trigger):
                          "context": "%s/pipeline" % CONTEXT}
         resp = []
         resp.append(githubclient.post_status(pipeline_body, github_repo, sha))
-        for _, builds in pipe['builds'].items():
+        builds = gitlabclient.get_jobs(project['id'], pipe['id'])
+        if not builds:
+            raise self.retry(countdown=60)
+        pdict = {'builds': {}}
+        for build in builds:
+            if build['name'] not in pdict['builds']:
+                pdict[build['name']] = []
+            pdict[build['name']].append(build)
+
+        for _, builds in pdict['builds'].items():
             build = sorted(builds, key=lambda x: x['id'], reverse=True)[0]
             if build['status'] not in ['skipped', 'created']:
                 resp.append(update_github_status(project, build, github_repo, sha, installation_id))

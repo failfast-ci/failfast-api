@@ -76,7 +76,7 @@ class Pipeline(object):
             "ci_project_id": "$CI_PROJECT_ID",
             "ci_sha": "$CI_BUILD_REF",
             "sha": "$SHA",
-            "ref": "$CI_COMMIT_REF_NAME",
+            "ci_ref": "$CI_COMMIT_REF_NAME",
             "github_repo": "$GITHUB_REPO",
             "installation_id": "$GITHUB_INSTALLATION_ID",
             "delay": 150}
@@ -150,6 +150,7 @@ class Pipeline(object):
             'FAILFASTCI_STATUS_API': "https://jobs.failfast-ci.io/api/v1/github_status",
             'SOURCE_REF': gevent.refname,
             'REF_NAME': gevent.refname,
+            'CI_REF': gevent.target_refname,
             'GITHUB_INSTALLATION_ID': str(gevent.installation_id),
             'GITHUB_REPO': gevent.repo}
 
@@ -167,6 +168,7 @@ class Pipeline(object):
             return {
                 'sha': gevent.head_sha,
                 'ci_sha': ci_sha,
+                'ref': gevent.refname,
                 'ci_ref': gevent.target_refname,
                 'ci_project_id': ci_project['id'],
                 'installation_id': gevent.installation_id,

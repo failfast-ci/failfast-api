@@ -99,7 +99,7 @@ class GitlabClient(object):
         return resp.json()
 
     def get_pipelines(self, project_id, ref=None):
-        path = self._url("/projects/%s/pipelines/%s" % (self.get_project_id(project_id)))
+        path = self._url("/projects/%s/pipelines" % (self.get_project_id(project_id)))
         params = {}
         if ref:
             params["ref"] = ref
