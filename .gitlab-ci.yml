@@ -13,13 +13,13 @@ cache:
     - cache
 
 .build_image: &buildimage
-  image: docker:git
+  image: docker:17.06-git
   services:
-     - docker:dind
+     - docker:17.06-dind
   variables:
     DOCKER_HOST: tcp://localhost:2375
 #    DOCKER_HOST: tcp://docker-host.gitlab-runner.svc.cluster.local:2375
-    DOCKER_DRIVER: overlay
+    DOCKER_DRIVER: aufs
   stage: build-image
   script:
     - docker info
