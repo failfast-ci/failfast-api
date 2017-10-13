@@ -1,4 +1,4 @@
-from hub2labhook.exception import Unsupported
+from hub2labhook.exception import Unsupported, Forbidden
 
 
 class GithubEvent(object):
@@ -74,8 +74,7 @@ class GithubEvent(object):
         if self.event_type == "push":
             return self.ref
         elif self.event_type == "pull_request":
-            return "pr-%s-%s" % (self.pr_id,
-                                 self.refname)
+            return "pr-%s-%s" % (self.pr_id, self.refname)
         else:
             self._raise_unsupported()
 
@@ -94,8 +93,7 @@ class GithubEvent(object):
         return sha
 
     def _raise_unsupported(self):
-        raise Unsupported("unsupported event: %s" % self.event_type,
-                          {"event": self.event_type})
+        raise Unsupported("unsupported event: %s" % self.event_type, {"event": self.event_type})
 
     @property
     def repo(self):

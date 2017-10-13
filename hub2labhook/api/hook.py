@@ -1,18 +1,20 @@
 from flask import jsonify, request, Blueprint, current_app
 import os
+import hmac
+import hashlib
 from hub2labhook.github.models.event import GithubEvent
 from hub2labhook.pipeline import Pipeline
 from hub2labhook.github.client import GithubClient
 from hub2labhook.api.app import getvalues
 from hub2labhook.exception import (Hub2LabException,
                                    InvalidUsage,
+                                   Forbidden,
                                    InvalidParams,
                                    UnauthorizedAccess,
                                    Unsupported)
 
 
 import hub2labhook.jobs.tasks as tasks
-
 
 hook_app = Blueprint('registry', __name__,)
 
@@ -38,6 +40,7 @@ def pre_request_logging():
 @hook_app.errorhandler(Hub2LabException)
 @hook_app.errorhandler(InvalidUsage)
 @hook_app.errorhandler(InvalidParams)
+@hook_app.errorhandler(Forbidden)
 def render_error(error):
     response = jsonify({"error": error.to_dict()})
     response.status_code = error.status_code
@@ -49,11 +52,22 @@ def test_error():
     raise InvalidUsage("error message", {"path": request.path})
 
 
+def verify_signature(payload_body, signature):
+    secret_token = os.getenv('GITHUB_SECRET_TOKEN', None)
+    if secret_token is None:
+        raise Unsupported("GITHUB_SECRET_TOKEN isn't configured, failed to verify signature")
+    digest = 'sha1=' + hmac.new(secret_token, payload_body, hashlib.sha1).hexdigest()
+    return hmac.compare_digest(signature, digest)
+
+
 @hook_app.route("/api/v1/github_event", methods=['POST'], strict_slashes=False)
 def github_event():
     params = getvalues()
     event = request.headers.get("X-GITHUB-EVENT", "push")
+    hook_signature = request.headers.get("X-Hub-Signature", None)
     allowed_events = []
+    if hook_signature:
+        verify_signature(request.data, hook_signature)
 
     if os.getenv("BUILD_PULL_REQUEST", "true") == "true":
         allowed_events.append("pull_request")
@@ -76,7 +90,6 @@ def github_event():
 @hook_app.route("/api/v1/gitlab_event", methods=['POST', 'GET'], strict_slashes=False)
 def gitlab_event():
     params = getvalues()
-    print(params)
     return jsonify({'params': params})
 
 
