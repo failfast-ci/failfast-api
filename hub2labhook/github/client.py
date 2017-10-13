@@ -8,20 +8,22 @@ import hub2labhook
 from hub2labhook.utils import getenv
 from hub2labhook.exception import ResourceNotFound
 
-
 INTEGRATION_PEM = base64.b64decode(os.environ['GITHUB_INTEGRATION_PEM'])
+
 INTEGRATION_ID = int(os.getenv('GITHUB_INTEGRATION_ID', '743'))
 INSTALLATION_ID = '3709'
-STATUS_MAP = {"running": "pending",
-              "failed": "failure",
-              "success": "success",
-              "skipped": "success",
-              "unknown": "error",
-              'manual': 'success',
-              "canceled": "error",
-              "pending": "pending",
-              "created": "pending",
-              "running": "pending"}
+STATUS_MAP = {
+    "running": "pending",
+    "failed": "failure",
+    "success": "success",
+    "skipped": "success",
+    "unknown": "error",
+    'manual': 'success',
+    "canceled": "error",
+    "pending": "pending",
+    "created": "pending",
+    "running": "pending"
+}
 CONTEXT = os.getenv("GITHUB_CONTEXT", "gitlab-ci")
 
 
@@ -49,19 +51,23 @@ class GithubClient(object):
     @property
     def headers(self):
         if not self._headers:
-            self._headers = {'Content-Type': 'application/json',
-                             "Accept": "application/vnd.github.machine-man-preview+json",
-                             'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
-                             'Authorization': "token %s" % self.token}
+            self._headers = {
+                'Content-Type': 'application/json',
+                "Accept": "application/vnd.github.machine-man-preview+json",
+                'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
+                'Authorization': "token %s" % self.token
+            }
         return self._headers
 
     @property
     def token(self):
         if not self._token:
-            headers = {'Content-Type': 'application/json',
-                       "Accept": 'application/vnd.github.machine-man-preview+json',
-                       'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
-                       'Authorization': "Bearer %s" % jwt_token()}
+            headers = {
+                'Content-Type': 'application/json',
+                "Accept": 'application/vnd.github.machine-man-preview+json',
+                'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
+                'Authorization': "Bearer %s" % jwt_token()
+            }
             path = "https://api.github.com/installations/%s/access_tokens" % self.installation_id
             resp = requests.post(path, headers=headers)
             resp.raise_for_status()
@@ -89,8 +95,7 @@ class GithubClient(object):
         for filepath in [".gitlab-ci.yml", ".failfast-ci.jsonnet"]:
             try:
                 content = self.fetch_file(source_repo, filepath, ref=ref)
-                return {"content": content,
-                        "file": filepath}
+                return {"content": content, "file": filepath}
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code != 404:
                     raise e

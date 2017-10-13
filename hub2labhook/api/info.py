@@ -27,16 +27,8 @@ def pre_request_logging():
 
 
 @info_app.route("/")
-def index_discovery():
-    return """<html lang="en">
-    <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body>
-    </body>
-    </html>"""
-
+def index():
+    return version()
 
 @info_app.route("/version")
 def version():
