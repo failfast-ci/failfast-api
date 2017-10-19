@@ -108,3 +108,10 @@ dockerfile-canary: clean
 
 dockerfile-push: dockerfile
 	docker push registry.gitlab.com/failfast-ci/hub2lab-hook:v$(VERSION)
+
+fmt-ci:
+	find . -iname "*.jsonnet" | xargs jsonnet fmt -i -n 2
+	find . -iname "*.libsonnet" | xargs jsonnet fmt -i -n 2
+
+gen-ci: fmt-ci
+	ffctl gen
