@@ -100,14 +100,14 @@ coveralls: test
 	coveralls
 
 dockerfile: clean
-	docker build -t registry.gitlab.com/failfast-ci/hub2lab-hook:v$(VERSION) .
+	docker build -t quay.io/failfast-ci/failfast:v$(VERSION) .
 
 dockerfile-canary: clean
-	docker build -t registry.gitlab.com/failfast-ci/hub2lab-hook:master .
-	docker push registry.gitlab.com/failfast-ci/hub2lab-hook:master
+	docker build -t quay.io/failfast-ci/failfast:master .
+	docker push quay.io/failfast-ci/failfast:master
 
 dockerfile-push: dockerfile
-	docker push registry.gitlab.com/failfast-ci/hub2lab-hook:v$(VERSION)
+	docker push quay.io/failfast-ci/failfast:v$(VERSION)
 
 fmt-ci:
 	find . -iname "*.jsonnet" | xargs jsonnet fmt -i -n 2
