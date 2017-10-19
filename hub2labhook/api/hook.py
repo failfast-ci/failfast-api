@@ -56,8 +56,11 @@ def verify_signature(payload_body, signature):
     secret_token = os.getenv('GITHUB_SECRET_TOKEN', None)
     if secret_token is None:
         raise Unsupported("GITHUB_SECRET_TOKEN isn't configured, failed to verify signature")
-    digest = 'sha1=' + hmac.new(secret_token, payload_body, hashlib.sha1).hexdigest()
-    return hmac.compare_digest(signature, digest)
+    digest = 'sha1=' + hmac.new(secret_token.encode(), payload_body, hashlib.sha1).hexdigest()
+
+    if not hmac.compare_digest(signature, digest):
+        raise Forbidden("Signature mismatch expected %s but got %s" % (signature, digest), {"signature": signature})
+    return True
 
 
 @hook_app.route("/api/v1/github_event", methods=['POST'], strict_slashes=False)
