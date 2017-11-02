@@ -7,9 +7,17 @@ import requests
 
 import hub2labhook
 
-from hub2labhook.utils import getenv
 
-GITLAB_TIMEOUT = 30
+from hub2labhook.config import (
+    GITLAB_SECRET_TOKEN,
+    GITLAB_TIMEOUT, 
+    GITLAB_API,
+    GITLAB_REPO,
+    GITLAB_BRANCH,
+    GITLAB_TRIGGER,
+    FAILFASTCI_NAMESPACE
+)
+
 API_VERSION = "/api/v4"
 
 
@@ -24,8 +32,8 @@ class GitlabClient(object):
           token (:obj:`str`): the private gitlab token,
                               if `None` takes value from GITLAB_TOKEN env-var.
         """
-        self.gitlab_token = getenv(token, "GITLAB_TOKEN")
-        self.endpoint = getenv(endpoint, "GITLAB_API", "https://gitlab.com")
+        self.gitlab_token = token or GITLAB_SECRET_TOKEN
+        self.endpoint = endpoint or GITLAB_API
         self._headers = None
         self.host = self.endpoint
 
@@ -57,7 +65,7 @@ class GitlabClient(object):
         if isinstance(project_name, int):
             return project_name
         else:
-            build_project = getenv(project_name, "GITLAB_REPO")
+            build_project =  project_name or GITLAB_REPO
             namespace, name = build_project.split("/")
             project_path = "%s%%2f%s" % (namespace, name)
             project = self.get_project(project_path)
@@ -121,7 +129,7 @@ class GitlabClient(object):
         return resp.json()[0]['id']
 
     def get_or_create_project(self, project_name, namespace=None):
-        group_name = getenv(namespace, "FAILFASTCI_NAMESPACE", "failfast-ci")
+        group_name = namespace or FAILFASTCI_NAMESPACE
         project_path = "%s%%2f%s" % (group_name, project_name)
         path = self._url("/projects/%s" % (project_path))
         resp = requests.get(path, headers=self.headers, timeout=GITLAB_TIMEOUT)
@@ -199,8 +207,8 @@ class GitlabClient(object):
 
     def trigger_build(self, gitlab_project, variables={}, trigger_token=None, branch="master"):
         project_id = self.get_project_id(gitlab_project)
-        project_branch = getenv(branch, "GITLAB_BRANCH")
-        trigger_token = getenv(trigger_token, 'GITLAB_TRIGGER')
+        project_branch = branch or GITLAB_BRANCH
+        trigger_token = trigger_token or GITLAB_TRIGGER 
 
         body = {"token": trigger_token, "ref": project_branch, "variables": variables}
 

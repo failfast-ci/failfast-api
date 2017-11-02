@@ -5,6 +5,10 @@ from flask import Flask, request
 from flask_cors import CORS
 
 
+from hub2labhook.config import (
+    APP_ENVIRON
+)
+
 def getvalues():
     jsonbody = request.get_json(force=True, silent=True)
     values = request.values.to_dict()
@@ -16,7 +20,7 @@ def getvalues():
 def create_app():
     app = Flask(__name__)
     CORS(app)
-    setting = os.getenv('APP_ENV', "development")
+    setting = APP_ENVIRON
     app.logger.addHandler(logging.StreamHandler(sys.stdout))
     app.logger.setLevel(logging.INFO)
     if setting != 'production':
