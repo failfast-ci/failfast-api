@@ -66,9 +66,8 @@ pylint:
     GIT_STRATEGY: none
 stages:
 - build_image
-- code-style
-- docker_release
 - tests
+- docker_release
 unit-tests:
   before_script:
   - cd /opt/failfast-ci

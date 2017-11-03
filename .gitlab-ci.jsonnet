@@ -3,11 +3,13 @@ local baseJobs = import ".gitlab-ci/jobs.libsonnet";
 local vars = import ".gitlab-ci/vars.libsonnet";
 local images = vars.images;
 
+local stagelist = ["build_image", "tests", "docker_release"];
+
 local stages = {
-  "code-style": "tests",
-  tests: "tests",
-  build_image: "build_image",
-  docker_release: "docker_release",
+  "code-style": stagelist[1],
+  tests: stagelist[1],
+  build_image: stagelist[0],
+  docker_release: stagelist[2],
 };
 
 local jobs = {
@@ -70,6 +72,6 @@ local jobs = {
     FAILFASTCI_NAMESPACE: "failfast-ci",
   },
 
-  stages: std.objectFields(stages),
+  stages: stagelist,
   cache: { paths: ["cache"] },
 } + jobs
