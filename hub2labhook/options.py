@@ -1,3 +1,8 @@
+"""
+Runtime options derived from environment name
+"""
+
+
 import os
 from iziconf import Iziconf
 

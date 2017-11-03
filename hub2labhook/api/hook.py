@@ -16,6 +16,13 @@ from hub2labhook.exception import (Hub2LabException,
 
 import hub2labhook.jobs.tasks as tasks
 
+from hub2labhook.config import (
+    GITHUB_SECRET_TOKEN,
+    BUILD_PULL_REQUEST,
+    BUILD_PUSH
+)
+
+
 hook_app = Blueprint('registry', __name__,)
 
 
@@ -53,7 +60,7 @@ def test_error():
 
 
 def verify_signature(payload_body, signature):
-    secret_token = os.getenv('GITHUB_SECRET_TOKEN', None)
+    secret_token = GITHUB_SECRET_TOKEN
     if secret_token is None:
         raise Unsupported("GITHUB_SECRET_TOKEN isn't configured, failed to verify signature")
     digest = 'sha1=' + hmac.new(secret_token.encode(), payload_body, hashlib.sha1).hexdigest()
@@ -72,10 +79,10 @@ def github_event():
     if hook_signature:
         verify_signature(request.data, hook_signature)
 
-    if os.getenv("BUILD_PULL_REQUEST", "true") == "true":
+    if BUILD_PULL_REQUEST == "true":
         allowed_events.append("pull_request")
 
-    if ((os.getenv("BUILD_PUSH", "false") == "true") or
+    if ((BUILD_PUSH == "true") or
         (event == "push" and
          (params['ref'] == "refs/heads/master" or str.startswith(params['ref'], "refs/tags/")))):
         allowed_events.append("push")

@@ -5,13 +5,17 @@ import base64
 import jwt
 import requests
 import hub2labhook
-from hub2labhook.utils import getenv
 from hub2labhook.exception import ResourceNotFound
+
+from hub2labhook.config import (
+    GITHUB_INTEGRATION_ID,
+    GITHUB_INSTALLATION_ID
+)
 
 INTEGRATION_PEM = base64.b64decode(os.environ['GITHUB_INTEGRATION_PEM'])
 
-INTEGRATION_ID = int(os.getenv('GITHUB_INTEGRATION_ID', '743'))
-INSTALLATION_ID = '3709'
+INTEGRATION_ID = int(GITHUB_INTEGRATION_ID)
+INSTALLATION_ID = int(GITHUB_INSTALLATION_ID)
 STATUS_MAP = {
     "running": "pending",
     "failed": "failure",
@@ -24,7 +28,6 @@ STATUS_MAP = {
     "created": "pending",
     "running": "pending"
 }
-CONTEXT = os.getenv("GITHUB_CONTEXT", "gitlab-ci")
 
 
 def jwt_token():
@@ -43,7 +46,7 @@ def get_integration_pem():
 
 class GithubClient(object):
     def __init__(self, installation_id=None):
-        self.installation_id = getenv(installation_id, "GITHUB_INSTALLATION_ID", INSTALLATION_ID)
+        self.installation_id = installation_id or GITHUB_INSTALLATION_ID
         self.integration_pem = get_integration_pem()
         self._headers = None
         self._token = None

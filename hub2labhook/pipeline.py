@@ -8,13 +8,17 @@ import uuid
 from hub2labhook.github.client import GithubClient
 from hub2labhook.gitlab.client import GitlabClient
 from hub2labhook.exception import Unexpected, ResourceNotFound
-from hub2labhook.utils import getenv, clone_url_with_auth
+from hub2labhook.utils import clone_url_with_auth
+from hub2labhook.config import (
+    GITLAB_USER,
+    FAILFASTCI_API
+)
+
 from git import Repo
 
 # from celery.contrib import rdb;rdb.set_trace()
 
 DEFAULT_MODE = "sync"
-FAILFAST_API = os.getenv("FAILFAST_CI_API", "https://jobs.failfast-ci.io")
 
 GITLAB_CI_KEYS = set([
     "before_script", "image", "services", "after_script", "variables", "stages", "types", "cache"])
@@ -71,7 +75,7 @@ class Pipeline(object):
 
     def _append_update_stage(self, content):
         stage_name = "github-status-update"
-        url = FAILFAST_API + "/api/v1/github_statuses"
+        url = FAILFASTCI_API + "/api/v1/github_statuses"
         update_status = {
             "ci_project_id": "$CI_PROJECT_ID",
             "ci_sha": "$CI_BUILD_REF",
@@ -111,7 +115,7 @@ class Pipeline(object):
             "github_repo": "$GITHUB_REPO",
             "installation_id": "$GITHUB_INSTALLATION_ID",
             "delay": 45})
-        url = FAILFAST_API + "/api/v1/github_status"
+        url = FAILFASTCI_API + "/api/v1/github_status"
         task = "curl -m 45 --connect-timeout 45 -XPOST %s -d \"%s\" || true" % (
             url, params.replace('"', '\\\"'))
         for key, job in content.items():
@@ -125,7 +129,7 @@ class Pipeline(object):
 
     def trigger_pipeline(self):
         gevent = self.ghevent
-        gitlab_user = getenv(None, "GITLAB_USER")
+        gitlab_user = GITLAB_USER
         dirpath = tempfile.mkdtemp()
         repo_path = os.path.join(dirpath, "repo")
         gitbin = self._checkout_repo(gevent, repo_path)
