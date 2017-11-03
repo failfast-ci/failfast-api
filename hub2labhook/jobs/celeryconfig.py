@@ -1,6 +1,5 @@
 import os
 
-
 broker_url = os.getenv("CELERY_BROKER", "redis://")
 result_backend = os.getenv("CELERY_BACKEND", "redis://")
 task_serializer = 'json'

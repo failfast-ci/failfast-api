@@ -1,18 +1,16 @@
 import time
 from copy import deepcopy
 import json
-import yaml
 import tempfile
 import os
 import uuid
+
+import yaml
 from hub2labhook.github.client import GithubClient
 from hub2labhook.gitlab.client import GitlabClient
 from hub2labhook.exception import Unexpected, ResourceNotFound
 from hub2labhook.utils import clone_url_with_auth
-from hub2labhook.config import (
-    GITLAB_USER,
-    FAILFASTCI_API
-)
+from hub2labhook.config import (GITLAB_USER, FAILFASTCI_API)
 
 from git import Repo
 
@@ -21,7 +19,8 @@ from git import Repo
 DEFAULT_MODE = "sync"
 
 GITLAB_CI_KEYS = set([
-    "before_script", "image", "services", "after_script", "variables", "stages", "types", "cache"])
+    "before_script", "image", "services", "after_script", "variables", "stages", "types", "cache"
+])
 
 
 class Pipeline(object):
@@ -41,7 +40,7 @@ class Pipeline(object):
                 time.sleep(1)
                 gitbin = Repo.clone_from(clone_url, repo_path).git
                 break
-            except:
+            except Exception:
                 try_count = try_count + 1
                 if try_count >= 3:
                     raise
@@ -58,7 +57,8 @@ class Pipeline(object):
         if not gitbin.rev_parse('HEAD') == gevent.head_sha:
             raise Unexpected("git sha don't match", {
                 'expected_sha': gevent.head_sha,
-                'sha': gitbin.rev_parse('HEAD')})
+                'sha': gitbin.rev_parse('HEAD')
+            })
         return gitbin
 
     def _get_ci_file(self, repo_path):
@@ -83,7 +83,8 @@ class Pipeline(object):
             "ci_ref": "$CI_COMMIT_REF_NAME",
             "github_repo": "$GITHUB_REPO",
             "installation_id": "$GITHUB_INSTALLATION_ID",
-            "delay": 150}
+            "delay": 150
+        }
         update_status_30 = deepcopy(update_status)
         update_status_30['delay'] = 30
         params_150 = json.dumps(update_status)
@@ -96,13 +97,16 @@ class Pipeline(object):
             "before_script": [],
             "after_script": [
                 "curl -XPOST %s -d \"%s\" || true" % (url, params_30.replace('"', '\\\"')),
-                "curl -XPOST %s -d \"%s\" || true" % (url, params_150.replace('"', '\\\"'))],
+                "curl -XPOST %s -d \"%s\" || true" % (url, params_150.replace('"', '\\\"'))
+            ],
             "script": [
                 "echo curl -XPOST %s -d \"%s\" || true" % (url, params_30.replace('"', '\\\"')),
-                "echo curl -XPOST %s -d \"%s\" || true" % (url, params_150.replace('"', '\\\"'))],
+                "echo curl -XPOST %s -d \"%s\" || true" % (url, params_150.replace('"', '\\\"'))
+            ],
             "tags": ["failfast-ci"],
             "when":
-                "always"}
+                "always"
+        }
         content['stages'].append(stage_name)
         content['report-status'] = job
 
@@ -114,7 +118,8 @@ class Pipeline(object):
             "build_id": "$CI_BUILD_ID",
             "github_repo": "$GITHUB_REPO",
             "installation_id": "$GITHUB_INSTALLATION_ID",
-            "delay": 45})
+            "delay": 45
+        })
         url = FAILFASTCI_API + "/api/v1/github_status"
         task = "curl -m 45 --connect-timeout 45 -XPOST %s -d \"%s\" || true" % (
             url, params.replace('"', '\\\"'))
@@ -156,7 +161,8 @@ class Pipeline(object):
             'REF_NAME': gevent.refname,
             'CI_REF': gevent.target_refname,
             'GITHUB_INSTALLATION_ID': str(gevent.installation_id),
-            'GITHUB_REPO': gevent.repo}
+            'GITHUB_REPO': gevent.repo
+        }
 
         content['variables'].update(variables)
         self._append_update_stage(content)
@@ -176,7 +182,8 @@ class Pipeline(object):
                 'ci_ref': gevent.target_refname,
                 'ci_project_id': ci_project['id'],
                 'installation_id': gevent.installation_id,
-                'github_repo': gevent.repo}
+                'github_repo': gevent.repo
+            }
         else:
             self.sync_only_ci_file(gevent, content, ci_project, ci_file)
 

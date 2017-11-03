@@ -30,3 +30,6 @@ SPLIT_PENALTY_IMPORT_NAMES=450
 SPLIT_PENALTY_LOGICAL_OPERATOR=300
 USE_TABS=False
 SPLIT_ARGUMENTS_WHEN_COMMA_TERMINATED=False
+
+# Allow lambdas to be formatted on more than one line.
+allow_multiline_lambdas=True

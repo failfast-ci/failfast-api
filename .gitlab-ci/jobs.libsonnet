@@ -1,5 +1,6 @@
 local utils = (import "jpy-utils.libsonnet");
 local docker = utils.docker;
+local vars = import "vars.libsonnet";
 
 {
   local job_tags = { tags: ['kubernetes'] },
@@ -20,4 +21,13 @@ local docker = utils.docker;
 
   } + job_tags,
 
+  job: {
+    variables: {
+      GIT_STRATEGY: "none",
+    },
+    before_script: [
+      "cd /opt/failfast-ci",
+    ],
+    image: vars.images.ci.failfast.name,
+  } + job_tags,
 }

@@ -14,7 +14,6 @@ INTEGRATION_PEM = base64.b64decode(os.environ['GITHUB_INTEGRATION_PEM'])
 INTEGRATION_ID = int(GITHUB_INTEGRATION_ID)
 INSTALLATION_ID = int(GITHUB_INSTALLATION_ID)
 GITHUB_STATUS_MAP = {
-    "running": "pending",
     "failed": "failure",
     "success": "success",
     "skipped": "success",
