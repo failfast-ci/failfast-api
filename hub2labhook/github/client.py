@@ -7,16 +7,13 @@ import requests
 import hub2labhook
 from hub2labhook.exception import ResourceNotFound
 
-from hub2labhook.config import (
-    GITHUB_INTEGRATION_ID,
-    GITHUB_INSTALLATION_ID
-)
+from hub2labhook.config import (GITHUB_INTEGRATION_ID, GITHUB_INSTALLATION_ID)
 
 INTEGRATION_PEM = base64.b64decode(os.environ['GITHUB_INTEGRATION_PEM'])
 
 INTEGRATION_ID = int(GITHUB_INTEGRATION_ID)
 INSTALLATION_ID = int(GITHUB_INSTALLATION_ID)
-STATUS_MAP = {
+GITHUB_STATUS_MAP = {
     "running": "pending",
     "failed": "failure",
     "success": "success",
