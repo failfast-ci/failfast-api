@@ -48,7 +48,7 @@ def update_build_status(self, params):
         build_id = params['build_id']
         gitlabclient = GitlabClient()
         project = gitlabclient.get_project(gitlab_project_id)
-        build = gitlabclient.get_build(project['id'], build_id)
+        build = gitlabclient.get_job(project['id'], build_id)
         return update_github_status(project, build, github_repo, sha, installation_id)
     except Exception as exc:
         self.retry(countdown=60, exc=exc)

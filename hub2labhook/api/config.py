@@ -1,9 +1,4 @@
-import os
-
-from hub2labhook.config import (
-    GITLAB_SECRET_TOKEN,
-    GITLAB_API
-)
+from hub2labhook.config import (GITLAB_SECRET_TOKEN, GITLAB_API)
 
 
 class Config(object):

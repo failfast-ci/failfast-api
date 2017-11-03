@@ -8,12 +8,12 @@ import os
 def getenv(name, default=None, convert=str):
     """
     Fetch variables from environment and convert to given type.
-    
+
     Python's `os.getenv` returns string and requires string default.
     This allows for varying types to be interpolated from the environment.
     """
 
-     # because os.getenv requires string default.
+    # because os.getenv requires string default.
     internal_default = "(none)"
     val = os.getenv(name, internal_default)
 

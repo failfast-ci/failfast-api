@@ -1,4 +1,4 @@
-from hub2labhook.exception import Unsupported, Forbidden
+from hub2labhook.exception import Unsupported
 
 
 class GithubEvent(object):

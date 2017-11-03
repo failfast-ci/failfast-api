@@ -1,13 +1,10 @@
 import sys
 import logging
-import os
 from flask import Flask, request
 from flask_cors import CORS
 
+from hub2labhook.config import (APP_ENVIRON)
 
-from hub2labhook.config import (
-    APP_ENVIRON
-)
 
 def getvalues():
     jsonbody = request.get_json(force=True, silent=True)

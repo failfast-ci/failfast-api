@@ -2,9 +2,7 @@ from __future__ import absolute_import
 from celery import Task
 from celery.utils.log import get_task_logger
 
-
 logger = get_task_logger(__name__)
-
 
 
 class JobBase(Task):

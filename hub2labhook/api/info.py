@@ -1,13 +1,11 @@
-from flask import (jsonify,
-                   request,
-                   Blueprint,
-                   current_app,
-                   url_for)
+from flask import (jsonify, request, Blueprint, current_app, url_for)
 
 import hub2labhook
 
-
-info_app = Blueprint('info', __name__,)
+info_app = Blueprint(
+    'info',
+    __name__,
+)
 
 
 @info_app.before_app_request
@@ -22,13 +20,15 @@ def pre_request_logging():
         "http_method": request.method,
         "original_url": request.url,
         "path": request.path,
-        "data":  values,
-        "headers": dict(request.headers.to_list())})
+        "data": values,
+        "headers": dict(request.headers.to_list())
+    })
 
 
 @info_app.route("/")
 def index():
     return version()
+
 
 @info_app.route("/version")
 def version():
@@ -45,7 +45,7 @@ def routes():
             options[arg] = "[{0}]".format(arg)
         methods = ','.join(rule.methods)
         url = url_for(rule.endpoint, **options)
-        line = urllib.unquote("{:50s} {:20s} {}".format(rule.endpoint, methods, url))
+        line = urllib.parse.unquote("{:50s} {:20s} {}".format(rule.endpoint, methods, url))
         output.append(line)
     lines = []
     for line in sorted(output):

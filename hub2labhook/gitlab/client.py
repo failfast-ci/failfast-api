@@ -7,22 +7,14 @@ import requests
 
 import hub2labhook
 
-
-from hub2labhook.config import (
-    GITLAB_SECRET_TOKEN,
-    GITLAB_TIMEOUT, 
-    GITLAB_API,
-    GITLAB_REPO,
-    GITLAB_BRANCH,
-    GITLAB_TRIGGER,
-    FAILFASTCI_NAMESPACE
-)
+from hub2labhook.config import (GITLAB_SECRET_TOKEN, GITLAB_TIMEOUT, GITLAB_API, GITLAB_REPO,
+                                GITLAB_BRANCH, GITLAB_TRIGGER, FAILFASTCI_NAMESPACE)
 
 API_VERSION = "/api/v4"
 
 
 class GitlabClient(object):
-    def __init__(self, endpoint: str=None, token: str=None):
+    def __init__(self, endpoint: str = None, token: str = None):
         """
         Creates a gitlab-client instance initialized with the private-token and endpoint urllib
 
@@ -48,7 +40,8 @@ class GitlabClient(object):
             self._headers = {
                 'Content-Type': 'application/json',
                 'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
-                'PRIVATE-TOKEN': self.gitlab_token}
+                'PRIVATE-TOKEN': self.gitlab_token
+            }
         return self._headers
 
     def get_project(self, project_id):
@@ -64,12 +57,12 @@ class GitlabClient(object):
         """ Requests the project-id (int) from a project_name (str) """
         if isinstance(project_name, int):
             return project_name
-        else:
-            build_project =  project_name or GITLAB_REPO
-            namespace, name = build_project.split("/")
-            project_path = "%s%%2f%s" % (namespace, name)
-            project = self.get_project(project_path)
-            return project['id']
+
+        build_project = project_name or GITLAB_REPO
+        namespace, name = build_project.split("/")
+        project_path = "%s%%2f%s" % (namespace, name)
+        project = self.get_project(project_path)
+        return project['id']
 
     def set_variables(self, project_id, variables):
         """ Create or update(if exists) pipeline variables """
@@ -149,7 +142,8 @@ class GitlabClient(object):
             "shared_runners_enabled": False,
             "public": True,
             "visibility_level": 20,
-            "public_jobs": True, }
+            "public_jobs": True,
+        }
         resp = requests.post(path, data=json.dumps(body), headers=self.headers,
                              timeout=GITLAB_TIMEOUT)
         resp.raise_for_status()
@@ -169,7 +163,8 @@ class GitlabClient(object):
             "branch": branch,
             "encoding": "base64",
             "content": base64.b64encode(file_content).decode(),
-            "commit_message": message}
+            "commit_message": message
+        }
         resp = requests.post(path, data=json.dumps(body), headers=self.headers,
                              timeout=GITLAB_TIMEOUT)
         if resp.status_code == 400 or resp.status_code == 409:
@@ -185,7 +180,7 @@ class GitlabClient(object):
         resp.raise_for_status()
         return resp.json()
 
-    def initialize_project(self, project_name: str, namespace: str=None):
+    def initialize_project(self, project_name: str, namespace: str = None):
         project = self.get_or_create_project(project_name, namespace)
         branch = "master"
         branch_path = self._url("/projects/%s/repository/branches/%s" % (project['id'], branch))
@@ -205,10 +200,12 @@ class GitlabClient(object):
 
         return project
 
-    def trigger_build(self, gitlab_project, variables={}, trigger_token=None, branch="master"):
+    def trigger_build(self, gitlab_project, variables=None, trigger_token=None, branch="master"):
+        if not variables:
+            variables = {}
         project_id = self.get_project_id(gitlab_project)
         project_branch = branch or GITLAB_BRANCH
-        trigger_token = trigger_token or GITLAB_TRIGGER 
+        trigger_token = trigger_token or GITLAB_TRIGGER
 
         body = {"token": trigger_token, "ref": project_branch, "variables": variables}
 

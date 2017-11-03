@@ -1,29 +1,18 @@
-from flask import jsonify, request, Blueprint, current_app
-import os
 import hmac
 import hashlib
-from hub2labhook.github.models.event import GithubEvent
-from hub2labhook.pipeline import Pipeline
-from hub2labhook.github.client import GithubClient
+from flask import jsonify, request, Blueprint, current_app
 from hub2labhook.api.app import getvalues
-from hub2labhook.exception import (Hub2LabException,
-                                   InvalidUsage,
-                                   Forbidden,
-                                   InvalidParams,
-                                   UnauthorizedAccess,
-                                   Unsupported)
-
+from hub2labhook.exception import (
+    Hub2LabException, InvalidUsage, Forbidden, InvalidParams, UnauthorizedAccess, Unsupported)
 
 import hub2labhook.jobs.tasks as tasks
 
-from hub2labhook.config import (
-    GITHUB_SECRET_TOKEN,
-    BUILD_PULL_REQUEST,
-    BUILD_PUSH
+from hub2labhook.config import (GITHUB_SECRET_TOKEN, BUILD_PULL_REQUEST, BUILD_PUSH)
+
+hook_app = Blueprint(
+    'registry',
+    __name__,
 )
-
-
-hook_app = Blueprint('registry', __name__,)
 
 
 @hook_app.before_request
@@ -38,8 +27,9 @@ def pre_request_logging():
         "http_method": request.method,
         "original_url": request.url,
         "path": request.path,
-        "data":  values,
-        "headers": dict(request.headers.to_list())})
+        "data": values,
+        "headers": dict(request.headers.to_list())
+    })
 
 
 @hook_app.errorhandler(Unsupported)
@@ -66,7 +56,9 @@ def verify_signature(payload_body, signature):
     digest = 'sha1=' + hmac.new(secret_token.encode(), payload_body, hashlib.sha1).hexdigest()
 
     if not hmac.compare_digest(signature, digest):
-        raise Forbidden("Signature mismatch expected %s but got %s" % (signature, digest), {"signature": signature})
+        raise Forbidden("Signature mismatch expected %s but got %s" % (signature, digest), {
+            "signature": signature
+        })
     return True
 
 
@@ -88,7 +80,8 @@ def github_event():
         allowed_events.append("push")
 
     if ((event not in allowed_events) or
-       (event == "pull_request" and params['action'] not in ['opened', 'reopened', 'synchronize'])):
+        (event == "pull_request" and
+         params['action'] not in ['opened', 'reopened', 'synchronize'])):
         return jsonify({'ignored': True})
 
     task = tasks.pipeline.s(params, dict(request.headers.to_list()))
@@ -112,7 +105,7 @@ def github_status():
     # sha = params['sha']
     # installation_id = params['installation_id']
     delay = int(params.get('delay', 0))
-    job = tasks.update_build_status.apply_async((params,), countdown=delay)
+    job = tasks.update_build_status.apply_async((params, ), countdown=delay)
     return jsonify({'job_id': job.id, 'params': params})
 
 
@@ -125,5 +118,5 @@ def github_statuses():
     # sha = params['sha']
     # installation_id = params['installation_id']
     delay = int(params.get('delay', 0))
-    job = tasks.update_github_statuses.apply_async((params,), countdown=delay)
+    job = tasks.update_github_statuses.apply_async((params, ), countdown=delay)
     return jsonify({'job_id': job.id, 'params': params})
