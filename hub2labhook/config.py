@@ -26,6 +26,10 @@ def getenv(name, default=None, convert=str):
     return val
 
 
+def envbool(value: str):
+    return value and (value.lower() in ('1', 'true'))
+
+
 GITLAB_TIMEOUT = 30
 
 APP_ENVIRON = getenv("APP_ENV", "development")
@@ -39,6 +43,27 @@ GITLAB_REPO = getenv("GITLAB_REPO", None)
 GITLAB_BRANCH = getenv("GITLAB_BRANCH", None)
 GITLAB_TRIGGER = getenv("GITLAB_TRIGGER", None)
 GITLAB_USER = getenv("GITLAB_USER", None)
+GITLAB_ENABLE_JOBS = True  # without this, CI is moot.
+
+GITLAB_ENABLE_SHARED_RUNNERS = getenv("GITLAB_SHARED_RUNNERS", 
+                                     default=False, convert=envbool)
+
+GITLAB_ENABLE_CONTAINER_REGISTRY = getenv("GITLAB_CONTAINER_REGISTRY",
+                                          default=False, convert=envbool)
+
+GITLAB_ENABLE_WIKI = getenv("GITLAB_WIKI", default=False, convert=envbool)
+GITLAB_ENABLE_SNIPPETS = getenv("GITLAB_SNIPPETS", default=False, 
+                                convert=envbool)
+
+
+GITLAB_ENABLE_MERGE_REQUESTS = getenv("GITLAB_MERGE_REQUESTS", default=False, 
+                                      convert=envbool)
+GITLAB_ENABLE_ISSUES = getenv("GITLAB_ISSUES", default=False, convert=envbool)
+
+GITLAB_REPO_PRIVACY = getenv("GITLAB_REPO_PRIVACY", default="internal")
+
+if GITLAB_REPO_PRIVACY not in ("private", "internal", "public"):
+    GITLAB_REPO_PRIVACY = "private"
 
 GITHUB_CONTEXT = getenv("GITHUB_CONTEXT", "gitlab-ci")
 GITHUB_INTEGRATION_ID = getenv("GITHUB_INTEGRATION_ID", "743")
