@@ -32,6 +32,9 @@ container-release:
   - docker pull quay.io/failfast-ci/failfast-cibuild:${CI_COMMIT_REF_SLUG}-${SHA8}
   - docker tag quay.io/failfast-ci/failfast-cibuild:${CI_COMMIT_REF_SLUG}-${SHA8} quay.io/failfast-ci/failfast:${CI_COMMIT_REF_SLUG}-${SHA8}
   - docker push quay.io/failfast-ci/failfast:${CI_COMMIT_REF_SLUG}-${SHA8}
+  - docker pull quay.io/failfast-ci/failfast-cibuild:${CI_COMMIT_REF_SLUG}-${SHA8}
+  - docker tag quay.io/failfast-ci/failfast-cibuild:${CI_COMMIT_REF_SLUG}-${SHA8} quay.io/failfast-ci/failfast:alpha
+  - docker push quay.io/failfast-ci/failfast:alpha
   services:
   - docker:dind
   stage: docker_release
