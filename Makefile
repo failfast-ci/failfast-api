@@ -125,3 +125,10 @@ fmt-ci:
 
 gen-ci: fmt-ci
 	ffctl gen
+
+mypy:
+	mypy hub2labhook --ignore-missing-imports
+
+check: pylint flake8 mypy yapf-test gen-ci
+
+prepare: yapf gen-ci check

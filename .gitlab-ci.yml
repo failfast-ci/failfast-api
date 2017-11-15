@@ -52,6 +52,18 @@ flake8:
   - kubernetes
   variables:
     GIT_STRATEGY: none
+mypy_compile:
+  before_script:
+  - cd /opt/failfast-ci
+  - pip install mypy
+  image: quay.io/failfast-ci/failfast-cibuild:${CI_COMMIT_REF_SLUG}-${SHA8}
+  script:
+  - make mypy
+  stage: tests
+  tags:
+  - kubernetes
+  variables:
+    GIT_STRATEGY: none
 pylint:
   before_script:
   - cd /opt/failfast-ci

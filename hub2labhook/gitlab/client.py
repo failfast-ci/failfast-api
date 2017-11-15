@@ -7,31 +7,17 @@ import requests
 
 import hub2labhook
 
-
 from hub2labhook.config import (
-    GITLAB_SECRET_TOKEN,
-    GITLAB_TIMEOUT, 
-    GITLAB_API,
-    GITLAB_REPO,
-    GITLAB_BRANCH,
-    GITLAB_TRIGGER,
-    GITLAB_ENABLE_SHARED_RUNNERS,
-    GITLAB_ENABLE_CONTAINER_REGISTRY,
-    GITLAB_ENABLE_WIKI,
-    GITLAB_ENABLE_SNIPPETS,
-    GITLAB_ENABLE_MERGE_REQUESTS,
-    GITLAB_ENABLE_ISSUES,
-    GITLAB_ENABLE_JOBS,
-    GITLAB_REPO_PRIVACY,
-    FAILFASTCI_NAMESPACE,
-    FAILFASTCI_API
-)
+    GITLAB_SECRET_TOKEN, GITLAB_TIMEOUT, GITLAB_API, GITLAB_REPO, GITLAB_BRANCH, GITLAB_TRIGGER,
+    GITLAB_ENABLE_SHARED_RUNNERS, GITLAB_ENABLE_CONTAINER_REGISTRY, GITLAB_ENABLE_WIKI,
+    GITLAB_ENABLE_SNIPPETS, GITLAB_ENABLE_MERGE_REQUESTS, GITLAB_ENABLE_ISSUES, GITLAB_ENABLE_JOBS,
+    GITLAB_REPO_PRIVACY, FAILFASTCI_NAMESPACE)
 
 API_VERSION = "/api/v4"
 
 
 class GitlabClient(object):
-    def __init__(self, endpoint: str=None, token: str=None):
+    def __init__(self, endpoint: str = None, token: str = None) -> None:
         """
         Creates a gitlab-client instance initialized with the private-token and endpoint urllib
 
@@ -138,7 +124,7 @@ class GitlabClient(object):
         resp.raise_for_status()
         return resp.json()[0]['id']
 
-    def get_or_create_project(self, project_name, namespace=None, repo_public: bool=False):
+    def get_or_create_project(self, project_name, namespace=None, repo_public: bool = False):
         group_name = namespace or FAILFASTCI_NAMESPACE
         project_path = "%s%%2f%s" % (group_name, project_name)
         path = self._url("/projects/%s" % (project_path))
@@ -152,16 +138,16 @@ class GitlabClient(object):
             "namespace_id": group_id,
             "issues_enabled": GITLAB_ENABLE_ISSUES,
             "merge_requests_enabled": GITLAB_ENABLE_MERGE_REQUESTS,
-            "jobs_enabled": GITLAB_ENABLE_JOBS, 
+            "jobs_enabled": GITLAB_ENABLE_JOBS,
             "wiki_enabled": GITLAB_ENABLE_WIKI,
             "snippets_enabled": GITLAB_ENABLE_SNIPPETS,
             "container_registry_enabled": GITLAB_ENABLE_CONTAINER_REGISTRY,
-            "shared_runners_enabled": GITLAB_ENABLE_SHARED_RUNNERS, 
+            "shared_runners_enabled": GITLAB_ENABLE_SHARED_RUNNERS,
             "public": repo_public,
             "visibility": ("public" if repo_public else GITLAB_REPO_PRIVACY),
-            "public_jobs": repo_public, 
+            "public_jobs": repo_public,
         }
-        resp = requests.post(path, data=json.dumps(body), headers=self.headers,
+        resp = requests.post(path, data=json.dumps(body).encode(), headers=self.headers,
                              timeout=GITLAB_TIMEOUT)
         resp.raise_for_status()
         return resp.json()
@@ -197,7 +183,7 @@ class GitlabClient(object):
         resp.raise_for_status()
         return resp.json()
 
-    def initialize_project(self, project_name: str, namespace: str=None):
+    def initialize_project(self, project_name: str, namespace: str = None):
         project = self.get_or_create_project(project_name, namespace)
         branch = "master"
         branch_path = self._url("/projects/%s/repository/branches/%s" % (project['id'], branch))

@@ -15,14 +15,15 @@ def pre_request_logging():
     if jsonbody:
         values.update(jsonbody)
 
-    current_app.logger.info("request", extra={
-        "remote_addr": request.remote_addr,
-        "http_method": request.method,
-        "original_url": request.url,
-        "path": request.path,
-        "data": values,
-        "headers": dict(request.headers.to_list())
-    })
+    current_app.logger.info(
+        "request", extra={
+            "remote_addr": request.remote_addr,
+            "http_method": request.method,
+            "original_url": request.url,
+            "path": request.path,
+            "data": values,
+            "headers": dict(request.headers.to_list())
+        })
 
 
 @info_app.route("/")

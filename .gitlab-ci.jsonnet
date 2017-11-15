@@ -35,6 +35,7 @@ local jobs = {
       "make pylint",
     ],
   },
+
   flake8: baseJobs.job {
     before_script+: [
       "pip install flake8",
@@ -44,6 +45,17 @@ local jobs = {
       "make flake8",
     ],
   },
+
+  mypy_compile: baseJobs.job {
+    before_script+: [
+      "pip install mypy",
+    ],
+    stage: stages["code-style"],
+    script: [
+      "make mypy",
+    ],
+  },
+
   yapf: baseJobs.job {
     before_script+: [
       "pip install yapf",

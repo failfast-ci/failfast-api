@@ -156,7 +156,7 @@ class Pipeline(object):
             'PR_ID': str(gevent.pr_id),
             'SHA': gevent.head_sha,
             'SHA8': gevent.head_sha[0:8],
-            'FAILFASTCI_STATUS_API': ('%s/api/v1/github_status' % (FAILFASTCI_API,)),
+            'FAILFASTCI_STATUS_API': ('%s/api/v1/github_status' % (FAILFASTCI_API, )),
             'SOURCE_REF': gevent.refname,
             'REF_NAME': gevent.refname,
             'CI_REF': gevent.target_refname,
