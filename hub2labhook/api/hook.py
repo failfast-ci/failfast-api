@@ -3,11 +3,13 @@ import hashlib
 from flask import jsonify, request, Blueprint, current_app
 from hub2labhook.api.app import getvalues
 from hub2labhook.exception import (
-    Hub2LabException, InvalidUsage, Forbidden, InvalidParams, UnauthorizedAccess, Unsupported)
+    Hub2LabException, InvalidUsage, Forbidden, InvalidParams,
+    UnauthorizedAccess, Unsupported)
 
 import hub2labhook.jobs.tasks as tasks
 
-from hub2labhook.config import (GITHUB_SECRET_TOKEN, BUILD_PULL_REQUEST, BUILD_PUSH)
+from hub2labhook.config import (
+    GITHUB_SECRET_TOKEN, BUILD_PULL_REQUEST, BUILD_PUSH)
 
 hook_app = Blueprint(
     'registry',
@@ -53,13 +55,16 @@ def test_error():
 def verify_signature(payload_body, signature):
     secret_token = GITHUB_SECRET_TOKEN
     if secret_token is None:
-        raise Unsupported("GITHUB_SECRET_TOKEN isn't configured, failed to verify signature")
-    digest = 'sha1=' + hmac.new(secret_token.encode(), payload_body, hashlib.sha1).hexdigest()
+        raise Unsupported(
+            "GITHUB_SECRET_TOKEN isn't configured, failed to verify signature")
+    digest = 'sha1=' + hmac.new(secret_token.encode(), payload_body,
+                                hashlib.sha1).hexdigest()
 
     if not hmac.compare_digest(signature, digest):
-        raise Forbidden("Signature mismatch expected %s but got %s" % (signature, digest), {
-            "signature": signature
-        })
+        raise Forbidden("Signature mismatch expected %s but got %s" %
+                        (signature, digest), {
+                            "signature": signature
+                        })
     return True
 
 
@@ -76,8 +81,8 @@ def github_event():
         allowed_events.append("pull_request")
 
     if ((BUILD_PUSH == "true") or
-        (event == "push" and
-         (params['ref'] == "refs/heads/master" or str.startswith(params['ref'], "refs/tags/")))):
+        (event == "push" and (params['ref'] == "refs/heads/master" or
+                              str.startswith(params['ref'], "refs/tags/")))):
         allowed_events.append("push")
 
     if ((event not in allowed_events) or
@@ -91,13 +96,15 @@ def github_event():
     return jsonify({'job_id': job.id, 'params': params})
 
 
-@hook_app.route("/api/v1/gitlab_event", methods=['POST', 'GET'], strict_slashes=False)
+@hook_app.route("/api/v1/gitlab_event", methods=['POST', 'GET'],
+                strict_slashes=False)
 def gitlab_event():
     params = getvalues()
     return jsonify({'params': params})
 
 
-@hook_app.route("/api/v1/github_status", methods=['POST'], strict_slashes=False)
+@hook_app.route("/api/v1/github_status", methods=['POST'],
+                strict_slashes=False)
 def github_status():
     params = getvalues()
     # gitlab_project_id = params['gitlab_project_id']
@@ -110,7 +117,8 @@ def github_status():
     return jsonify({'job_id': job.id, 'params': params})
 
 
-@hook_app.route("/api/v1/github_statuses", methods=['POST'], strict_slashes=False)
+@hook_app.route("/api/v1/github_statuses", methods=['POST'],
+                strict_slashes=False)
 def github_statuses():
     params = getvalues()
     # gitlab_project_id = params['gitlab_project_id']

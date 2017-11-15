@@ -22,4 +22,5 @@ class JobBase(Task):
         return self._app.amqp.routes[0].route_for_task(self.name)['queue']
 
     def task_routing_key(self):
-        return self._app.amqp.routes[0].route_for_task(self.name)['routing_key']
+        return self._app.amqp.routes[0].route_for_task(
+            self.name)['routing_key']

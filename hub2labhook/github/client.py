@@ -33,7 +33,8 @@ def jwt_token():
         "iss": INTEGRATION_ID
     }
 
-    return jwt.encode(payload, INTEGRATION_PEM, algorithm='RS256').decode("utf-8")
+    return jwt.encode(payload, INTEGRATION_PEM,
+                      algorithm='RS256').decode("utf-8")
 
 
 def get_integration_pem():
@@ -74,14 +75,18 @@ class GithubClient(object):
         return self._token
 
     def post_status(self, body, github_repo, sha):
-        path = "https://api.github.com/repos/%s/commits/%s/statuses" % (github_repo, sha)
-        resp = requests.post(path, data=json.dumps(body), headers=self.headers, timeout=5)
+        path = "https://api.github.com/repos/%s/commits/%s/statuses" % (
+            github_repo, sha)
+        resp = requests.post(path, data=json.dumps(body), headers=self.headers,
+                             timeout=5)
         resp.raise_for_status()
         return resp.json()
 
     def fetch_file(self, repo, file_path, ref="master"):
-        path = "https://api.github.com/repos/%s/contents/%s" % (repo, file_path)
-        resp = requests.get(path, headers=self.headers, params={'ref': ref}, timeout=30)
+        path = "https://api.github.com/repos/%s/contents/%s" % (repo,
+                                                                file_path)
+        resp = requests.get(path, headers=self.headers, params={'ref': ref},
+                            timeout=30)
         resp.raise_for_status()
         content = resp.json()
         filecontent = content['content']

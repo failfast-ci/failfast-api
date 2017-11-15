@@ -45,15 +45,18 @@ GITLAB_TRIGGER = getenv("GITLAB_TRIGGER", None)
 GITLAB_USER = getenv("GITLAB_USER", None)
 GITLAB_ENABLE_JOBS = True  # without this, CI is moot.
 
-GITLAB_ENABLE_SHARED_RUNNERS = getenv("GITLAB_SHARED_RUNNERS", default=False, convert=envbool)
+GITLAB_ENABLE_SHARED_RUNNERS = getenv("GITLAB_SHARED_RUNNERS", default=False,
+                                      convert=envbool)
 
-GITLAB_ENABLE_CONTAINER_REGISTRY = getenv("GITLAB_CONTAINER_REGISTRY", default=False,
-                                          convert=envbool)
+GITLAB_ENABLE_CONTAINER_REGISTRY = getenv("GITLAB_CONTAINER_REGISTRY",
+                                          default=False, convert=envbool)
 
 GITLAB_ENABLE_WIKI = getenv("GITLAB_WIKI", default=False, convert=envbool)
-GITLAB_ENABLE_SNIPPETS = getenv("GITLAB_SNIPPETS", default=False, convert=envbool)
+GITLAB_ENABLE_SNIPPETS = getenv("GITLAB_SNIPPETS", default=False,
+                                convert=envbool)
 
-GITLAB_ENABLE_MERGE_REQUESTS = getenv("GITLAB_MERGE_REQUESTS", default=False, convert=envbool)
+GITLAB_ENABLE_MERGE_REQUESTS = getenv("GITLAB_MERGE_REQUESTS", default=False,
+                                      convert=envbool)
 GITLAB_ENABLE_ISSUES = getenv("GITLAB_ISSUES", default=False, convert=envbool)
 
 GITLAB_REPO_PRIVACY = getenv("GITLAB_REPO_PRIVACY", default="internal")

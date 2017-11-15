@@ -46,7 +46,8 @@ def routes():
             options[arg] = "[{0}]".format(arg)
         methods = ','.join(rule.methods)
         url = url_for(rule.endpoint, **options)
-        line = urllib.parse.unquote("{:50s} {:20s} {}".format(rule.endpoint, methods, url))
+        line = urllib.parse.unquote("{:50s} {:20s} {}".format(
+            rule.endpoint, methods, url))
         output.append(line)
     lines = []
     for line in sorted(output):

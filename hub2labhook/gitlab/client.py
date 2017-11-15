@@ -8,10 +8,11 @@ import requests
 import hub2labhook
 
 from hub2labhook.config import (
-    GITLAB_SECRET_TOKEN, GITLAB_TIMEOUT, GITLAB_API, GITLAB_REPO, GITLAB_BRANCH, GITLAB_TRIGGER,
-    GITLAB_ENABLE_SHARED_RUNNERS, GITLAB_ENABLE_CONTAINER_REGISTRY, GITLAB_ENABLE_WIKI,
-    GITLAB_ENABLE_SNIPPETS, GITLAB_ENABLE_MERGE_REQUESTS, GITLAB_ENABLE_ISSUES, GITLAB_ENABLE_JOBS,
-    GITLAB_REPO_PRIVACY, FAILFASTCI_NAMESPACE)
+    GITLAB_SECRET_TOKEN, GITLAB_TIMEOUT, GITLAB_API, GITLAB_REPO,
+    GITLAB_BRANCH, GITLAB_TRIGGER, GITLAB_ENABLE_SHARED_RUNNERS,
+    GITLAB_ENABLE_CONTAINER_REGISTRY, GITLAB_ENABLE_WIKI,
+    GITLAB_ENABLE_SNIPPETS, GITLAB_ENABLE_MERGE_REQUESTS, GITLAB_ENABLE_ISSUES,
+    GITLAB_ENABLE_JOBS, GITLAB_REPO_PRIVACY, FAILFASTCI_NAMESPACE)
 
 API_VERSION = "/api/v4"
 
@@ -69,7 +70,8 @@ class GitlabClient(object):
 
     def set_variables(self, project_id, variables):
         """ Create or update(if exists) pipeline variables """
-        path = self._url("/projects/%s/variables" % self.get_project_id(project_id))
+        path = self._url(
+            "/projects/%s/variables" % self.get_project_id(project_id))
         for key, value in variables.iteritems():
             key_path = path + "/%s" % key
             resp = requests.get(key_path)
@@ -79,11 +81,13 @@ class GitlabClient(object):
                     continue
                 action = "put"
             body = {"key": key, "value": value}
-            resp = getattr(requests, action)(path, data=json.dumps(body), headers=self.headers)
+            resp = getattr(requests, action)(path, data=json.dumps(body),
+                                             headers=self.headers)
             resp.raise_for_status()
 
     def get_job(self, project_id, job_id):
-        path = self._url("/projects/%s/jobs/%s" % (self.get_project_id(project_id), job_id))
+        path = self._url("/projects/%s/jobs/%s" %
+                         (self.get_project_id(project_id), job_id))
         resp = requests.get(path, headers=self.headers, timeout=GITLAB_TIMEOUT)
         resp.raise_for_status()
         return resp.json()
@@ -96,23 +100,25 @@ class GitlabClient(object):
         return resp.json()
 
     def get_jobs(self, project_id, pipeline_id):
-        path = self._url("/projects/%s/pipelines/%s/jobs" % (self.get_project_id(project_id),
-                                                             pipeline_id))
+        path = self._url("/projects/%s/pipelines/%s/jobs" %
+                         (self.get_project_id(project_id), pipeline_id))
         resp = requests.get(path, headers=self.headers, timeout=GITLAB_TIMEOUT)
         resp.raise_for_status()
         return resp.json()
 
     def get_pipelines(self, project_id, ref=None):
-        path = self._url("/projects/%s/pipelines" % (self.get_project_id(project_id)))
+        path = self._url("/projects/%s/pipelines" %
+                         (self.get_project_id(project_id)))
         params = {}
         if ref:
             params["ref"] = ref
-        resp = requests.get(path, headers=self.headers, params=params, timeout=GITLAB_TIMEOUT)
+        resp = requests.get(path, headers=self.headers, params=params,
+                            timeout=GITLAB_TIMEOUT)
         return resp.json()
 
     def get_pipeline_status(self, project_id, pipeline_id):
-        path = self._url("/projects/%s/pipelines/%s" % (self.get_project_id(project_id),
-                                                        pipeline_id))
+        path = self._url("/projects/%s/pipelines/%s" %
+                         (self.get_project_id(project_id), pipeline_id))
         resp = requests.get(path, headers=self.headers, timeout=GITLAB_TIMEOUT)
         resp.raise_for_status()
         return resp.json()
@@ -120,11 +126,13 @@ class GitlabClient(object):
     def get_namespace_id(self, namespace):
         path = self._url("/namespaces")
         params = {'search': namespace}
-        resp = requests.get(path, headers=self.headers, params=params, timeout=GITLAB_TIMEOUT)
+        resp = requests.get(path, headers=self.headers, params=params,
+                            timeout=GITLAB_TIMEOUT)
         resp.raise_for_status()
         return resp.json()[0]['id']
 
-    def get_or_create_project(self, project_name, namespace=None, repo_public: bool = False):
+    def get_or_create_project(self, project_name, namespace=None,
+                              repo_public: bool = False):
         group_name = namespace or FAILFASTCI_NAMESPACE
         project_path = "%s%%2f%s" % (group_name, project_name)
         path = self._url("/projects/%s" % (project_path))
@@ -147,20 +155,22 @@ class GitlabClient(object):
             "visibility": ("public" if repo_public else GITLAB_REPO_PRIVACY),
             "public_jobs": repo_public,
         }
-        resp = requests.post(path, data=json.dumps(body).encode(), headers=self.headers,
-                             timeout=GITLAB_TIMEOUT)
+        resp = requests.post(path, data=json.dumps(body).encode(),
+                             headers=self.headers, timeout=GITLAB_TIMEOUT)
         resp.raise_for_status()
         return resp.json()
 
-    def push_file(self, project_id, file_path, file_content, branch, message, force=True):
-        branch_path = self._url(
-            "/projects/%s/repository/branches" % self.get_project_id(project_id))
+    def push_file(self, project_id, file_path, file_content, branch, message,
+                  force=True):
+        branch_path = self._url("/projects/%s/repository/branches" %
+                                self.get_project_id(project_id))
         branch_body = {'branch': branch, 'ref': "_failfastci"}
-        resp = requests.post(branch_path, params=branch_body, headers=self.headers,
-                             timeout=GITLAB_TIMEOUT)
+        resp = requests.post(branch_path, params=branch_body,
+                             headers=self.headers, timeout=GITLAB_TIMEOUT)
 
-        path = self._url("/projects/%s/repository/files/%s" % (self.get_project_id(project_id),
-                                                               urllib.parse.quote_plus(file_path)))
+        path = self._url("/projects/%s/repository/files/%s" %
+                         (self.get_project_id(project_id),
+                          urllib.parse.quote_plus(file_path)))
         body = {
             "file_path": file_path,
             "branch": branch,
@@ -171,8 +181,8 @@ class GitlabClient(object):
         resp = requests.post(path, data=json.dumps(body), headers=self.headers,
                              timeout=GITLAB_TIMEOUT)
         if resp.status_code == 400 or resp.status_code == 409:
-            resp = requests.put(path, data=json.dumps(body), headers=self.headers,
-                                timeout=GITLAB_TIMEOUT)
+            resp = requests.put(path, data=json.dumps(body),
+                                headers=self.headers, timeout=GITLAB_TIMEOUT)
 
         resp.raise_for_status()
         return resp.json()
@@ -186,31 +196,41 @@ class GitlabClient(object):
     def initialize_project(self, project_name: str, namespace: str = None):
         project = self.get_or_create_project(project_name, namespace)
         branch = "master"
-        branch_path = self._url("/projects/%s/repository/branches/%s" % (project['id'], branch))
-        resp = requests.get(branch_path, headers=self.headers, timeout=GITLAB_TIMEOUT)
+        branch_path = self._url("/projects/%s/repository/branches/%s" %
+                                (project['id'], branch))
+        resp = requests.get(branch_path, headers=self.headers,
+                            timeout=GITLAB_TIMEOUT)
         if resp.status_code == 404:
             time.sleep(2)
-            self.push_file(project['id'], file_path="README.md", file_content=bytes(
-                ("# %s" % project_name).encode()), branch="master", message="init readme")
+            self.push_file(project['id'], file_path="README.md",
+                           file_content=bytes(
+                               ("# %s" % project_name).encode()),
+                           branch="master", message="init readme")
             time.sleep(2)
-            resp = requests.put(branch_path + "/unprotect", headers=self.headers,
-                                timeout=GITLAB_TIMEOUT)
+            resp = requests.put(branch_path + "/unprotect",
+                                headers=self.headers, timeout=GITLAB_TIMEOUT)
             resp.raise_for_status()
-            branch_path = self._url("/projects/%s/repository/branches" % project['id'])
+            branch_path = self._url(
+                "/projects/%s/repository/branches" % project['id'])
             branch_body = {'branch': "_failfastci", 'ref': "master"}
-            resp = requests.post(branch_path, params=branch_body, headers=self.headers,
-                                 timeout=GITLAB_TIMEOUT)
+            resp = requests.post(branch_path, params=branch_body,
+                                 headers=self.headers, timeout=GITLAB_TIMEOUT)
 
         return project
 
-    def trigger_build(self, gitlab_project, variables=None, trigger_token=None, branch="master"):
+    def trigger_build(self, gitlab_project, variables=None, trigger_token=None,
+                      branch="master"):
         if not variables:
             variables = {}
         project_id = self.get_project_id(gitlab_project)
         project_branch = branch or GITLAB_BRANCH
         trigger_token = trigger_token or GITLAB_TRIGGER
 
-        body = {"token": trigger_token, "ref": project_branch, "variables": variables}
+        body = {
+            "token": trigger_token,
+            "ref": project_branch,
+            "variables": variables
+        }
 
         path = self._url("/projects/%s/trigger/builds" % project_id)
         resp = requests.post(path, data=json.dumps(body), headers=self.headers,
