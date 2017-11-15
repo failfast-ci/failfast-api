@@ -2,7 +2,7 @@ local utils = import "jpy-utils.libsonnet";
 local baseJobs = import ".gitlab-ci/jobs.libsonnet";
 local vars = import ".gitlab-ci/vars.libsonnet";
 local images = vars.images;
-
+local docker = utils.docker;
 local stagelist = ["build_image", "tests", "docker_release"];
 
 local stages = {
@@ -16,10 +16,11 @@ local jobs = {
   // All the CI jobs
 
 
-  'container-release': baseJobs.dockerBuild(images.release.failfast) {
+  'container-release': baseJobs.dockerBuild(images.release.failfast) + utils.gitlabCi.onlyMaster {
     stage: stages.docker_release,
-    script: utils.docker.rename(images.ci.failfast.name, images.release.failfast.name),
-  } + utils.gitlabCi.onlyMaster,
+    script: docker.rename(images.ci.failfast.name, images.release.failfast.name) +
+            docker.rename(images.ci.failfast.name, images.release.failfast.get_name('alpha')),
+  },
 
   'build-image': baseJobs.dockerBuild(images.ci.failfast) +
                  {
