@@ -135,6 +135,7 @@ class GitlabClient(object):
         path = self._url("/projects")
         body = {
             "name": project_name,
+            "path": project_path,
             "namespace_id": group_id,
             "issues_enabled": GITLAB_ENABLE_ISSUES,
             "merge_requests_enabled": GITLAB_ENABLE_MERGE_REQUESTS,
