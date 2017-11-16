@@ -93,7 +93,9 @@ class GithubEvent(object):
         return sha
 
     def _raise_unsupported(self):
-        raise Unsupported("unsupported event: %s" % self.event_type, {"event": self.event_type})
+        raise Unsupported("unsupported event: %s" % self.event_type, {
+            "event": self.event_type
+        })
 
     @property
     def repo(self):

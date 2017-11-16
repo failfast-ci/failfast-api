@@ -1,6 +1,6 @@
 [style]
 based_on_style = chromium
-COLUMN_LIMIT=99
+COLUMN_LIMIT=79
 INDENT_WIDTH=4
 BLANK_LINE_BEFORE_CLASS_DOCSTRING=False
 #True

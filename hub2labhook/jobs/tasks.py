@@ -49,7 +49,8 @@ def update_build_status(self, params):
         gitlabclient = GitlabClient()
         project = gitlabclient.get_project(gitlab_project_id)
         build = gitlabclient.get_job(project['id'], build_id)
-        return update_github_status(project, build, github_repo, sha, installation_id)
+        return update_github_status(project, build, github_repo, sha,
+                                    installation_id)
     except Exception as exc:
         self.retry(countdown=60, exc=exc)
 
@@ -102,7 +103,8 @@ def update_github_statuses(self, trigger):
             build = sorted(builds, key=lambda x: x['id'], reverse=True)[0]
             if build['status'] not in ['skipped', 'created']:
                 resp.append(
-                    update_github_status(project, build, github_repo, sha, installation_id))
+                    update_github_status(project, build, github_repo, sha,
+                                         installation_id))
         if pending:
             raise self.retry(countdown=60)
         return resp
