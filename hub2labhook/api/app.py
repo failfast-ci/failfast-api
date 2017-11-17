@@ -1,6 +1,6 @@
 from flask import Flask, request
 from flask_cors import CORS
-from hub2labhook.config import (APP_ENVIRON)
+from hub2labhook.config import FFCONFIG
 from hub2labhook.exception import Hub2LabException
 from hub2labhook.api.handlers.errors import render_error
 from hub2labhook.api.handlers.request_logging import before_request_log, after_request_log
@@ -28,11 +28,10 @@ class FailfastApp(FlaskApp):
 def create_app():
     app = Flask(__name__)
     CORS(app)
-    setting = APP_ENVIRON
     ffapp = FailfastApp(app)
     # app.logger.addHandler(logging.StreamHandler(sys.stdout))
     # app.logger.setLevel(logging.INFO)
-    if setting != 'production':
+    if FFCONFIG.failfast['env'] != 'production':
         ffapp.app.config.from_object(
             'hub2labhook.api.config.DevelopmentConfig')
     else:

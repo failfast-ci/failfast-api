@@ -3,6 +3,7 @@ Acquire runtime configuration from environment variables (etc).
 """
 
 import os
+import yaml
 
 
 def logfile_path(jsonfmt=False, debug=False):
@@ -91,7 +92,7 @@ GITHUB_INSTALLATION_ID = getenv("GITHUB_INSTALLATION_ID", "3709")
 GITHUB_SECRET_TOKEN = getenv("GITHUB_SECRET_TOKEN", None)
 
 FAILFASTCI_NAMESPACE = getenv("FAILFASTCI_NAMESPACE", "failfast-ci")
-FAILFASTCI_API = getenv("FAILFAST_CI_API", "https://jobs.failfast-ci.io")
+FAILFASTCI_API = getenv("FAILFAST_CI_API", "https://jobs.failfast-ci.com")
 
 # The GitLab runner tag to require on CI jobs introduced by failfast
 FAILFASTCI_REQUIRE_RUNNER_TAG = getenv("FAILFASTCI_RUNNER_TAG", "failfast-ci")
@@ -106,3 +107,92 @@ FFCI_SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
 FFCI_ROOT_DIR = os.path.abspath(os.path.join(FFCI_SOURCE_DIR, "../"))
 FFCI_CONF_DIR = os.getenv("FFCI_CONF_DIR", os.path.join(
     FFCI_ROOT_DIR, "conf/"))
+
+FFCI_CONF_FILE = os.getenv("FFCI_CONF_FILE", None)
+
+
+class FailFastConfig(object):
+    """
+    """
+
+    def __init__(self, defaults=None, confpath=None):
+        self.settings = {
+            'failfast': {
+                'debug': False,
+                'env': APP_ENVIRON,
+                'failfast_url': FAILFASTCI_API,
+                'build': {
+                    'on-pullrequests': ['*'],
+                    'on-branches': ['master'],
+                    'on-labels': [
+                        '/ok-to-test'
+                    ],  # list branches (regexp) to trigger builds on push events
+                    'on-comments': [
+                        '/retest', '/test'
+                    ],  # list branches (regexp) to trigger builds on PR events
+                },
+                # https://developer.github.com/v4/reference/enum/commentauthorassociation/
+                'authorized_groups': ['COLLABORATOR', 'MEMBER', 'OWNER'],
+                'authorized_users': [],
+            },
+            'github': {
+                'context': GITHUB_CONTEXT,
+                'installation_id': GITHUB_INSTALLATION_ID,
+                'secret_token': GITHUB_SECRET_TOKEN,
+                'integration_id': GITHUB_INTEGRATION_ID,
+            },
+            'gitlab': {
+                'repo': GITLAB_REPO,
+                'timeout': GITLAB_TIMEOUT,
+                'secret_token': GITLAB_SECRET_TOKEN,
+                'gitlab_url': GITLAB_API,
+                'privacy': GITLAB_REPO_PRIVACY,
+                'namespace': FAILFASTCI_NAMESPACE,
+                'robot-user': GITLAB_USER,
+                'runner_tags': [FAILFASTCI_REQUIRE_RUNNER_TAG],
+                'enable_shared_runners': GITLAB_ENABLE_SHARED_RUNNERS,
+                'enable_jobs': GITLAB_ENABLE_JOBS,
+                'enable_container_registry': GITLAB_ENABLE_CONTAINER_REGISTRY,
+                'enable_wiki': GITLAB_ENABLE_WIKI,
+                'enable_snippets': GITLAB_ENABLE_SNIPPETS,
+                'enable_issues': GITLAB_ENABLE_ISSUES,
+                'enable_merge_requests': GITLAB_ENABLE_MERGE_REQUESTS,
+            }
+        }
+        if defaults:
+            self.load_conf(defaults)
+
+        if confpath:
+            self.load_conffile(confpath)
+
+    @property
+    def gitlab(self):
+        return self.settings['gitlab']
+
+    @property
+    def github(self):
+        return self.settings['github']
+
+    @property
+    def failfast(self):
+        return self.settings['failfast']
+
+    def reload(self, confpath, inplace=False):
+        if inplace:
+            instance = self
+            instance.load_conffile(confpath)
+        else:
+            instance = FailFastConfig(defaults=self.settings,
+                                      confpath=confpath)
+        return instance
+
+    def load_conf(self, conf):
+        for key, v in conf.items():
+            self.settings[key].update(v)
+
+    def load_conffile(self, confpath):
+        with open(confpath, 'r') as conffile:
+            self.load_conf(yaml.load(conffile.read()))
+
+
+FFCONFIG = FailFastConfig(confpath=FFCI_CONF_FILE)

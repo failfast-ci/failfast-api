@@ -7,12 +7,12 @@ import requests
 import hub2labhook
 from hub2labhook.exception import ResourceNotFound
 
-from hub2labhook.config import (GITHUB_INTEGRATION_ID, GITHUB_INSTALLATION_ID)
+from hub2labhook.config import FFCONFIG
 
 INTEGRATION_PEM = base64.b64decode(os.environ['GITHUB_INTEGRATION_PEM'])
 
-INTEGRATION_ID = int(GITHUB_INTEGRATION_ID)
-INSTALLATION_ID = int(GITHUB_INSTALLATION_ID)
+INTEGRATION_ID = int(FFCONFIG.github['integration_id'])
+
 GITHUB_STATUS_MAP = {
     "failed": "failure",
     "success": "success",
@@ -42,8 +42,8 @@ def get_integration_pem():
 
 
 class GithubClient(object):
-    def __init__(self, installation_id=None):
-        self.installation_id = installation_id or GITHUB_INSTALLATION_ID
+    def __init__(self, installation_id):
+        self.installation_id = installation_id
         self.integration_pem = get_integration_pem()
         self._headers = None
         self._token = None
@@ -93,6 +93,11 @@ class GithubClient(object):
         if content['encoding'] == "base64":
             filecontent = base64.b64decode(filecontent)
         return filecontent
+
+    def get_json(self, path, params={}):
+        resp = requests.get(path, headers=self.headers, params=params)
+        resp.raise_for_status()
+        return resp.json()
 
     def get_ci_file(self, source_repo, ref):
         content = None

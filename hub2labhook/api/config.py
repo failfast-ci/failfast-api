@@ -1,11 +1,11 @@
-from hub2labhook.config import (GITLAB_SECRET_TOKEN, GITLAB_API)
+from hub2labhook.config import FFCONFIG
 
 
 class Config(object):
     """ Default configuration """
-    DEBUG = True
-    GITLAB_TOKEN = GITLAB_SECRET_TOKEN
-    GITLAB_API = GITLAB_API
+    DEBUG = FFCONFIG.failfast['debug']
+    GITLAB_TOKEN = FFCONFIG.gitlab['secret_token']
+    GITLAB_API = FFCONFIG.gitlab['gitlab_url']
 
 
 class ProductionConfig(Config):
