@@ -154,7 +154,7 @@ class Pipeline(object):
         self.gitlab = GitlabClient(gitlab_endpoint)
 
         ci_project = self.gitlab.initialize_project(
-            gevent.repo.replace("/", "."), namespace)
+            gevent.repo.replace("/", "_"), namespace)
 
         # @Todo(ant31) check if clone_url is required
         # clone_url = clone_url_with_auth(gevent.clone_url, "bot:%s" % self.github.token)
