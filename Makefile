@@ -46,6 +46,15 @@ clean-test:
 	rm -f .coverage
 	rm -fr htmlcov/
 
+
+.virtenv/.date: requirements_dev.txt requirements_test.txt
+	virtualenv -p python3.6 $(shell dirname $@)
+	. $(shell dirname $@)/bin/activate && for f in $<; do pip install -r $$f; done && pip install -e .
+	touch -r $< $@
+
+test-env-setup: .virtenv/.date
+	@echo "To use the provided virtual environment: \n\tsource $(shell dirname $<)/bin/activate && make test"
+
 lint:
 	flake8 hub2lab-hook tests
 
