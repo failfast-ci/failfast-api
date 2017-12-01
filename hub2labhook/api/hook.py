@@ -90,8 +90,10 @@ def github_event():
          params['action'] not in ['opened', 'reopened', 'synchronize'])):
         return jsonify({'ignored': True})
 
-    task = tasks.pipeline.s(params, dict(request.headers.to_list()))
+    headers = dict(request.headers.to_list())
+    task = tasks.pipeline.s(params, headers)
     task.link(tasks.update_github_statuses.s())
+    task.link_error(tasks.update_github_statuses_failure.s(params, headers))
     job = task.delay()
     return jsonify({'job_id': job.id, 'params': params})
 
