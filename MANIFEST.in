@@ -3,6 +3,7 @@ include LICENSE
 include README.md
 include run-server.sh
 recursive-include tests *
+recursive-include conf *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 

@@ -1,5 +1,8 @@
-from flask import (jsonify, request, Blueprint, current_app, url_for)
+import time
+import logging
 
+from flask import (jsonify, Blueprint, current_app, url_for)
+from hub2labhook.exception import Forbidden
 import hub2labhook
 
 info_app = Blueprint(
@@ -7,28 +10,23 @@ info_app = Blueprint(
     __name__,
 )
 
-
-@info_app.before_app_request
-def pre_request_logging():
-    jsonbody = request.get_json(force=True, silent=True)
-    values = request.values.to_dict()
-    if jsonbody:
-        values.update(jsonbody)
-
-    current_app.logger.info(
-        "request", extra={
-            "remote_addr": request.remote_addr,
-            "http_method": request.method,
-            "original_url": request.url,
-            "path": request.path,
-            "data": values,
-            "headers": dict(request.headers.to_list())
-        })
+logger = logging.getLogger(__name__)
 
 
 @info_app.route("/")
 def index():
     return version()
+
+
+@info_app.route("/error")
+def gen_error():
+    raise Forbidden("test")
+
+
+@info_app.route("/slow")
+def slow_req():
+    time.sleep(5)
+    return jsonify({"ok": 200})
 
 
 @info_app.route("/version")

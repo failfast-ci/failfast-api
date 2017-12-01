@@ -1,8 +1,7 @@
 import os
 import json
+import base64
 import pytest
-
-from hub2labhook.api.app import create_app
 
 
 LOCAL_DIR = os.path.dirname(__file__)
@@ -10,7 +9,8 @@ LOCAL_DIR = os.path.dirname(__file__)
 
 @pytest.fixture
 def app():
-    app = create_app()
+    from hub2labhook.api.app import create_app
+    app = create_app().app
     return app
 
 
@@ -21,11 +21,17 @@ def get_request(name):
     return json.loads(r)
 
 
+@pytest.fixture(scope='session')
+def testenv(monkeypatch):
+    monkeypatch.setenv("GITHUB_INTEGRATION_PEM", base64.b64encode("fakepem"))
+
+
 @pytest.fixture()
 def push_headers():
     return {"User-Agent": " GitHub-Hookshot/d9ba1f0",
             "X-GITHUB-DELIVERY": "5ca32b80-b638-11e6-8213-373827616e33",
             "X-GITHUB-EVENT": "push"}
+
 
 @pytest.fixture()
 def pr_headers():

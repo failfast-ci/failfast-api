@@ -1,53 +1,20 @@
 import hmac
 import hashlib
-from flask import jsonify, request, Blueprint, current_app
+from flask import jsonify, request, Blueprint
 from hub2labhook.api.app import getvalues
-from hub2labhook.exception import (
-    Hub2LabException, InvalidUsage, Forbidden, InvalidParams,
-    UnauthorizedAccess, Unsupported)
-
+from hub2labhook.exception import (InvalidUsage, Forbidden, Unsupported)
 import hub2labhook.jobs.tasks as tasks
 
 from hub2labhook.config import (
     GITHUB_SECRET_TOKEN, BUILD_PULL_REQUEST, BUILD_PUSH)
 
-hook_app = Blueprint(
-    'registry',
+ffapi_app = Blueprint(
+    'ffapi',
     __name__,
-)
+)  # type: Blueprint
 
 
-@hook_app.before_request
-def pre_request_logging():
-    jsonbody = request.get_json(force=True, silent=True)
-    values = request.values.to_dict()
-    if jsonbody:
-        values.update(jsonbody)
-
-    current_app.logger.info(
-        "request", extra={
-            "remote_addr": request.remote_addr,
-            "http_method": request.method,
-            "original_url": request.url,
-            "path": request.path,
-            "data": values,
-            "headers": dict(request.headers.to_list())
-        })
-
-
-@hook_app.errorhandler(Unsupported)
-@hook_app.errorhandler(UnauthorizedAccess)
-@hook_app.errorhandler(Hub2LabException)
-@hook_app.errorhandler(InvalidUsage)
-@hook_app.errorhandler(InvalidParams)
-@hook_app.errorhandler(Forbidden)
-def render_error(error):
-    response = jsonify({"error": error.to_dict()})
-    response.status_code = error.status_code
-    return response
-
-
-@hook_app.route("/test_error")
+@ffapi_app.route("/test_error")
 def test_error():
     raise InvalidUsage("error message", {"path": request.path})
 
@@ -68,7 +35,8 @@ def verify_signature(payload_body, signature):
     return True
 
 
-@hook_app.route("/api/v1/github_event", methods=['POST'], strict_slashes=False)
+@ffapi_app.route("/api/v1/github_event", methods=['POST'],
+                 strict_slashes=False)
 def github_event():
     params = getvalues()
     event = request.headers.get("X-GITHUB-EVENT", "push")
@@ -98,15 +66,15 @@ def github_event():
     return jsonify({'job_id': job.id, 'params': params})
 
 
-@hook_app.route("/api/v1/gitlab_event", methods=['POST', 'GET'],
-                strict_slashes=False)
+@ffapi_app.route("/api/v1/gitlab_event", methods=['POST', 'GET'],
+                 strict_slashes=False)
 def gitlab_event():
     params = getvalues()
     return jsonify({'params': params})
 
 
-@hook_app.route("/api/v1/github_status", methods=['POST'],
-                strict_slashes=False)
+@ffapi_app.route("/api/v1/github_status", methods=['POST'],
+                 strict_slashes=False)
 def github_status():
     params = getvalues()
     # gitlab_project_id = params['gitlab_project_id']
@@ -119,8 +87,8 @@ def github_status():
     return jsonify({'job_id': job.id, 'params': params})
 
 
-@hook_app.route("/api/v1/github_statuses", methods=['POST'],
-                strict_slashes=False)
+@ffapi_app.route("/api/v1/github_statuses", methods=['POST'],
+                 strict_slashes=False)
 def github_statuses():
     params = getvalues()
     # gitlab_project_id = params['gitlab_project_id']
