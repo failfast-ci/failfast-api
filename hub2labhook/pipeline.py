@@ -150,18 +150,18 @@ class Pipeline(object):
         dirpath = tempfile.mkdtemp()
         repo_path = os.path.join(dirpath, "repo")
         gitbin = self._checkout_repo(gevent, repo_path)
-        
+
         try:
             ci_file = self._get_ci_file(repo_path)
         except ResourceNotFound as e:
-            raise Unexpected("Could not find a CI config file in: %s" % (repo_path,))
-        
-        
+            raise Unexpected("Could not find a CI config file in: %s" %
+                             (repo_path, ))
+
         try:
             content = self._parse_ci_file(ci_file['content'], ci_file['file'])
         except YAMLComposeError as e:
-            raise Unexpected("Could not parse CI file: %s" % (ci_file['file'],))
-
+            raise Unexpected("Could not parse CI file: %s" %
+                             (ci_file['file'], ))
 
         namespace = content['variables'].get('FAILFASTCI_NAMESPACE', None)
         gitlab_endpoint = content['variables'].get('GITLAB_URL', None)
@@ -214,7 +214,7 @@ class Pipeline(object):
                           (gevent.head_sha, gevent.commit_url))
             gitbin.push("target", 'HEAD:%s' % gevent.target_refname, "-f")
             ci_sha = str(gitbin.rev_parse('HEAD'))
-            return { # NOTE: the GitHub reference details for subsequent tasks.
+            return {  # NOTE: the GitHub reference details for subsequent tasks.
                 'sha': gevent.head_sha,
                 'ci_sha': ci_sha,
                 'ref': gevent.refname,

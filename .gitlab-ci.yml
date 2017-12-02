@@ -44,6 +44,7 @@ container-release:
     DOCKER_DRIVER: overlay2
     DOCKER_HOST: tcp://localhost:2375
 flake8:
+  allow_failure: true
   before_script:
   - cd /opt/failfast-ci
   - pip install flake8
@@ -98,6 +99,7 @@ unit-tests:
 variables:
   FAILFASTCI_NAMESPACE: failfast-ci
 yapf:
+  allow_failure: true
   before_script:
   - cd /opt/failfast-ci
   - pip install yapf

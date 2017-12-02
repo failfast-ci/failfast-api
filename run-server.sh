@@ -9,4 +9,4 @@ GITLAB_REPO=$GITLAB_REPO \
            GITHUB_CONTEXT=$GITHUB_CONTEXT \
            GITLAB_TRIGGER=$GITLAB_TRIGGER \
            GITLAB_TOKEN=$GITLAB_TOKEN \
-           gunicorn hub2labhook.api.wsgi:app -b :$PORT --timeout 120 -w 4 --reload
+           gunicorn hub2labhook.api.wsgi:app -b :$PORT --timeout 120 -w 4 --reload -c conf/gunicorn.py
