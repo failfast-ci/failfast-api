@@ -10,6 +10,6 @@ RUN rm -rf $workdir
 RUN mkdir -p $workdir
 COPY . $workdir
 WORKDIR $workdir
-RUN pip install gunicorn -U && pip install -e .
+RUN pip install gunicorn gevent -U && pip install -e .
 
-CMD ["./run-server"]
+CMD ["./run-server.sh"]
