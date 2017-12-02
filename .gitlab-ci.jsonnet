@@ -45,6 +45,7 @@ local jobs = {
     script: [
       "make flake8",
     ],
+    allow_failure: true,
   },
 
   mypy_compile: baseJobs.job {
@@ -65,6 +66,8 @@ local jobs = {
     script: [
       "make yapf-diff",
     ],
+    allow_failure: true,
+
   },
 
   'unit-tests': baseJobs.job {

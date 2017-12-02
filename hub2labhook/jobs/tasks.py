@@ -9,17 +9,15 @@ from hub2labhook.config import GITHUB_CONTEXT
 
 from hub2labhook.jobs.runner import app
 from hub2labhook.jobs.job_base import JobBase
-from hub2labhook.exception import Unexpected
 
 
 @app.task(bind=True, base=JobBase)
 def pipeline(self, event, headers):
     gevent = GithubEvent(event, headers)
     build = Pipeline(gevent)
- 
+
     # NOTE this is throwing exceptions, e.g. Unexpected
     return build.trigger_pipeline()
-
 
 
 def update_github_status(project, build, github_repo, sha, installation_id):
@@ -59,8 +57,6 @@ def update_build_status(self, params):
         self.retry(countdown=60, exc=exc)
 
 
-
-
 @app.task(bind=True, base=JobBase)
 def update_github_statuses_failure(self, event, headers):
     """ The pipeline has failed. Notify GitHub. """
@@ -68,11 +64,10 @@ def update_github_statuses_failure(self, event, headers):
 
     githubclient = GithubClient(gevent.installation_id)
     body = dict(
-        state = GITHUB_STATUS_MAP["cancelled"],
-        target_url = (gevent.commit_url), # TODO: link the gitlab YAML
-        description = "An error occurred in initial pipeline execution",
-        context = "%s/%s/%s" % (GITHUB_CONTEXT, "pipeline", "initalize")
-    )
+        state=GITHUB_STATUS_MAP["cancelled"],
+        target_url=(gevent.commit_url),  # TODO: link the gitlab YAML
+        description="An error occurred in initial pipeline execution",
+        context="%s/%s/%s" % (GITHUB_CONTEXT, "pipeline", "initalize"))
     return githubclient.post_status(body, gevent.repo, gevent.head_sha)
 
 
