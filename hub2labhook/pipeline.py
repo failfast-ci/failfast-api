@@ -163,8 +163,10 @@ class Pipeline(object):
             raise Unexpected("Could not parse CI file: %s" %
                              (ci_file['file'], ))
 
-        namespace = content['variables'].get('FAILFASTCI_NAMESPACE', None)
-        gitlab_endpoint = content['variables'].get('GITLAB_URL', None)
+        variables = content.get('variables', dict())
+
+        namespace = variables.get('FAILFASTCI_NAMESPACE', None)
+        gitlab_endpoint = variables.get('GITLAB_URL', None)
         self.gitlab = GitlabClient(gitlab_endpoint)
 
         ci_project = self.gitlab.initialize_project(
@@ -176,7 +178,8 @@ class Pipeline(object):
                                          "%s:%s" % (gitlab_user,
                                                     self.gitlab.gitlab_token))
         gitbin.remote('add', 'target', target_url)
-        variables = {
+
+        variables.update({
             'EVENT':
                 gevent.event_type,
             'PR_ID':
@@ -197,13 +200,15 @@ class Pipeline(object):
                 str(gevent.installation_id),
             'GITHUB_REPO':
                 gevent.repo
-        }
+        })
 
-        content['variables'].update(variables)
+        content['variables'] = variables
+
         self._append_update_stage(content)
-        if (('FAILFASTCI_SYNC_REPO' in content['variables'] and
-             content['variables']['FAILFAST_SYNC_REPO'] == "true") or
-                DEFAULT_MODE == "sync"):
+
+        perform_sync = variables.get("FAILFAST_SYNC_REPO", "false")
+
+        if ((perform_sync == "true") or (DEFAULT_MODE == "sync")):
             # Full synchronize the repo
             path = os.path.join(repo_path, ".gitlab-ci.yml")
             with open(path, 'w') as gitlabcifile:
