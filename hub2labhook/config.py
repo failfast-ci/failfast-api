@@ -93,6 +93,12 @@ GITHUB_SECRET_TOKEN = getenv("GITHUB_SECRET_TOKEN", None)
 FAILFASTCI_NAMESPACE = getenv("FAILFASTCI_NAMESPACE", "failfast-ci")
 FAILFASTCI_API = getenv("FAILFAST_CI_API", "https://jobs.failfast-ci.io")
 
+# The GitLab runner tag to require on CI jobs introduced by failfast
+FAILFASTCI_REQUIRE_RUNNER_TAG = getenv("FAILFASTCI_RUNNER_TAG", "failfast-ci")
+
+if FAILFASTCI_REQUIRE_RUNNER_TAG.lower() in ('none', ):
+    FAILFASTCI_REQUIRE_RUNNER_TAG = None
+
 BUILD_PULL_REQUEST = getenv("BUILD_PULL_REQUEST", "true")
 BUILD_PUSH = getenv("BUILD_PUSH", "false")
 
