@@ -47,7 +47,7 @@ clean-test:
 	rm -fr htmlcov/
 
 
-.virtenv/.date: requirements_dev.txt requirements_test.txt
+.virtenv/.date: requirements_dev.txt requirements_test.txt requirements.txt
 	virtualenv -p python3.6 $(shell dirname $@)
 	. $(shell dirname $@)/bin/activate && for f in $<; do pip install -r $$f; done && pip install -e .
 	touch -r $< $@
