@@ -13,7 +13,8 @@ from hub2labhook.github.client import GithubClient
 from hub2labhook.gitlab.client import GitlabClient
 from hub2labhook.exception import Unexpected, ResourceNotFound
 from hub2labhook.utils import clone_url_with_auth
-from hub2labhook.config import (GITLAB_USER, FAILFASTCI_API)
+from hub2labhook.config import (
+    GITLAB_USER, FAILFASTCI_API, FAILFASTCI_REQUIRE_RUNNER_TAG)
 
 from git import Repo
 
@@ -115,10 +116,14 @@ class Pipeline(object):
                 "echo curl -XPOST %s -d \"%s\" || true" %
                 (url, params_150.replace('"', '\\\"'))
             ],
-            "tags": ["failfast-ci"],
             "when":
                 "always"
         }
+
+        if isinstance(FAILFASTCI_REQUIRE_RUNNER_TAG, str) and \
+                bool(FAILFASTCI_REQUIRE_RUNNER_TAG):
+            job['tags'] = [FAILFASTCI_REQUIRE_RUNNER_TAG]
+
         content['stages'].append(stage_name)
         content['report-status'] = job
 
