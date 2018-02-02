@@ -80,7 +80,7 @@ class Pipeline(object):
                 return {"content": content, "file": filepath}
         if content is None:
             raise ResourceNotFound(
-                "n o .gitlab-ci.yml or .failfail-ci.jsonnet")
+                "no .gitlab-ci.yml or .failfail-ci.jsonnet")
 
     def _append_update_stage(self, content):
         stage_name = "github-status-update"
@@ -124,7 +124,12 @@ class Pipeline(object):
                 bool(FAILFASTCI_REQUIRE_RUNNER_TAG):
             job['tags'] = [FAILFASTCI_REQUIRE_RUNNER_TAG]
 
-        content['stages'].append(stage_name)
+        # adopt GitLab's default if absent
+        # https://docs.gitlab.com/ce/ci/yaml/README.html#stages
+        stages = content.get('stages', ['build', 'test', 'deploy'])
+        stages.append(stage_name)
+        content['stages'] = stages
+
         content['report-status'] = job
 
     def _append_update_build(self, content):
