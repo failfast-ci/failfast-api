@@ -125,7 +125,7 @@ class FailFastConfig(object):
                     'on-pullrequests': ['*'],
                     'on-branches': ['master'],
                     'on-labels': [
-                        '/ok-to-test'
+                        'ok-to-test'
                     ],  # list branches (regexp) to trigger builds on push events
                     'on-comments': [
                         '/retest', '/test'

@@ -87,6 +87,8 @@ release: clean
 	python setup.py sdist upload
 	python setup.py bdist_wheel upload
 
+gen-config:
+	python scripts/generate-conf-doc.py > Documentation/config/failfast-ci.yaml
 
 dist: clean
 	python setup.py sdist
@@ -138,6 +140,6 @@ gen-ci: fmt-ci
 mypy:
 	mypy hub2labhook --ignore-missing-imports
 
-check: pylint flake8 mypy yapf-test gen-ci
+check: pylint flake8 mypy yapf-test gen-ci gen-config
 
 prepare: yapf gen-ci check
