@@ -4,7 +4,7 @@ import subprocess
 
 __author__ = 'Antoine Legrand'
 __email__ = '2t.antoine@gmail.com'
-__version__ = '0.3.2'
+__version__ = '0.4.0'
 
 
 def _get_git_sha():
