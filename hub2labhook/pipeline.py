@@ -147,14 +147,17 @@ class Pipeline(object):
         variables = content.get('variables', dict())
 
         namespace = variables.get('FAILFASTCI_NAMESPACE',
-                                  self.config.gitlab.get('namespace', None))
+                                 self.config.gitlab.get('namespace', None))
+        repo = variables.get('GITLAB_REPOSITORY', None)
+        reponame = gevent.repo.replace("/", "_")
+        if repo:
+            namespace, reponame = repo.split('/')
         gitlab_endpoint = variables.get('GITLAB_URL',
                                         self.config.gitlab.get(
                                             'gitlab_url', None))
         self.gitlab = GitlabClient(gitlab_endpoint, config=self.config)
 
-        ci_project = self.gitlab.initialize_project(
-            gevent.repo.replace("/", "_"), namespace)
+        ci_project = self.gitlab.initialize_project(reponame, namespace)
 
         # @Todo(ant31) check if clone_url is required
         # clone_url = clone_url_with_auth(gevent.clone_url, "bot:%s" % self.github.token)
