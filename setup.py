@@ -48,6 +48,7 @@ setup(
     packages=[
         'hub2labhook',
         "hub2labhook.api",
+        "hub2labhook.api.handlers",
         "hub2labhook.gitlab",
         "hub2labhook.gitlab.models",
         "hub2labhook.github",

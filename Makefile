@@ -10,7 +10,7 @@ webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
 endef
 export BROWSER_PYSCRIPT
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
-VERSION := `cat VERSION`
+VERSION = `cat VERSION`
 
 help:
 	@echo "clean - remove all build, test, coverage and Python artifacts"
@@ -120,8 +120,10 @@ yapf-test: yapf-diff
 	if [ `yapf -r appr -d | wc -l` -gt 0 ] ; then false ; else true ;fi
 
 
-dockerfile: clean
-	docker build -t quay.io/failfast-ci/failfast:v$(VERSION) .
+dockerfile: clean dist
+	tar xvf dist/hub2lab-hook-${VERSION}.tar.gz -C dist
+	git rev-parse HEAD > dist/GIT_HEAD
+	docker build --build-arg version=$(VERSION) -f Dockerfile.local -t quay.io/failfast-ci/failfast:v$(VERSION) .
 
 dockerfile-canary: clean
 	docker build -t quay.io/failfast-ci/failfast:master .
