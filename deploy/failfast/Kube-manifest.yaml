@@ -1,0 +1,28 @@
+apiVersion: manifest.k8s.io/v1alpha1
+kind: Manifest
+metadata:
+  name: failfast-ci
+description: Bridge gitlab and github
+namePrefix:
+# Labels to add to all objects and selectors.
+# These labels would also be used to form the selector for apply --prune
+# Named differently than “labels” to avoid confusion with metadata for this object
+objectLabels:
+  k8s-app: failfast-ci
+objectAnnotations: {}
+resources:
+- resources/ff-api.yaml
+- resources/ff-worker.yaml
+# There could also be configmaps in Base, which would make these overlays
+configmaps:
+  - name: failfast-ci
+    files:
+      - configmaps/failfast-ci.yaml
+    type: file
+# There could be secrets in Base, if just using a fork/rebase workflow
+genericSecrets:
+  - name: failfast-ci
+    type: file
+    files:
+      - secrets/integration_pem
+recursive: true

@@ -1,0 +1,75 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: failfast-ci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: failfast-ci
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        k8s-app: failfast-ci
+    spec:
+      containers:
+      - command:
+        - gunicorn
+        - hub2labhook.api.wsgi:app
+        - -b
+        - :5000
+        - --timeout
+        - "121"
+        - -w
+        - "4"
+        - --reload
+        - -c
+        - conf/gunicorn.py
+        volumeMounts:
+          - name: failfast-config
+            mountPath: /etc/failfast-ci
+        env:
+        - name: CELERY_BACKEND
+          value: redis://failfast-redis.hooktest.svc.cluster.local:6379
+        - name: CELERY_BROKER
+          value: redis://failfast-redis.hooktest.svc.cluster.local:6379
+        - name: FFCI_CONF_FILE
+          value: /etc/failfast-ci/failfast-ci.yaml
+        - name: GITHUB_INTEGRATION_PEM
+          valueFrom:
+            secretKeyRef:
+              key: integration_pem
+              name: failfast-ci
+        image: quay.io/failfast-ci/failfast-cibuild:pr-36-failfast-configuration-8b7ba189
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /version
+            port: 5000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 30
+        name: failfast-ci
+        ports:
+        - containerPort: 5000
+          name: failfast-ci
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      volumes:
+        - name: failfast-config
+          configMap:
+            name: failfast-ci
+      imagePullSecrets:
+      - name: gitlab-registry
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}
