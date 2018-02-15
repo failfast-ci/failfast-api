@@ -151,7 +151,7 @@ class Pipeline(object):
         gitlab_endpoint = variables.get('GITLAB_URL',
                                         self.config.gitlab.get(
                                             'gitlab_url', None))
-        self.gitlab = GitlabClient(gitlab_endpoint, self.config)
+        self.gitlab = GitlabClient(gitlab_endpoint, config=self.config)
 
         ci_project = self.gitlab.initialize_project(
             gevent.repo.replace("/", "_"), namespace)

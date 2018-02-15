@@ -1,7 +1,9 @@
 from __future__ import absolute_import, unicode_literals
+import logging
 import re
 import requests
-
+import time
+from celery import signature
 from hub2labhook.github.models.event import GithubEvent
 from hub2labhook.github.client import GITHUB_STATUS_MAP, GithubClient
 from hub2labhook.gitlab.client import GitlabClient
@@ -10,6 +12,9 @@ from hub2labhook.config import FFCONFIG
 
 from hub2labhook.jobs.runner import app
 from hub2labhook.jobs.job_base import JobBase
+
+
+logger = logging.getLogger(__name__)
 
 
 def is_authorized(self, user, group=None, config=None):
@@ -88,16 +93,8 @@ def update_github_status(project, build, github_repo, sha, installation_id,
 def pipeline(self, event, headers):
     gevent = GithubEvent(event, headers)
     config = FFCONFIG
-    trigger_build = (
-        istriggered_on_branches(gevent, config) or
-        istriggered_on_pr(gevent, config) or
-        istriggered_on_comments(gevent, config) or
-        istriggered_on_labels(gevent, config))
-    if trigger_build:
-        build = Pipeline(gevent, config)
-        return build.trigger_pipeline()
-    else:
-        return None
+    build = Pipeline(gevent, config)
+    return build.trigger_pipeline()
 
 
 @app.task(bind=True, base=JobBase)
@@ -114,17 +111,16 @@ def update_build_status(self, params):
         return update_github_status(project, build, github_repo, sha,
                                     installation_id, params['context'])
     except Exception as exc:
-        self.retry(countdown=60, exc=exc)
+        raise self.retry(countdown=60, exc=exc)
 
 
 @app.task(bind=True, base=JobBase)
-def update_github_statuses_failure(self, event, headers):
+def update_github_statuses_failure(self, request, exc, traceback, event, headers):
     """ The pipeline has failed. Notify GitHub. """
     gevent = GithubEvent(event, headers)
-
     githubclient = GithubClient(gevent.installation_id)
     body = dict(
-        state=GITHUB_STATUS_MAP["cancelled"],
+        state=GITHUB_STATUS_MAP["canceled"],
         target_url=(gevent.commit_url),  # TODO: link the gitlab YAML
         description="An error occurred in initial pipeline execution",
         context="%s/%s/%s" % (FFCONFIG.github['context'], "pipeline",
@@ -132,7 +128,7 @@ def update_github_statuses_failure(self, event, headers):
     return githubclient.post_status(body, gevent.repo, gevent.head_sha)
 
 
-@app.task(bind=True, base=JobBase)
+@app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
 def update_github_statuses(self, trigger):
     descriptions = {
         "pending": "Pipeline in-progress",
@@ -156,6 +152,7 @@ def update_github_statuses(self, trigger):
         project_url = project['web_url']
         pipelines = gitlabclient.get_pipelines(int(gitlab_project_id), ref=ref)
         if not pipelines:
+            logger.info('no pipelines')
             raise self.retry(countdown=60)
         pipe = pipelines[0]
         state = GITHUB_STATUS_MAP[pipe['status']]
@@ -170,6 +167,7 @@ def update_github_statuses(self, trigger):
         resp.append(githubclient.post_status(pipeline_body, github_repo, sha))
         builds = gitlabclient.get_jobs(project['id'], pipe['id'])
         if not builds:
+            logger.info('no builds')
             raise self.retry(countdown=60)
         pdict = {'builds': {}}
         for build in builds:
@@ -184,9 +182,26 @@ def update_github_statuses(self, trigger):
                     update_github_status(project, build, github_repo, sha,
                                          installation_id, context))
         if pending:
-            raise self.retry(countdown=60)
+            logger.info('still pending: retry')
+            time.sleep(10)
+            raise self.retry(exc=None, countdown=60)
         return resp
     except requests.exceptions.RequestException as exc:
+        logger.error('Error request')
         raise self.retry(countdown=60, exc=exc)
-    except Exception as exc:
-        raise self.retry(countdown=60, exc=exc)
+
+
+def start_pipeline(event, headers):
+    gevent = GithubEvent(event, headers)
+    config = FFCONFIG
+    trigger_build = (istriggered_on_branches(gevent, config) or
+                     istriggered_on_pr(gevent, config) or
+                     istriggered_on_labels(gevent, config))
+    if trigger_build:
+        task = pipeline.s(event, headers)
+        status_sig = signature('hub2labhook.jobs.tasks.update_github_statuses', args=(), countdown=10)
+        task.link(status_sig)
+        task.link_error(update_github_statuses_failure.s(event, headers))
+        return task
+    else:
+        return None
