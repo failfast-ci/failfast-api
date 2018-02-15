@@ -44,12 +44,9 @@ def github_event():
         verify_signature(request.data, hook_signature)
 
     headers = dict(request.headers.to_list())
-    task = tasks.pipeline.s(params, headers)
+    task = tasks.start_pipeline(params, headers)
     if task is None:
         return jsonify({'ignored': True})
-
-    task.link(tasks.update_github_statuses.s())
-    task.link_error(tasks.update_github_statuses_failure.s(params, headers))
     job = task.delay()
     return jsonify({'job_id': job.id, 'params': params})
 
