@@ -1,5 +1,4 @@
 import time
-from copy import deepcopy
 import json
 import tempfile
 import os
@@ -13,8 +12,7 @@ from hub2labhook.github.client import GithubClient
 from hub2labhook.gitlab.client import GitlabClient
 from hub2labhook.exception import Unexpected, ResourceNotFound
 from hub2labhook.utils import clone_url_with_auth
-from hub2labhook.config import (
-    GITLAB_USER, FAILFASTCI_API, FAILFASTCI_REQUIRE_RUNNER_TAG)
+from hub2labhook.config import FFCONFIG
 
 from git import Repo
 
@@ -29,8 +27,11 @@ GITLAB_CI_KEYS = set([
 
 
 class Pipeline(object):
-    def __init__(self, git_event):
+    def __init__(self, git_event, config=None):
+        if config is None:
+            config = FFCONFIG
         self.ghevent = git_event
+        self.config = config
         self.github = GithubClient(
             installation_id=self.ghevent.installation_id)
 
@@ -79,12 +80,11 @@ class Pipeline(object):
                 content = f.read()
                 return {"content": content, "file": filepath}
         if content is None:
-            raise ResourceNotFound(
-                "no .gitlab-ci.yml or .failfail-ci.jsonnet")
+            raise ResourceNotFound("no .gitlab-ci.yml or .failfast-ci.jsonnet")
 
     def _append_update_stage(self, content):
         stage_name = "github-status-update"
-        url = FAILFASTCI_API + "/api/v1/github_statuses"
+        url = self.config.failfast['failfast_url'] + "/api/v1/github_statuses"
         update_status = {
             "ci_project_id": "$CI_PROJECT_ID",
             "ci_sha": "$CI_BUILD_REF",
@@ -94,10 +94,8 @@ class Pipeline(object):
             "installation_id": "$GITHUB_INSTALLATION_ID",
             "delay": 150
         }
-        update_status_30 = deepcopy(update_status)
-        update_status_30['delay'] = 30
         params_150 = json.dumps(update_status)
-        params_30 = json.dumps(update_status_30)
+
         job = {
             "image":
                 "python:2.7",
@@ -106,13 +104,9 @@ class Pipeline(object):
             "before_script": [],
             "after_script": [
                 "curl -XPOST %s -d \"%s\" || true" %
-                (url, params_30.replace('"', '\\\"')),
-                "curl -XPOST %s -d \"%s\" || true" %
                 (url, params_150.replace('"', '\\\"'))
             ],
             "script": [
-                "echo curl -XPOST %s -d \"%s\" || true" %
-                (url, params_30.replace('"', '\\\"')),
                 "echo curl -XPOST %s -d \"%s\" || true" %
                 (url, params_150.replace('"', '\\\"'))
             ],
@@ -120,9 +114,8 @@ class Pipeline(object):
                 "always"
         }
 
-        if isinstance(FAILFASTCI_REQUIRE_RUNNER_TAG, str) and \
-                bool(FAILFASTCI_REQUIRE_RUNNER_TAG):
-            job['tags'] = [FAILFASTCI_REQUIRE_RUNNER_TAG]
+        if self.config.gitlab.get('runner_tags', None) is not None:
+            job['tags'] = self.config.gitlab['runner_tags']
 
         # adopt GitLab's default if absent
         # https://docs.gitlab.com/ce/ci/yaml/README.html#stages
@@ -132,55 +125,39 @@ class Pipeline(object):
 
         content['report-status'] = job
 
-    def _append_update_build(self, content):
-        params = json.dumps({
-            "ci_project_id": "$CI_PROJECT_ID",
-            "ci_sha": "$CI_BUILD_REF",
-            "sha": "$SHA",
-            "build_id": "$CI_BUILD_ID",
-            "github_repo": "$GITHUB_REPO",
-            "installation_id": "$GITHUB_INSTALLATION_ID",
-            "delay": 45
-        })
-        url = FAILFASTCI_API + "/api/v1/github_status"
-        task = "curl -m 45 --connect-timeout 45 -XPOST %s -d \"%s\" || true" % (
-            url, params.replace('"', '\\\"'))
-        for key, job in content.items():
-            if key in GITLAB_CI_KEYS or key[0] == ".":
-                continue
-            if "after_script" not in job:
-                job['after_script'] = []
-            if task not in job:
-                if task not in job['after_script']:
-                    job['after_script'].append(task)
-
     def trigger_pipeline(self):
         gevent = self.ghevent
-        gitlab_user = GITLAB_USER
+        gitlab_user = self.config.gitlab['robot-user']
         dirpath = tempfile.mkdtemp()
         repo_path = os.path.join(dirpath, "repo")
         gitbin = self._checkout_repo(gevent, repo_path)
 
         try:
             ci_file = self._get_ci_file(repo_path)
-        except ResourceNotFound as e:
+        except ResourceNotFound:
             raise Unexpected("Could not find a CI config file in: %s" %
-                             (repo_path, ))
+                             (repo_path))
 
         try:
             content = self._parse_ci_file(ci_file['content'], ci_file['file'])
-        except YAMLComposeError as e:
+        except YAMLComposeError:
             raise Unexpected("Could not parse CI file: %s" %
                              (ci_file['file'], ))
 
         variables = content.get('variables', dict())
 
-        namespace = variables.get('FAILFASTCI_NAMESPACE', None)
-        gitlab_endpoint = variables.get('GITLAB_URL', None)
-        self.gitlab = GitlabClient(gitlab_endpoint)
+        namespace = variables.get('FAILFASTCI_NAMESPACE',
+                                  self.config.gitlab.get('namespace', None))
+        repo = variables.get('GITLAB_REPOSITORY', None)
+        reponame = gevent.repo.replace("/", "_")
+        if repo:
+            namespace, reponame = repo.split('/')
+        gitlab_endpoint = variables.get('GITLAB_URL',
+                                        self.config.gitlab.get(
+                                            'gitlab_url', None))
+        self.gitlab = GitlabClient(gitlab_endpoint, config=self.config)
 
-        ci_project = self.gitlab.initialize_project(
-            gevent.repo.replace("/", "_"), namespace)
+        ci_project = self.gitlab.initialize_project(reponame, namespace)
 
         # @Todo(ant31) check if clone_url is required
         # clone_url = clone_url_with_auth(gevent.clone_url, "bot:%s" % self.github.token)
@@ -198,8 +175,9 @@ class Pipeline(object):
                 gevent.head_sha,
             'SHA8':
                 gevent.head_sha[0:8],
-            'FAILFASTCI_STATUS_API': ('%s/api/v1/github_status' %
-                                      (FAILFASTCI_API, )),
+            'FAILFASTCI_STATUS_API': (
+                '%s/api/v1/github_status' %
+                (self.config.failfast['failfast_url'], )),
             'SOURCE_REF':
                 gevent.refname,
             'REF_NAME':
@@ -236,7 +214,8 @@ class Pipeline(object):
                 'ci_ref': gevent.target_refname,
                 'ci_project_id': ci_project['id'],
                 'installation_id': gevent.installation_id,
-                'github_repo': gevent.repo
+                'github_repo': gevent.repo,
+                'context': self.config.github['context']
             }
         else:
             self.sync_only_ci_file(gevent, content, ci_project, ci_file)

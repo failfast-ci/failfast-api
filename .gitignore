@@ -67,3 +67,4 @@ target/
 .virtenv
 .vscode/
 *.orig
+deploy/myfailfast

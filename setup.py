@@ -39,7 +39,7 @@ test_requirements = [
 
 setup(
     name='hub2lab-hook',
-    version='0.3.2',
+    version='0.4.0',
     description="hub2lab-hook",
     long_description=readme,
     author="Antoine Legrand",
@@ -48,6 +48,7 @@ setup(
     packages=[
         'hub2labhook',
         "hub2labhook.api",
+        "hub2labhook.api.handlers",
         "hub2labhook.gitlab",
         "hub2labhook.gitlab.models",
         "hub2labhook.github",

@@ -1,0 +1,83 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: failfast-ci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: failfast-ci
+  template:
+    metadata:
+      labels:
+        k8s-app: failfast-ci
+    spec:
+      containers:
+      - command:
+        - gunicorn
+        - hub2labhook.api.wsgi:app
+        - -b
+        - :5000
+        - --timeout
+        - "121"
+        - -w
+        - "4"
+        - --reload
+        - -c
+        - conf/gunicorn.py
+        volumeMounts:
+          - name: failfast-config
+            mountPath: /etc/failfast-ci
+        env:
+        - name: K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CELERY_BACKEND
+          value: redis://failfast-redis.$K8S_NAMESPACE.svc.cluster.local:6379
+        - name: CELERY_BROKER
+          value: redis://failfast-redis.$K8S_NAMESPACE.svc.cluster.local:6379
+        - name: FFCI_CONF_FILE
+          value: /etc/failfast-ci/failfast-ci.yaml
+        - name: GITHUB_INTEGRATION_PEM
+          valueFrom:
+            secretKeyRef:
+              key: integration_pem
+              name: failfast-ci
+        image: quay.io/failfast-ci/failfast:v0.4.0
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /version
+            port: 5000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 30
+        name: failfast-ci
+        ports:
+        - containerPort: 5000
+          name: failfast-ci
+          protocol: TCP
+      volumes:
+        - name: failfast-config
+          configMap:
+            name: failfast-ci
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    k8s-app: failfast-ci
+  name: failfast-ci
+spec:
+  ports:
+  - name: failfast-ci
+    port: 5000
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    k8s-app: failfast-ci
+  type: ClusterIP

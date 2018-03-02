@@ -1,0 +1,17 @@
+apiVersion: manifest.k8s.io/v1alpha1
+kind: Manifest
+metadata:
+  name: failfast-ci
+description: Bridge gitlab and github
+namePrefix: ''
+# Labels to add to all objects and selectors.
+# These labels would also be used to form the selector for apply --prune
+# Named differently than “labels” to avoid confusion with metadata for this object
+objectLabels:
+  app.kubernetes.io/name: failfast-ci
+  app.kubernetes.io/version: v0.4.0
+
+resources:
+- resources/ff-api.yaml
+- resources/ff-worker.yaml
+- resources/redis.yaml

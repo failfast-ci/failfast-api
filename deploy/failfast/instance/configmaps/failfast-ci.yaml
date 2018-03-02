@@ -1,0 +1,38 @@
+failfast:
+  authorized_groups: [COLLABORATOR, MEMBER, OWNER]
+  authorized_users: []
+  build:
+    on-branches: [master]
+    on-comments: [/retest, /test]
+    on-labels: [ok-to-test]
+    on-pullrequests: ['*']
+  debug: false
+  env: development
+  # Ingress url to the failfast api
+  failfast_url: https://$CHANGEME
+
+
+github:
+  context: failfast-ci-dev
+  integration_id: $CHANGEME
+  secret_token: null
+
+gitlab:
+  enable_container_registry: false
+  enable_issues: false
+  enable_jobs: true
+  enable_merge_requests: false
+  enable_shared_runners: false
+  enable_snippets: false
+  enable_wiki: false
+  gitlab_url: https://gitlab.com
+  # Default group on gitlab
+  namespace: $CHANGEME
+  privacy: internal
+  repo: null
+  # Gitlab robot user to add as owner
+  robot-user: $CHANGEME
+  runner_tags:
+    - failfast-ci
+  secret_token: $CHANGEME
+  timeout: 30

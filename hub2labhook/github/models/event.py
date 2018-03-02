@@ -83,6 +83,32 @@ class GithubEvent(object):
         return self.headers.get("X-GITHUB-EVENT", "push")
 
     @property
+    def comment(self):
+        if self.event_type == "issue_comment":
+            return self.event['issue']['comment']['body']
+        else:
+            self._raise_unsupported()
+        return None
+
+    @property
+    def author_association(self):
+        return self.event['issue']['comment']['author_association']
+
+    @property
+    def action(self):
+        return self.event['action']
+
+    @property
+    def label(self):
+        if self.event_type != "pull_request" and self.action != "labeled":
+            self._raise_unsupported()
+        return self.event['label']['name']
+
+    @property
+    def pull_request_url(self):
+        return self.event['issue']['pull_request']['url']
+
+    @property
     def head_sha(self):
         if self.event_type == "push":
             sha = self.event['head_commit']['id']
@@ -116,6 +142,8 @@ class GithubEvent(object):
             user = self.event['pusher']['name']
         elif self.event_type == "pull_request":
             user = self.event['pull_request']['user']['login']
+        elif self.event_type == "issue_comment":
+            user = self.event['issue']['comment']['user']['login']
         else:
             self._raise_unsupported()
         return user

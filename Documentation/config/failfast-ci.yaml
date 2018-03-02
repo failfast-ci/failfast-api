@@ -1,0 +1,29 @@
+failfast:
+  authorized_groups: [COLLABORATOR, MEMBER, OWNER]
+  authorized_users: []
+  build:
+    on-branches: [master]
+    on-comments: [/retest, /test]
+    on-labels: [ok-to-test]
+    on-pullrequests: ['*']
+  debug: false
+  env: development
+  failfast_url: https://jobs.failfast-ci.com
+github: {context: gitlab-ci, integration_id: '000', secret_token: null}
+gitlab:
+  enable_container_registry: false
+  enable_issues: false
+  enable_jobs: true
+  enable_merge_requests: false
+  enable_shared_runners: false
+  enable_snippets: false
+  enable_wiki: false
+  gitlab_url: https://gitlab.com
+  namespace: failfast-ci
+  privacy: internal
+  repo: null
+  robot-user: falifast-ci-robot
+  runner_tags: [failfast-ci]
+  secret_token: WpCFJMbxCJoBEFNDvkiM
+  timeout: 30
+

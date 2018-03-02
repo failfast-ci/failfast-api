@@ -18,7 +18,7 @@ ROADMAP.md
 env/
 build/
 develop-eggs/
-dist/
+
 downloads/
 eggs/
 .eggs/
@@ -45,3 +45,4 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+deploy/
