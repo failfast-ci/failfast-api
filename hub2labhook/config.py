@@ -87,8 +87,7 @@ if GITLAB_REPO_PRIVACY not in ("private", "internal", "public"):
     GITLAB_REPO_PRIVACY = "private"
 
 GITHUB_CONTEXT = getenv("GITHUB_CONTEXT", "gitlab-ci")
-GITHUB_INTEGRATION_ID = getenv("GITHUB_INTEGRATION_ID", "743")
-GITHUB_INSTALLATION_ID = getenv("GITHUB_INSTALLATION_ID", "3709")
+GITHUB_INTEGRATION_ID = getenv("GITHUB_INTEGRATION_ID", "000")
 GITHUB_SECRET_TOKEN = getenv("GITHUB_SECRET_TOKEN", None)
 
 FAILFASTCI_NAMESPACE = getenv("FAILFASTCI_NAMESPACE", "failfast-ci")
@@ -137,7 +136,6 @@ class FailFastConfig(object):
             },
             'github': {
                 'context': GITHUB_CONTEXT,
-                'installation_id': GITHUB_INSTALLATION_ID,
                 'secret_token': GITHUB_SECRET_TOKEN,
                 'integration_id': GITHUB_INTEGRATION_ID,
             },
