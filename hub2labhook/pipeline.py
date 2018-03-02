@@ -147,7 +147,7 @@ class Pipeline(object):
         variables = content.get('variables', dict())
 
         namespace = variables.get('FAILFASTCI_NAMESPACE',
-                                 self.config.gitlab.get('namespace', None))
+                                  self.config.gitlab.get('namespace', None))
         repo = variables.get('GITLAB_REPOSITORY', None)
         reponame = gevent.repo.replace("/", "_")
         if repo:

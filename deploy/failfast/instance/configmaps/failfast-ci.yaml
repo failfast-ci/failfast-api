@@ -4,16 +4,17 @@ failfast:
   build:
     on-branches: [master]
     on-comments: [/retest, /test]
-    on-labels: [/ok-to-test]
+    on-labels: [ok-to-test]
     on-pullrequests: ['*']
   debug: false
   env: development
-  failfast_url: https://jobs.failfast-ci.com
+  # Ingress url to the failfast api
+  failfast_url: https://$CHANGEME
 
 
 github:
   context: failfast-ci-dev
-  integration_id: '6059'
+  integration_id: $CHANGEME
   secret_token: null
 
 gitlab:
@@ -25,11 +26,13 @@ gitlab:
   enable_snippets: false
   enable_wiki: false
   gitlab_url: https://gitlab.com
-  namespace: failfast-ci
+  # Default group on gitlab
+  namespace: $CHANGEME
   privacy: internal
   repo: null
-  robot-user: falifastci-bot
+  # Gitlab robot user to add as owner
+  robot-user: $CHANGEME
   runner_tags:
     - failfast-ci
-  secret_token: replaceme
+  secret_token: $CHANGEME
   timeout: 30

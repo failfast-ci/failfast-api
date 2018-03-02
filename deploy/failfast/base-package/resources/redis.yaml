@@ -1,0 +1,48 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    k8s-app: failfast-redis
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: failfast-redis
+  template:
+    metadata:
+      labels:
+        k8s-app: failfast-redis
+    spec:
+      containers:
+      - image: redis:3
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /data
+          name: data
+      volumes:
+      - emptyDir: {}
+        name: data
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    k8s-app: failfast-redis
+  name: failfast-redis
+spec:
+  ports:
+  - name: redis
+    port: 6379
+    protocol: TCP
+    targetPort: 6379
+  selector:
+    k8s-app: failfast-redis
+  type: ClusterIP

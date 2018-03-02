@@ -4,17 +4,11 @@ metadata:
   labels:
     k8s-app: failfast-ci-worker
   name: failfast-ci-worker
-  selfLink: /apis/extensions/v1beta1/namespaces/hooktest/deployments/failfast-ci-worker
 spec:
   replicas: 1
   selector:
     matchLabels:
       k8s-app: failfast-ci-worker
-  strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 1
-    type: RollingUpdate
   template:
     metadata:
       creationTimestamp: null
@@ -33,10 +27,14 @@ spec:
           - name: failfast-config
             mountPath: /etc/failfast-ci
         env:
+        - name: K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         - name: CELERY_BACKEND
-          value: redis://failfast-redis.hooktest.svc.cluster.local:6379
+          value: redis://failfast-redis.$K8S_NAMESPACE.svc.cluster.local:6379
         - name: CELERY_BROKER
-          value: redis://failfast-redis.hooktest.svc.cluster.local:6379
+          value: redis://failfast-redis.$K8S_NAMESPACE.svc.cluster.local:6379
         - name: GITHUB_INTEGRATION_PEM
           valueFrom:
             secretKeyRef:
@@ -44,21 +42,10 @@ spec:
               name: failfast-ci
         - name: FFCI_CONF_FILE
           value: /etc/failfast-ci/failfast-ci.yaml
-        image: quay.io/failfast-ci/failfast-cibuild:pr-36-failfast-configuration-8b7ba189
+        image: quay.io/failfast-ci/failfast:v0.4.0
         imagePullPolicy: Always
         name: failfast-ci-worker
-        resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
       volumes:
         - name: failfast-config
           configMap:
             name: failfast-ci
-      dnsPolicy: ClusterFirst
-      imagePullSecrets:
-      - name: gitlab-registry
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
-      terminationGracePeriodSeconds: 30
-status: {}
