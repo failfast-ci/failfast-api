@@ -120,19 +120,22 @@ class FailFastConfig(object):
                 'debug': False,
                 'env': APP_ENVIRON,
                 'failfast_url': FAILFASTCI_API,
-                'build': {
-                    'on-pullrequests': ['*'],
-                    'on-branches': ['master'],
-                    'on-labels': [
-                        'ok-to-test'
-                    ],  # list branches (regexp) to trigger builds on push events
-                    'on-comments': [
-                        '/retest', '/test'
-                    ],  # list branches (regexp) to trigger builds on PR events
-                },
-                # https://developer.github.com/v4/reference/enum/commentauthorassociation/
-                'authorized_groups': ['COLLABORATOR', 'MEMBER', 'OWNER'],
-                'authorized_users': [],
+                'triggers': {
+                    'branches': {
+                        'trigger-on': ['master'],
+                    },
+                    'comments': {
+                        'trigger-on': ['/retest', '/test'],
+                        'groups': ['COLLABORATOR', 'MEMBER', 'OWNER'],
+                    },
+                    'labels': {
+                        'trigger-on': ['ok-to-test'],  
+                    },
+                    'pullrequests': {
+                        'trigger-on': ['*'],
+                        'groups': ['COLLABORATOR', 'MEMBER', 'OWNER'],
+                    },  
+                }, 
             },
             'github': {
                 'context': GITHUB_CONTEXT,

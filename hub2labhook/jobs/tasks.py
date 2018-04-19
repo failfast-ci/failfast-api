@@ -15,38 +15,52 @@ from hub2labhook.jobs.job_base import JobBase
 
 logger = logging.getLogger(__name__)
 
+def is_user_authorized(user, allowed_users):
+    return allowed_users == '*' or user in allowed_users
 
-def is_authorized(self, user, group=None, config=None):
+
+def is_group_authorized(group, allowed_groups):
+    return allowed_groups == '*' or group in allowed_groups
+
+
+def is_authorized(user, group, allowed_users, allowed_groups):
+    return is_user_authorized(user, allowed_users) or is_group_authorized(group, allowed_groups)
+
+
+def get_trigger_details(trigger_name, config=None):
     if config is None:
         config = FFCONFIG
-    return ((config.failfast['authorized_users'] == '*' or
-             user in config.failfast['authorized_users']) or
-            (group and (config.failfast['authorized_groups'] == '*' or
-                        group in config.failfast['authorized_groups'])))
+    on = config.failfast.get('triggers', {}).get(trigger_name, {}).get('trigger-on', [])
+    groups = config.failfast.get('triggers', {}).get(trigger_name, {}).get('groups', [])
+    users = config.failfast.get('triggers', {}).get(trigger_name, {}).get('users', [])
+    return (on, groups, users)
 
 
 def istriggered_on_comments(gevent, config=None):
     if config is None:
         config = FFCONFIG
+    comments, allowed_groups, allowed_users = get_trigger_details('comments', config=config)
     return (gevent.event_type == "issue_comment" and
-            is_authorized(gevent.user, gevent.author_association) and
-            gevent.comment in FFCONFIG.failfast.get('build', {}).get(
-                'on-comments', []))
+            is_authorized(gevent.user, gevent.author_association, allowed_users, allowed_groups) and
+            gevent.comment in comments)
 
 
 def istriggered_on_labels(gevent, config=None):
     if config is None:
         config = FFCONFIG
+    labels, allowed_groups, allowed_users = get_trigger_details('labels', config=config)
     return (gevent.event_type == "pull_request" and
-            gevent.action == "labeled" and gevent.label in config.failfast.get(
-                'build', {}).get('on-labels', []))
+            gevent.action == "labeled" and
+            is_authorized(gevent.user, gevent.author_association, allowed_users, allowed_groups) and
+            gevent.label in labels)
 
 
 def istriggered_on_branches(gevent, config=None):
     if config is None:
         config = FFCONFIG
+      
+    branches, _, _ = get_trigger_details('branches', config=config)
 
-    branches = config.failfast.get('build', {}).get('on-branches', [])
     if str.startswith(gevent.ref, "refs/tags/"):
         return "tags" in branches
 
@@ -61,10 +75,11 @@ def istriggered_on_branches(gevent, config=None):
 def istriggered_on_pr(gevent, config=None):
     if config is None:
         config = FFCONFIG
-    pr_list = FFCONFIG.failfast.get('build', {}).get('on-pullrequests', [])
+    prs, allowed_groups, allowed_users = get_trigger_details('pullrequests', config=config)
     return (gevent.event_type == "pull_request" and
             gevent.action in ['opened', 'reopened', 'synchronize'] and
-            '*' in pr_list)
+            is_authorized(gevent.user, gevent.author_association, allowed_users, allowed_groups) and 
+            '*' in prs)
 
 
 def update_github_status(project, build, github_repo, sha, installation_id,
@@ -142,7 +157,7 @@ def update_github_statuses(self, trigger):
     github_repo = trigger['github_repo']
     sha = trigger['sha']
     installation_id = trigger['installation_id']
-    context = trigger['context']
+    context = FFCONFIG.github['context']
     ref = trigger['ci_ref']
     pending = False
     gitlabclient = GitlabClient()

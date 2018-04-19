@@ -1,11 +1,15 @@
 failfast:
-  authorized_groups: [COLLABORATOR, MEMBER, OWNER]
-  authorized_users: []
-  build:
-    on-branches: [master]
-    on-comments: [/retest, /test]
-    on-labels: [ok-to-test]
-    on-pullrequests: ['*']
+  triggers:
+    branches:
+      trigger-on: [master]
+    comments:
+      trigger-on: [/retest, /test]
+      groups: [COLLABORATOR, MEMBER, OWNER] 
+    labels:
+      trigger-on: [ok-to-test]
+    pullrequests:
+      trigger-on: ['*']
+      groups: [COLLABORATOR, MEMBER, OWNER]  
   debug: false
   env: development
   failfast_url: https://jobs.failfast-ci.com

@@ -92,7 +92,13 @@ class GithubEvent(object):
 
     @property
     def author_association(self):
-        return self.event['issue']['comment']['author_association']
+        if self.event_type == "issue_comment":
+            return self.event['issue']['comment']['author_association']
+        elif self.event_type == "pull_request":
+            return self.event['pull_request']['author_associateion']
+        else:
+            self._raise_unsupported()
+        return None
 
     @property
     def action(self):
