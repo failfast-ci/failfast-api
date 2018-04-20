@@ -213,7 +213,9 @@ def start_pipeline(event, headers):
     trigger_build = (
         istriggered_on_branches(gevent, config) or
         istriggered_on_pr(gevent, config) or
-        istriggered_on_labels(gevent, config))
+        istriggered_on_labels(gevent, config) or 
+        istriggered_on_comments(gevent, config)
+    )
     if trigger_build:
         task = pipeline.s(event, headers)
         status_sig = signature('hub2labhook.jobs.tasks.update_github_statuses',

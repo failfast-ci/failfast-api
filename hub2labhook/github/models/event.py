@@ -13,6 +13,8 @@ class GithubEvent(object):
             ref = self.event['ref']
         elif self.event_type == "pull_request":
             ref = self.event['pull_request']['head']['ref']
+        elif self.event_type == "pull_request_review_comment":
+            ref = self.event['pull_request']['head']['ref']
         else:
             self._raise_unsupported()
         return ref
@@ -61,7 +63,7 @@ class GithubEvent(object):
 
     @property
     def refname(self):
-        if self.event_type not in ["push", "pull_request"]:
+        if self.event_type not in ["push", "pull_request", "pull_request_review_comment"]:
             self._raise_unsupported()
 
         if not self._refname:
@@ -74,6 +76,8 @@ class GithubEvent(object):
         if self.event_type == "push":
             return self.ref
         elif self.event_type == "pull_request":
+            return "pr-%s-%s" % (self.pr_id, self.refname)
+        elif self.event_type == "pull_request_review_comment":
             return "pr-%s-%s" % (self.pr_id, self.refname)
         else:
             self._raise_unsupported()
@@ -95,8 +99,9 @@ class GithubEvent(object):
         if self.event_type == "issue_comment":
             return self.event['issue']['comment']['author_association']
         elif self.event_type == "pull_request":
-            return self.event['pull_request']['author_associateion']
-        else:
+            return self.event['pull_request']['author_association']
+        elif self.event_type == "pull_request_review_comment":
+            return self.event['pull_request']['author_association']
             self._raise_unsupported()
         return None
 
@@ -120,6 +125,8 @@ class GithubEvent(object):
             sha = self.event['head_commit']['id']
         elif self.event_type == "pull_request":
             sha = self.event['pull_request']['head']['sha']
+        elif self.event_type == "pull_request_review_comment":
+            sha = self.event['pull_request']['head']['sha']
         else:
             self._raise_unsupported()
         return sha
@@ -131,14 +138,14 @@ class GithubEvent(object):
 
     @property
     def repo(self):
-        if self.event_type not in ["push", "pull_request"]:
+        if self.event_type not in ["push", "pull_request", "pull_request_review_comment"]:
             self._raise_unsupported()
 
         return self.event['repository']['full_name']
 
     @property
     def pr_repo(self):
-        if self.event_type not in ["pull_request"]:
+        if self.event_type not in ["pull_request", "pull_request_review_comment"]:
             self._raise_unsupported()
         return self.event['pull_request']['head']['repo']['full_name']
 
@@ -147,6 +154,8 @@ class GithubEvent(object):
         if self.event_type == "push":
             user = self.event['pusher']['name']
         elif self.event_type == "pull_request":
+            user = self.event['pull_request']['user']['login']
+        elif self.event_type == "pull_request_review_comment":
             user = self.event['pull_request']['user']['login']
         elif self.event_type == "issue_comment":
             user = self.event['issue']['comment']['user']['login']
