@@ -102,6 +102,7 @@ class GithubEvent(object):
             return self.event['pull_request']['author_association']
         elif self.event_type == "pull_request_review_comment":
             return self.event['pull_request']['author_association']
+        else:
             self._raise_unsupported()
         return None
 

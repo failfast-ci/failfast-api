@@ -26,7 +26,6 @@ requirements = [
     'celery',
     'flower',
     'mypy',
-    'jaeger-client'
 ]
 
 test_requirements = [
