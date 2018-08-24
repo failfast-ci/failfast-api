@@ -142,7 +142,7 @@ def update_github_statuses(self, trigger):
     github_repo = trigger['github_repo']
     sha = trigger['sha']
     installation_id = trigger['installation_id']
-    context = trigger['context']
+    context = FFCONFIG.github['context']
     ref = trigger['ci_ref']
     pending = False
     gitlabclient = GitlabClient()
