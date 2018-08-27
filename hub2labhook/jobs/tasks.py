@@ -265,7 +265,7 @@ def start_pipeline(event, headers):
         istriggered_on_labels(gevent, config))
     if trigger_build:
         task = pipeline.s(event, headers)
-        # status_sig = signature('hub2labhook.jobs.tasks.update_github_statuses',
+        # status_sig = signature('hub2labhook.jobs.tasks.update_github_status',
         #                        args=(), countdown=10)
         # task.link(status_sig)
         task.link_error(update_github_statuses_failure.s(event, headers))

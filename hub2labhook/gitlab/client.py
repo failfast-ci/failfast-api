@@ -48,7 +48,7 @@ class GitlabClient(object):
         return self._headers
 
     def gitlabci_lint(self, data):
-        path = self._url("ci/lint")
+        path = self._url("/ci/lint")
         resp = requests.post(path, json={'content': data},
                              headers=self.headers,
                              timeout=self.config.gitlab['timeout'])

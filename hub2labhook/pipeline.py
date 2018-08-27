@@ -3,7 +3,7 @@ import json
 import tempfile
 import os
 import uuid
-
+import logging
 import yaml
 
 from yaml.composer import ComposerError as YAMLComposeError
@@ -17,6 +17,7 @@ from hub2labhook.config import FFCONFIG
 from git import Repo
 
 # from celery.contrib import rdb;rdb.set_trace()
+logger = logging.getLogger(__name__)
 
 DEFAULT_MODE = "sync"
 
@@ -143,9 +144,12 @@ class Pipeline(object):
         except YAMLComposeError:
             raise Unexpected("Could not parse CI file: %s" % (ci_file['file']),
                              {})
-        lint_resp = GitlabClient().gitlabci_lint(content)
+
+        lint_resp = GitlabClient().gitlabci_lint(ci_file['content'])
+        logger.error(lint_resp)
+        logger.error(content)
         if 'status' not in lint_resp or lint_resp['status'] != 'valid':
-            raise Unexpected(".gitlab-ci.yml lint errors", {})
+            raise Unexpected(".gitlab-ci.yml syntax error", {})
 
         variables = content.get('variables', dict())
 
