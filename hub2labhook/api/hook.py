@@ -55,7 +55,27 @@ def github_event():
                  strict_slashes=False)
 def gitlab_event():
     params = getvalues()
-    return jsonify({'params': params})
+    headers = dict(request.headers.to_list())
+    event = headers.get("X-Gitlab-Event", None)
+
+    if event == "Pipeline Hook":
+        task = tasks.update_pipeline_hook
+    elif event == "Job Hook":
+        pass
+    else:
+        return jsonify({'ignored': True, 'event': event})
+    job = task.delay(params)
+    return jsonify({'job_id': job.id, 'params': params})
+
+
+@ffapi_app.route("/api/v1/resync/<int:gitlab_project_id>/<int:pipeline_id>",
+                 methods=['POST', 'GET'], strict_slashes=False)
+def resync(gitlab_project_id, pipeline_id):
+    task = tasks.update_pipeline_status.apply_async(
+        (gitlab_project_id, pipeline_id), )
+    resp = task.get()
+    # redirect(resp., code=302)
+    return jsonify(resp)
 
 
 @ffapi_app.route("/api/v1/github_status", methods=['POST'],

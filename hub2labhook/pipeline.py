@@ -3,7 +3,7 @@ import json
 import tempfile
 import os
 import uuid
-
+import logging
 import yaml
 
 from yaml.composer import ComposerError as YAMLComposeError
@@ -17,6 +17,7 @@ from hub2labhook.config import FFCONFIG
 from git import Repo
 
 # from celery.contrib import rdb;rdb.set_trace()
+logger = logging.getLogger(__name__)
 
 DEFAULT_MODE = "sync"
 
@@ -141,8 +142,14 @@ class Pipeline(object):
         try:
             content = self._parse_ci_file(ci_file['content'], ci_file['file'])
         except YAMLComposeError:
-            raise Unexpected("Could not parse CI file: %s" %
-                             (ci_file['file'], ))
+            raise Unexpected("Could not parse CI file: %s" % (ci_file['file']),
+                             {})
+
+        lint_resp = GitlabClient().gitlabci_lint(ci_file['content'])
+        logger.error(lint_resp)
+        logger.error(content)
+        if 'status' not in lint_resp or lint_resp['status'] != 'valid':
+            raise Unexpected(".gitlab-ci.yml syntax error", {})
 
         variables = content.get('variables', dict())
 
@@ -192,19 +199,15 @@ class Pipeline(object):
 
         content['variables'] = variables
 
-        self._append_update_stage(content)
-
+        self.gitlab.set_variables(
+            ci_project['id'], {
+                'GITHUB_INSTALLATION_ID': str(gevent.installation_id),
+                'GITHUB_REPO': gevent.repo
+            })
         perform_sync = variables.get("FAILFAST_SYNC_REPO", "false")
 
         if ((perform_sync == "true") or (DEFAULT_MODE == "sync")):
-            # Full synchronize the repo
-            path = os.path.join(repo_path, ".gitlab-ci.yml")
-            with open(path, 'w') as gitlabcifile:
-                gitlabcifile.write(
-                    yaml.safe_dump(content, default_style='"',
-                                   width=float("inf")))
-            gitbin.commit("-a", "-m", "build %s \n\n @ %s" %
-                          (gevent.head_sha, gevent.commit_url))
+            # Full synchronize the repo)
             gitbin.push("target", 'HEAD:%s' % gevent.target_refname, "-f")
             ci_sha = str(gitbin.rev_parse('HEAD'))
             return {  # NOTE: the GitHub reference details for subsequent tasks.

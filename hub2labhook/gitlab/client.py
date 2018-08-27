@@ -47,6 +47,13 @@ class GitlabClient(object):
             }
         return self._headers
 
+    def gitlabci_lint(self, data):
+        path = self._url("/ci/lint")
+        resp = requests.post(path, json={'content': data},
+                             headers=self.headers,
+                             timeout=self.config.gitlab['timeout'])
+        return resp.json()
+
     def get_project(self, project_id):
         """ Returns the gitlab project dict
             link: https://docs.gitlab.com/ce/api/projects.html#get-single-project
@@ -68,19 +75,38 @@ class GitlabClient(object):
         project = self.get_project(project_path)
         return project['id']
 
+    def get_variables(self, project_id):
+        path = self._url(
+            "/projects/%s/variables" % self.get_project_id(project_id))
+        resp = requests.get(path, headers=self.headers,
+                            timeout=self.config.gitlab['timeout'])
+        resp.raise_for_status()
+        return resp.json()
+
+    def get_variable(self, project_id, key):
+        path = self._url("/projects/%s/variables/%s" %
+                         (self.get_project_id(project_id), key))
+        resp = requests.get(path, headers=self.headers,
+                            timeout=self.config.gitlab['timeout'])
+        resp.raise_for_status()
+        return resp.json()
+
     def set_variables(self, project_id, variables):
         """ Create or update(if exists) pipeline variables """
         path = self._url(
             "/projects/%s/variables" % self.get_project_id(project_id))
-        for key, value in variables.iteritems():
+        for key, value in variables.items():
             key_path = path + "/%s" % key
-            resp = requests.get(key_path)
+            resp = requests.get(key_path, headers=self.headers)
             action = "post"
             if resp.status_code == 200:
                 if resp.json()['value'] == value:
                     continue
                 action = "put"
+                path = key_path
+
             body = {"key": key, "value": value}
+
             resp = getattr(requests, action)(path, data=json.dumps(body),
                                              headers=self.headers)
             resp.raise_for_status()
