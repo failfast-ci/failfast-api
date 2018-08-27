@@ -80,7 +80,7 @@ pylint:
   - kubernetes
   variables:
     GIT_STRATEGY: none
-stages
+stages:
 - build_image
 - tests
 - docker_release
