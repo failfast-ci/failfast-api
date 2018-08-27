@@ -88,15 +88,18 @@ class GitlabClient(object):
         """ Create or update(if exists) pipeline variables """
         path = self._url(
             "/projects/%s/variables" % self.get_project_id(project_id))
-        for key, value in variables.iteritems():
+        for key, value in variables.items():
             key_path = path + "/%s" % key
-            resp = requests.get(key_path)
+            resp = requests.get(key_path, headers=self.headers)
             action = "post"
             if resp.status_code == 200:
                 if resp.json()['value'] == value:
                     continue
                 action = "put"
+                path = key_path
+
             body = {"key": key, "value": value}
+
             resp = getattr(requests, action)(path, data=json.dumps(body),
                                              headers=self.headers)
             resp.raise_for_status()
