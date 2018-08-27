@@ -123,8 +123,7 @@ def update_github_statuses_failure(self, request, exc, traceback, event,
         state=GITHUB_STATUS_MAP["canceled"],
         target_url=(gevent.commit_url),  # TODO: link the gitlab YAML
         description="An error occurred in initial pipeline execution",
-        context="%s/%s/%s" % (FFCONFIG.github['context'], "pipeline",
-                              "initalize"))
+        context="%s/%s" % (FFCONFIG.github['context'], "pipeline"))
     return githubclient.post_status(body, gevent.repo, gevent.head_sha)
 
 

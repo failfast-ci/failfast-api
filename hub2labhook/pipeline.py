@@ -141,11 +141,11 @@ class Pipeline(object):
         try:
             content = self._parse_ci_file(ci_file['content'], ci_file['file'])
         except YAMLComposeError:
-            raise Unexpected("Could not parse CI file: %s" %
-                             (ci_file['file'], ))
+            raise Unexpected("Could not parse CI file: %s" % (ci_file['file']),
+                             {})
         lint_resp = GitlabClient().gitlabci_lint(content)
         if 'status' not in lint_resp or lint_resp['status'] != 'valid':
-            raise Unexpected(".gitlab-ci.yml lint errors")
+            raise Unexpected(".gitlab-ci.yml lint errors", {})
 
         variables = content.get('variables', dict())
 
