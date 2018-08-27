@@ -68,6 +68,22 @@ class GitlabClient(object):
         project = self.get_project(project_path)
         return project['id']
 
+    def get_variables(self, project_id):
+        path = self._url(
+            "/projects/%s/variables" % self.get_project_id(project_id))
+        resp = requests.get(path, headers=self.headers,
+                            timeout=self.config.gitlab['timeout'])
+        resp.raise_for_status()
+        return resp.json()
+
+    def get_variable(self, project_id, key):
+        path = self._url("/projects/%s/variables/%s" %
+                         (self.get_project_id(project_id), key))
+        resp = requests.get(path, headers=self.headers,
+                            timeout=self.config.gitlab['timeout'])
+        resp.raise_for_status()
+        return resp.json()
+
     def set_variables(self, project_id, variables):
         """ Create or update(if exists) pipeline variables """
         path = self._url(

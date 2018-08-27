@@ -192,19 +192,15 @@ class Pipeline(object):
 
         content['variables'] = variables
 
-        self._append_update_stage(content)
-
+        self.gitlab.set_variables(
+            ci_project['id'], {
+                'GITHUB_INSTALLATION_ID': str(gevent.installation_id),
+                'GITHUB_REPO': gevent.repo
+            })
         perform_sync = variables.get("FAILFAST_SYNC_REPO", "false")
 
         if ((perform_sync == "true") or (DEFAULT_MODE == "sync")):
-            # Full synchronize the repo
-            path = os.path.join(repo_path, ".gitlab-ci.yml")
-            with open(path, 'w') as gitlabcifile:
-                gitlabcifile.write(
-                    yaml.safe_dump(content, default_style='"',
-                                   width=float("inf")))
-            gitbin.commit("-a", "-m", "build %s \n\n @ %s" %
-                          (gevent.head_sha, gevent.commit_url))
+            # Full synchronize the repo)
             gitbin.push("target", 'HEAD:%s' % gevent.target_refname, "-f")
             ci_sha = str(gitbin.rev_parse('HEAD'))
             return {  # NOTE: the GitHub reference details for subsequent tasks.
