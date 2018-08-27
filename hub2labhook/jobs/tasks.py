@@ -269,7 +269,7 @@ def start_pipeline(event, headers):
         # status_sig = signature('hub2labhook.jobs.tasks.update_github_statuses',
         #                        args=(), countdown=10)
         # task.link(status_sig)
-        # task.link_error(update_github_statuses_failure.s(event, headers))
+        task.link_error(update_github_statuses_failure.s(event, headers))
         return task
     else:
         return None

@@ -47,6 +47,13 @@ class GitlabClient(object):
             }
         return self._headers
 
+    def gitlabci_lint(self, data):
+        path = self._url("ci/lint")
+        resp = requests.post(path, json={'content': data},
+                             headers=self.headers,
+                             timeout=self.config.gitlab['timeout'])
+        return resp.json()
+
     def get_project(self, project_id):
         """ Returns the gitlab project dict
             link: https://docs.gitlab.com/ce/api/projects.html#get-single-project

@@ -1,6 +1,6 @@
 import hmac
 import hashlib
-from flask import jsonify, request, Blueprint, redirect
+from flask import jsonify, request, Blueprint
 from hub2labhook.api.app import getvalues
 from hub2labhook.exception import (InvalidUsage, Forbidden, Unsupported)
 import hub2labhook.jobs.tasks as tasks
