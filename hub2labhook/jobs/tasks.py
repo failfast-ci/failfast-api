@@ -3,7 +3,7 @@ import logging
 import re
 import requests
 import time
-
+from datetime import datetime
 from hub2labhook.github.models.event import GithubEvent
 from hub2labhook.github.client import GITHUB_STATUS_MAP, GITHUB_CHECK_MAP, GithubClient
 from hub2labhook.gitlab.client import GitlabClient
@@ -92,53 +92,69 @@ def update_github_status(project, build, github_repo, sha, installation_id,
 def update_github_check(event):
     gitlabclient = GitlabClient()
     logger.info(event)
-    build = event['object_attributes']
-    project = event['project']
-
+    build = event
     gitlabclient = GitlabClient()
     installation_id = gitlabclient.get_variable(
-        project['id'], 'GITHUB_INSTALLATION_ID')['value']
-    github_repo = gitlabclient.get_variable(project['id'],
+        build['project_id'], 'GITHUB_INSTALLATION_ID')['value']
+    github_repo = gitlabclient.get_variable(build['project_id'],
                                             'GITHUB_REPO')['value']
 
     githubclient = GithubClient(installation_id=installation_id)
 
-    conclusion = ""
-    if build['started_at'] == "":
+    extra = {'conclusion': None, 'started_at': None, 'completed_at': None}
+    if not build['build_started_at']:
         status = "queued"
-    elif build['finished_at'] == "":
+    elif not build['build_finished_at']:
         status = "in_progress"
+        extra['started_at'] = datetime.strptime(
+            build['build_started_at'],
+            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
+
     else:
         status = "completed"
-        conclusion = GITHUB_CHECK_MAP[build['status']]
+        extra['conclusion'] = GITHUB_CHECK_MAP[build['build_status']]
+        extra['started_at'] = datetime.strptime(
+            build['build_started_at'],
+            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
+        extra['completed_at'] = datetime.strptime(
+            build['build_finished_at'],
+            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
 
     check = {
         "name":
-            build['name'],
+            build['build_name'],
         "head_sha":
             build['sha'],
         "status":
             status,
-        "conclusion":
-            conclusion,
         "external_id":
-            build['id'],
-        "started_at":
-            build['started_at'],
-        "completed_at":
-            build['finished_at'],
+            str(build['build_id']),
+        "details_url":
+            build['repository']['homepage'] + "/builds/%s" % build['build_id'],
         "output": {
-            "title": "%s - %s" % (build['stage'], build['name']),
-            "summary": "'%s' - %s" % (build['name'], status),
-            "text": "%s - %s" % (build['stage'], build['name'])
+            "title":
+                "failfast-ci/%s - %s" % (build['build_stage'],
+                                         build['build_name']),
+            "summary":
+                "failfast-ci/'%s' - %s" % (build['build_name'], status),
+            "text":
+                " - stage: %s\n - job: %s" %
+                (build['build_stage'], build['build_name']) +
+                "\n\n ##Trace available: %s" % build['repository']['homepage']
+                + "/builds/%s" % build['build_id']
         },
         "actions": [{
-            "label": "retry",
-            "identifier": "retry_job",
-            "description": "Re-run the job"
+            "label": "Skip test",
+            "identifier": "skip",
+            "description": "Mark the task as success"
         }]
     }
 
+    for k, v in extra.items():
+        if v is not None:
+            check[k] = v
+
+    logger.info(check)
     return githubclient.create_check(github_repo, check)
 
 
