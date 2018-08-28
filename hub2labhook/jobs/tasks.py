@@ -3,7 +3,7 @@ import logging
 import re
 import requests
 import time
-from celery import signature
+
 from hub2labhook.github.models.event import GithubEvent
 from hub2labhook.github.client import GITHUB_STATUS_MAP, GithubClient
 from hub2labhook.gitlab.client import GitlabClient

@@ -9,7 +9,7 @@ failfast:
   debug: false
   env: development
   failfast_url: https://jobs.failfast-ci.com
-github: {context: gitlab-ci, integration_id: '000', secret_token: null}
+github: {context: gitlab-ci, integration_id: '6059', secret_token: null}
 gitlab:
   enable_container_registry: false
   enable_issues: false

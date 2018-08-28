@@ -117,7 +117,7 @@ yapf-diff:
 	yapf -r hub2labhook -d
 
 yapf-test: yapf-diff
-	if [ `yapf -r appr -d | wc -l` -gt 0 ] ; then false ; else true ;fi
+	if [ `yapf -r hub2labhook -d | wc -l` -gt 0 ] ; then false ; else true ;fi
 
 
 dockerfile: clean dist
