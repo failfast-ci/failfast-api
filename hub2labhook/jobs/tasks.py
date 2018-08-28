@@ -81,7 +81,7 @@ def update_github_status(project, build, github_repo, sha, installation_id,
     state = GITHUB_STATUS_MAP[build['status']]
     build_body = {
         "state": state,
-        "target_url": (project_url + "/builds/%s") % build['id'],
+        "target_url": project_url + "/builds/%s" % build['id'],
         "description": descriptions[GITHUB_STATUS_MAP[build['status']]],
         "context": "%s/%s/%s" % (context, build['stage'], build['name'])
     }
