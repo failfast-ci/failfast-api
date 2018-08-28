@@ -5,7 +5,7 @@ import requests
 import time
 
 from hub2labhook.github.models.event import GithubEvent
-from hub2labhook.github.client import GITHUB_STATUS_MAP, GithubClient
+from hub2labhook.github.client import GITHUB_STATUS_MAP, GITHUB_CHECK_MAP, GithubClient
 from hub2labhook.gitlab.client import GitlabClient
 from hub2labhook.pipeline import Pipeline
 from hub2labhook.config import FFCONFIG
@@ -86,6 +86,60 @@ def update_github_status(project, build, github_repo, sha, installation_id,
         "context": "%s/%s/%s" % (context, build['stage'], build['name'])
     }
     return githubclient.post_status(build_body, github_repo, sha)
+
+
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def update_github_check(event):
+    gitlabclient = GitlabClient()
+    logger.info(event)
+    build = event['object_attributes']
+    project = event['project']
+
+    gitlabclient = GitlabClient()
+    installation_id = gitlabclient.get_variable(
+        project['id'], 'GITHUB_INSTALLATION_ID')['value']
+    github_repo = gitlabclient.get_variable(project['id'],
+                                            'GITHUB_REPO')['value']
+
+    githubclient = GithubClient(installation_id=installation_id)
+
+    conclusion = ""
+    if build['started_at'] == "":
+        status = "queued"
+    elif build['finished_at'] == "":
+        status = "in_progress"
+    else:
+        status = "completed"
+        conclusion = GITHUB_CHECK_MAP[build['status']]
+
+    check = {
+        "name":
+            build['name'],
+        "head_sha":
+            build['sha'],
+        "status":
+            status,
+        "conclusion":
+            conclusion,
+        "external_id":
+            build['id'],
+        "started_at":
+            build['started_at'],
+        "completed_at":
+            build['finished_at'],
+        "output": {
+            "title": "%s - %s" % (build['stage'], build['name']),
+            "summary": "'%s' - %s" % (build['name'], status),
+            "text": "%s - %s" % (build['stage'], build['name'])
+        },
+        "actions": [{
+            "label": "retry",
+            "identifier": "retry_job",
+            "description": "Re-run the job"
+        }]
+    }
+
+    return githubclient.create_check(github_repo, check)
 
 
 @app.task(bind=True, base=JobBase)

@@ -22,7 +22,21 @@ GITHUB_STATUS_MAP = {
     "canceled": "error",
     "pending": "pending",
     "created": "pending",
-    "running": "pending"
+    "running": "pending",
+    "warning": "success"
+}
+# success, failure, neutral, cancelled, timed_out, or action_required. When the conclusion is action_required
+GITHUB_CHECK_MAP = {
+    "failed": "failure",
+    "success": "success",
+    "skipped": "success",
+    "unknown": "failure",
+    'manual': 'action_required',
+    "canceled": "cancelled",
+    "pending": "queued",
+    "created": "queued",
+    "running": "in_progress",
+    "warning": "neutral"
 }
 
 
@@ -124,71 +138,10 @@ class GithubClient(object):
         resp.raise_for_status()
         return resp.json()
 
-    def create_check(self, github_repo, sha):
-        check = {
-            "name": "mighty_readme",
-            "head_sha": sha,
-            "status": "in_progress",
-            "external_id": "42",
-            "started_at": "2018-05-04T01:14:52Z",
-            "output": {
-                "title": "Mighty Readme report",
-                "summary": "foo",
-                "text": "bright"
-            }
-        }
-        check2 = {
-            "conclusion":
-                "neutral",
-            "name":
-                "Check2",
-            "head_sha":
-                sha,
-            "status":
-                "completed",
-            "started_at":
-                "2017-11-30T19:39:10Z",
-            "completed_at":
-                "2017-11-30T19:49:10Z",
-            "output": {
-                "title":
-                    "Mighty Readme report",
-                "summary":
-                    "There are 0 failures, 2 warnings, and 1 notices.",
-                "text":
-                    "You may have some misspelled words on lines 2 and 4. You also may want to add a section in your README about how to install your app.",
-                "annotations": [{
-                    "path": "README.md",
-                    "annotation_level": "warning",
-                    "title": "Spell Checker",
-                    "message": "Check your spelling for 'banaas'.",
-                    "raw_details": "Do you mean 'bananas' or 'banana'?",
-                    "start_line": 2,
-                    "end_line": 2
-                }, {
-                    "path": "README.md",
-                    "annotation_level": "warning",
-                    "title": "Spell Checker",
-                    "message": "Check your spelling for 'aples'",
-                    "raw_details": "Do you mean 'apples' or 'Naples'",
-                    "start_line": 2,
-                    "end_line": 2
-                }],
-                "images": [{
-                    "alt": "Super bananas",
-                    "image_url": "http://example.com/images/42"
-                }]
-            },
-            "actions": [{
-                "label": "Fix",
-                "identifier": "fix_errors",
-                "description": "Allow us to fix these errors for you"
-            }]
-        }
+    def create_check(self, github_repo, check_body):
         path = self._url("/repos/%s/check-runs" % github_repo)
-        print(check)
         resp = requests.post(
-            path, data=json.dumps(check2), headers=self.headers({
+            path, data=json.dumps(check_body), headers=self.headers({
                 'Accept': 'application/vnd.github.antiope-preview+json'
             }))
 
