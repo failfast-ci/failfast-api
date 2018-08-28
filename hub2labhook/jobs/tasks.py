@@ -3,7 +3,7 @@ import logging
 import re
 import requests
 import time
-from celery import signature
+
 from hub2labhook.github.models.event import GithubEvent
 from hub2labhook.github.client import GITHUB_STATUS_MAP, GithubClient
 from hub2labhook.gitlab.client import GitlabClient
@@ -81,7 +81,7 @@ def update_github_status(project, build, github_repo, sha, installation_id,
     state = GITHUB_STATUS_MAP[build['status']]
     build_body = {
         "state": state,
-        "target_url": (project_url + "/builds/%s") % build['id'],
+        "target_url": project_url + "/builds/%s" % build['id'],
         "description": descriptions[GITHUB_STATUS_MAP[build['status']]],
         "context": "%s/%s/%s" % (context, build['stage'], build['name'])
     }
