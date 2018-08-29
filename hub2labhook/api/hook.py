@@ -51,7 +51,7 @@ def github_event():
         job = tasks.request_action(
             gevent.event['requested_action']['identifier'], params).delay()
     elif gevent.event_type == "check_suite" and gevent.action == "rerequested":
-        job = tasks.retry_pipeline.delay(gevent.external_id)
+        job = tasks.retry_pipeline.delay()
     elif gevent.event_type in ["push", "pull_request"]:
         job = tasks.start_pipeline(params, headers).delay()
     else:

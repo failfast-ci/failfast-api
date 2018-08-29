@@ -1,5 +1,9 @@
 import json
+import logging
 from hub2labhook.exception import Unsupported
+
+
+logger = logging.getLogger(__name__)
 
 
 class GithubEvent(object):
@@ -10,8 +14,9 @@ class GithubEvent(object):
 
     @property
     def external_id(self):
-        if self.event_type in ["check_run", "check_suite"]:
-            return json.loads(self.event['external_id'])
+        if self.event_type in ["check_run"]:
+            logger.info(self.event['check_run']['external_id'])
+            return json.loads(self.event['chech_run']['external_id'])
         else:
             self._raise_unsupported()
 

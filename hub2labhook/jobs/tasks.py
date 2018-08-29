@@ -68,6 +68,19 @@ def istriggered_on_pr(gevent, config=None):
             '*' in pr_list)
 
 
+def _task_actions():
+    return ([{
+                "label": "retry",
+                "identifier": "retry",
+                "description": "Retries the job"
+            },
+            {
+            "label": "Ignore test",
+            "identifier": "skip",
+            "description": "Marks the job as neutral"
+        }])
+
+
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
 def update_github_check(event):
     gitlabclient = GitlabClient()
@@ -107,7 +120,7 @@ def update_github_check(event):
             status,
         "external_id":
             json.dumps({
-                'project': build['project']['id'],
+                'project': build['project_id'],
                 'build': build['build_id']
             }),
         "details_url":
@@ -122,11 +135,7 @@ def update_github_check(event):
                 "\n\n ## Trace available: %s" % build['repository']['homepage']
                 + "/builds/%s" % build['build_id']
         },  # noqa
-        "actions": [{
-            "label": "Skip test",
-            "identifier": "skip",
-            "description": "Mark the task as success"
-        }]
+        "actions": _task_actions()
     }
 
     for k, v in extra.items():
@@ -252,8 +261,13 @@ def retry_build(self, external_id):
 def skip_check(self, event):
     try:
         check = {
-            'status': 'completed',
-            'conclusion': 'cancelled',
+            'status':
+                'completed',
+            'conclusion':
+                'neutral',
+            'completed_at':
+                datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "actions": _task_actions()
         }
 
         githubclient = GithubClient(
@@ -268,6 +282,8 @@ def skip_check(self, event):
 def request_action(action, event):
     if action == "skip":
         return skip_check.s(event)
+    if action == "retry":
+        return retry_build.s(json.loads(event['check_run']['external_id']))
 
 
 @app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
