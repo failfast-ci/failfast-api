@@ -148,5 +148,4 @@ class GithubClient(object):
         return resp.json()
 
     def check_run(self, github_repo, sha):
-        path = self._url("/repos/:%s/check-runs" % github_repo)
-        return path
+        return self._url("/repos/:%s/check-runs" % github_repo)

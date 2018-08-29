@@ -79,6 +79,17 @@ local jobs = {
       "make test",
     ],
   },
+
+  'unit-tests-manual': baseJobs.job {
+    before_script+: [
+      "pip install -r requirements_test.txt",
+    ],
+    stage: stages.tests,
+    when: "manual",
+    script: [
+      "make test",
+    ],
+  },
 };
 
 
