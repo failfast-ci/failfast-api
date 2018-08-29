@@ -16,7 +16,7 @@ class GithubEvent(object):
     def external_id(self):
         if self.event_type in ["check_run"]:
             logger.info(self.event['check_run']['external_id'])
-            return json.loads(self.event['chech_run']['external_id'])
+            return json.loads(self.event['check_run']['external_id'])
         else:
             self._raise_unsupported()
 
