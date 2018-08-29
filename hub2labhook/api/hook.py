@@ -4,7 +4,7 @@ from flask import jsonify, request, Blueprint
 from hub2labhook.api.app import getvalues
 from hub2labhook.exception import (InvalidUsage, Forbidden, Unsupported)
 import hub2labhook.jobs.tasks as tasks
-
+from hub2labhook.github.models.event import GithubEvent
 from hub2labhook.config import FFCONFIG
 
 ffapi_app = Blueprint(
@@ -44,10 +44,19 @@ def github_event():
         verify_signature(request.data, hook_signature)
 
     headers = dict(request.headers.to_list())
-    task = tasks.start_pipeline(params, headers)
-    if task is None:
-        return jsonify({'ignored': True})
-    job = task.delay()
+    gevent = GithubEvent(params, headers)
+    if gevent.event_type == "check_run" and gevent.action == "rerequested":
+        job = tasks.retry_build.delay(gevent.external_id)
+    elif gevent.event_type == "check_run" and gevent.action == "requested_action":
+        job = tasks.request_action(
+            gevent.event['requested_action']['identifier'], params).delay()
+    elif gevent.event_type == "check_suite" and gevent.action == "rerequested":
+        job = tasks.retry_pipeline.delay(gevent.external_id)
+    elif gevent.event_type in ["push", "pull_request"]:
+        job = tasks.start_pipeline(params, headers).delay()
+    else:
+        return jsonify({'ignored': True, 'event': params, 'headers': headers})
+
     return jsonify({'job_id': job.id, 'params': params})
 
 

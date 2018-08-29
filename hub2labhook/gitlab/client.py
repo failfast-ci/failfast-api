@@ -266,6 +266,21 @@ class GitlabClient(object):
 
         return project
 
+    def retry_build(self, gitlab_project_id, build_id):
+        path = self._url("/projects/%s/jobs/%s/retry" % (gitlab_project_id,
+                                                         build_id))
+        resp = requests.post(path, headers=self.headers,
+                             timeout=self.config.gitlab['timeout'])
+        resp.raise_for_status()
+        return resp.json()
+
+    def retry_pipeline(self, gitlab_project_id, sha):
+        path = self._url("/projects/%s/pipeline" % gitlab_project_id)
+        resp = requests.post(path, params={'ref': sha}, headers=self.headers,
+                             timeout=self.config.gitlab['timeout'])
+        resp.raise_for_status()
+        return resp.json()
+
     # TODO(ant31): dead-code
     def trigger_build(self, gitlab_project, variables=None, trigger_token=None,
                       branch="master"):

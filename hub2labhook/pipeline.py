@@ -1,5 +1,4 @@
 import time
-import json
 import tempfile
 import os
 import uuid
@@ -82,49 +81,6 @@ class Pipeline(object):
                 return {"content": content, "file": filepath}
         if content is None:
             raise ResourceNotFound("no .gitlab-ci.yml or .failfast-ci.jsonnet")
-
-    def _append_update_stage(self, content):
-        stage_name = "github-status-update"
-        url = self.config.failfast['failfast_url'] + "/api/v1/github_statuses"
-        update_status = {
-            "ci_project_id": "$CI_PROJECT_ID",
-            "ci_sha": "$CI_BUILD_REF",
-            "sha": "$SHA",
-            "ci_ref": "$CI_COMMIT_REF_NAME",
-            "github_repo": "$GITHUB_REPO",
-            "installation_id": "$GITHUB_INSTALLATION_ID",
-            "delay": 150
-        }
-        params_150 = json.dumps(update_status)
-
-        job = {
-            "image":
-                "python:2.7",
-            "stage":
-                stage_name,
-            "before_script": [],
-            "after_script": [
-                "curl -XPOST %s -d \"%s\" || true" %
-                (url, params_150.replace('"', '\\\"'))
-            ],
-            "script": [
-                "echo curl -XPOST %s -d \"%s\" || true" %
-                (url, params_150.replace('"', '\\\"'))
-            ],
-            "when":
-                "always"
-        }
-
-        if self.config.gitlab.get('runner_tags', None) is not None:
-            job['tags'] = self.config.gitlab['runner_tags']
-
-        # adopt GitLab's default if absent
-        # https://docs.gitlab.com/ce/ci/yaml/README.html#stages
-        stages = content.get('stages', ['build', 'test', 'deploy'])
-        stages.append(stage_name)
-        content['stages'] = stages
-
-        content['report-status'] = job
 
     def trigger_pipeline(self):
         gevent = self.ghevent

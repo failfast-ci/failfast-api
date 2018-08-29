@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import logging
 import re
+import json
 from datetime import datetime
 
 import requests
@@ -72,12 +73,11 @@ def update_github_check(event):
     gitlabclient = GitlabClient()
     logger.info(event)
     build = event
-    gitlabclient = GitlabClient()
+
     installation_id = gitlabclient.get_variable(
         build['project_id'], 'GITHUB_INSTALLATION_ID')['value']
     github_repo = gitlabclient.get_variable(build['project_id'],
                                             'GITHUB_REPO')['value']
-
     githubclient = GithubClient(installation_id=installation_id)
 
     extra = {'conclusion': None, 'started_at': None, 'completed_at': None}
@@ -106,7 +106,10 @@ def update_github_check(event):
         "status":
             status,
         "external_id":
-            str(build['build_id']),
+            json.dumps({
+                'project': build['project']['id'],
+                'build': build['build_id']
+            }),
         "details_url":
             build['repository']['homepage'] + "/builds/%s" % build['build_id'],
         "output": {
@@ -229,6 +232,48 @@ def update_pipeline_hook(self, event):
     except requests.exceptions.RequestException as exc:
         logger.error('Error request')
         raise self.retry(countdown=60, exc=exc)
+
+
+@app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
+          retry_backoff=True)
+def retry_build(self, external_id):
+    project_id = external_id['project']
+    build_id = external_id['build']
+    gitlabclient = GitlabClient()
+    try:
+        return gitlabclient.retry_build(project_id, build_id)
+    except requests.exceptions.RequestException as exc:
+        logger.error('Error request')
+        raise self.retry(countdown=60, exc=exc)
+
+
+@app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
+          retry_backoff=True)
+def skip_check(self, event):
+    try:
+        check = {
+            'status': 'completed',
+            'conclusion': 'cancelled',
+        }
+
+        githubclient = GithubClient(
+            installation_id=event['installation']['id'])
+        return githubclient.update_check_run(event['repository']['full_name'],
+                                             check, event['check_run']['id'])
+    except requests.exceptions.RequestException as exc:
+        logger.error('Error request')
+        raise self.retry(countdown=60, exc=exc)
+
+
+def request_action(action, event):
+    if action == "skip":
+        return skip_check.s(event)
+
+
+@app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
+          retry_backoff=True)
+def retry_pipeline(self, external_id):
+    pass
 
 
 def start_pipeline(event, headers):

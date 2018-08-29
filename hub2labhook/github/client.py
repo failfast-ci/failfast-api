@@ -144,6 +144,14 @@ class GithubClient(object):
             path, data=json.dumps(check_body), headers=self.headers({
                 'Accept': 'application/vnd.github.antiope-preview+json'
             }))
+        return resp.json()
+
+    def update_check_run(self, github_repo, check_body, check_id):
+        path = self._url("/repos/%s/check-runs/%s" % (github_repo, check_id))
+        resp = requests.patch(
+            path, data=json.dumps(check_body), headers=self.headers({
+                'Accept': 'application/vnd.github.antiope-preview+json'
+            }))
 
         return resp.json()
 
