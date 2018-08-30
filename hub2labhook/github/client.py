@@ -34,7 +34,7 @@ GITHUB_CHECK_MAP = {
     'manual': 'action_required',
     "canceled": "cancelled",
     "pending": "queued",
-    "created": "queued",
+    "created": None,  # manual -> ignore
     "running": "in_progress",
     "warning": "neutral"
 }

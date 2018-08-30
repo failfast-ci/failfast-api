@@ -94,6 +94,11 @@ def update_github_check(event):
     githubclient = GithubClient(installation_id=installation_id)
 
     extra = {'conclusion': None, 'started_at': None, 'completed_at': None}
+
+    if build['build_status'] == "created":
+        # Ignore such builds as they are probably manuals builds
+        return None
+
     if not build['build_started_at']:
         status = "queued"
     elif not build['build_finished_at']:
