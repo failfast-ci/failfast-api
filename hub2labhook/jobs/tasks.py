@@ -75,9 +75,13 @@ def _task_actions():
                 "description": "Retries the job"
             },
             {
-            "label": "Ignore test",
+            "label": "Skip test",
             "identifier": "skip",
             "description": "Marks the job as neutral"
+        },   {
+            "label": "Resync status",
+            "identifier": "resync",
+            "description": "Resync the status from gitlab"
         }])
 
 
@@ -115,6 +119,9 @@ def update_github_check(event):
         extra['completed_at'] = datetime.strptime(
             build['build_finished_at'],
             "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
+
+    if build['build_status'] == "failed" and build['build_allow_failure'] == True:
+        extra['conclusion'] = "neutral"
 
     check = {
         "name":
