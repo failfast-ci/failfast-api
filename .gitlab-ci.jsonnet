@@ -25,6 +25,7 @@ local jobs = {
   'build-image': baseJobs.dockerBuild(images.ci.failfast) +
                  {
                    stage: stages.build_image,
+                   when: "manual",
                  },
 
   pylint: baseJobs.job {
