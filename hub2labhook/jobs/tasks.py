@@ -209,7 +209,7 @@ def skip_check(self, event):
             'status': 'completed',
             'conclusion': 'neutral',
             'completed_at': CheckStatus.ztime(),
-            "actions": CheckStatus.task_actions()
+            "actions": CheckStatus.list_task_actions()
         }
 
         githubclient = GithubClient(

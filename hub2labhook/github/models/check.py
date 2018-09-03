@@ -104,6 +104,10 @@ class CheckStatus(object):
             'project_id': self.project_id
         }
 
+    @classmethod
+    def list_task_actions(cls):
+        return list(cls.task_actions().values())
+
     def check_name(self):
         if self.object_kind == "build":
             return "%s/-/%s" % (FFCONFIG.github['context'],
@@ -174,11 +178,10 @@ class CheckStatus(object):
         if self.object_kind == "build":
             # If allow_failure, set check-status to 'neutral'
             if self.object['build_status'] == "failed" and self.object['build_allow_failure'] is True:
-                status = 'allow_failure'
-            status = self.object['build_status']
+                return 'allow_failure'
+            return self.object['build_status']
         else:
-            status = self.object['object_attributes']['status']
-        return status
+            return self.object['object_attributes']['status']
 
     def render_check(self):
         check = {
@@ -191,7 +194,7 @@ class CheckStatus(object):
             "external_id": json.dumps(self.external_id),
             "details_url": self.details_url,
             "output": self.check_output(),
-            "actions": list(self.task_actions().values())
+            "actions": self.list_task_actions()
         }
         check = {k: v for k, v in check.items() if v is not None}
         logger.info(check)
@@ -217,3 +220,4 @@ class CheckStatus(object):
 
     def check_pipeline_text(self):
         return "pipeline %s: %s" % (self.object_id, self.status)
+
