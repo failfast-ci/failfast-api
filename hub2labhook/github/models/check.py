@@ -71,7 +71,7 @@ class CheckStatus(object):
             return self.object['sha']
 
     def build_url(self, build_id):
-        return self.repourl + "/builds/%s" % build_id,
+        return self.repourl + "/builds/%s" % build_id
 
     def pipeline_url(self, pipeline_id):
         return self.repourl + "/pipelines/%s" % pipeline_id
@@ -178,7 +178,7 @@ class CheckStatus(object):
             "external_id": json.dumps(self.external_id),
             "details_url": self.details_url,
             "output": self.check_output(),  # noqa
-            "actions": self.task_actions().values()
+            "actions": list(self.task_actions().values())
         })
         logger.info(check)
         return check
