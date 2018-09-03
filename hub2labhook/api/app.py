@@ -22,7 +22,7 @@ class FailfastApp(FlaskApp):
     blueprints = [(ffapi_app, ""), (info_app, "")]
     before_request_funcs = [before_request_log]
     after_request_funcs = [after_request_log]
-    error_handler_funcs = [(Hub2LabException, render_error)]
+    error_handler_funcs = [(Exception, render_error), (Hub2LabException, render_error)]
 
 
 def create_app():

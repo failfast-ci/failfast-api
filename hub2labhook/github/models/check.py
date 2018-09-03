@@ -5,13 +5,17 @@ import logging
 
 from hub2labhook.config import FFCONFIG
 from hub2labhook.github.client import GITHUB_CHECK_MAP
+from hub2labhook.exception import Unexpected
+
 
 logger = logging.getLogger(__name__)
 
 
 class CheckStatus(object):
-    def __init__(self, object):
-        self.object = object
+    def __init__(self, obj):
+        self.object = obj
+        if self.object_kind not in ['pipeline', 'build']:
+            raise Unexpected("Object kind unknown %s" % self.object_kind)
 
     @classmethod
     def ztime(cls, timestr=None):
@@ -52,16 +56,19 @@ class CheckStatus(object):
     @property
     def repourl(self):
         if self.object_kind == "pipeline":
-            return self.object['project']['web_ur']
+            return self.object['project']['web_url']
         elif self.object_kind == "build":
             return self.object['repository']['homepage']
 
     def build_trace_url(self, build_id):
-        self.build_url(build_id) + "/trace"
+        return self.build_url(build_id) + "/trace"
 
     @property
     def sha(self):
-        self.object['sha']
+        if self.object_kind == "pipeline":
+            return self.object['object_attributes']['sha']
+        else:
+            return self.object['sha']
 
     def build_url(self, build_id):
         return self.repourl + "/builds/%s" % build_id,
@@ -79,7 +86,7 @@ class CheckStatus(object):
     @property
     def object_id(self):
         if self.object_kind == "pipeline":
-            return self.object['id']
+            return self.object['object_attributes']['id']
         elif self.object_kind == "build":
             return self.object['build_id']
 
@@ -124,15 +131,15 @@ class CheckStatus(object):
     def started_at(self):
         if self.object_kind == "build":
             return self.object['build_started_at']
-        else:
-            return self.object['created_at']
+        elif self.object_kind == "pipeline":
+            return self.object['object_attributes']['created_at']
 
     @property
     def finished_at(self):
         if self.object_kind == "build":
             return self.object['build_finished_at']
         else:
-            return self.object['finished_at']
+            return self.object['object_attributes']['finished_at']
 
     @property
     def status(self):
@@ -142,7 +149,7 @@ class CheckStatus(object):
                 status = 'allow_failure'
             status = self.object['build_status']
         else:
-            status = self.object['status']
+            status = self.object['object_attributes']['status']
         return status
 
     def _set_status(self, started_at, finished_at, gitlab_status):
