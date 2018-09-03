@@ -46,7 +46,7 @@ def github_event():
     headers = dict(request.headers.to_list())
     gevent = GithubEvent(params, headers)
     if gevent.event_type == "check_run" and gevent.action == "rerequested":
-        job = tasks.retry_build.delay(gevent.external_id)
+        job = tasks.retry_build.delay(gevent.external_id, gevent.head_sha)
     elif gevent.event_type == "check_run" and gevent.action == "requested_action":
         job = tasks.request_action(
             gevent.event['requested_action']['identifier'], params).delay()
@@ -67,10 +67,10 @@ def gitlab_event():
     headers = dict(request.headers.to_list())
     event = headers.get("X-Gitlab-Event", None)
 
-    if event == "Pipeline Hook":
-        task = tasks.update_github_pipeline_check
+    if event in "Pipeline Hook":
+        task = tasks.update_github_check
     elif event == "Job Hook":
-        task = tasks.update_github_build_check
+        task = tasks.update_github_check
     else:
         return jsonify({'ignored': True, 'event': event, 'headers': headers})
     job = task.delay(params)

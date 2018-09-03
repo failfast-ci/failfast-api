@@ -2,11 +2,12 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import re
 import json
-from datetime import datetime
 
 import requests
 from hub2labhook.github.models.event import GithubEvent
-from hub2labhook.github.client import GITHUB_STATUS_MAP, GITHUB_CHECK_MAP, GithubClient
+from hub2labhook.github.models.check import CheckStatus
+
+from hub2labhook.github.client import GITHUB_STATUS_MAP, GithubClient
 from hub2labhook.gitlab.client import GitlabClient
 from hub2labhook.pipeline import Pipeline
 from hub2labhook.config import FFCONFIG
@@ -68,168 +69,17 @@ def istriggered_on_pr(gevent, config=None):
             '*' in pr_list)
 
 
-def _task_actions():
-    return ([{
-        "label": "retry",
-        "identifier": "retry",
-        "description": "Retries the job"
-    }, {
-        "label": "Skip test",
-        "identifier": "skip",
-        "description": "Marks the job as neutral"
-    }, {
-        "label": "Resync status",
-        "identifier": "resync",
-        "description": "Resync the status from gitlab"
-    }])
-
-
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
-def update_github_pipeline_check(event):
+def update_github_check(event):
     gitlabclient = GitlabClient()
-    logger.info(event)
-    pipeline = event
-
+    checkstatus = CheckStatus(event)
     installation_id = gitlabclient.get_variable(
-        pipeline['project_id'], 'GITHUB_INSTALLATION_ID')['value']
-    github_repo = gitlabclient.get_variable(build['project_id'],
+        checkstatus.project_id, 'GITHUB_INSTALLATION_ID')['value']
+    github_repo = gitlabclient.get_variable(checkstatus.project_id,
                                             'GITHUB_REPO')['value']
     githubclient = GithubClient(installation_id=installation_id)
 
-    extra = {'conclusion': None, 'started_at': None, 'completed_at': None}
-
-    if build['build_status'] == "created":
-        # Ignore such builds as they are probably manuals builds
-        return None
-
-    if not build['build_started_at']:
-        status = "queued"
-    elif not build['build_finished_at']:
-        status = "in_progress"
-        extra['started_at'] = datetime.strptime(
-            build['build_started_at'],
-            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
-    else:
-        status = "completed"
-        extra['conclusion'] = GITHUB_CHECK_MAP[build['build_status']]
-        extra['started_at'] = datetime.strptime(
-            build['build_started_at'],
-            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
-        extra['completed_at'] = datetime.strptime(
-            build['build_finished_at'],
-            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
-
-    if build['build_status'] == "failed" and build['build_allow_failure'] == True:
-        extra['conclusion'] = "neutral"
-
-    check = {
-        "name":
-            "%s/%s" % (FFCONFIG.github['context'], build['build_name']),
-        "head_sha":
-            build['sha'],
-        "status":
-            status,
-        "external_id":
-            json.dumps({
-                'project': build['project_id'],
-                'build': build['build_id']
-            }),
-        "details_url":
-            build['repository']['homepage'] + "/builds/%s" % build['build_id'],
-        "output": {
-            "title":
-                "%s/%s" % (build['build_stage'], build['build_name']),
-            "summary":
-                "'%s/%s" % (build['build_name'], status),
-            "text":
-                "# %s/%s" % (build['build_stage'], build['build_name']) +
-                "\n\n ## Trace available: %s" % build['repository']['homepage']
-                + "/builds/%s" % build['build_id']
-        },  # noqa
-        "actions":
-            _task_actions()
-    }
-
-    for k, v in extra.items():
-        if v is not None:
-            check[k] = v
-
-    logger.info(check)
-    return githubclient.create_check(github_repo, check)
-
-
-@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
-def update_github_build_check(event):
-    gitlabclient = GitlabClient()
-    logger.info(event)
-    build = event
-
-    installation_id = gitlabclient.get_variable(
-        build['project_id'], 'GITHUB_INSTALLATION_ID')['value']
-    github_repo = gitlabclient.get_variable(build['project_id'],
-                                            'GITHUB_REPO')['value']
-    githubclient = GithubClient(installation_id=installation_id)
-
-    extra = {'conclusion': None, 'started_at': None, 'completed_at': None}
-
-    if build['build_status'] == "created":
-        # Ignore such builds as they are probably manuals builds
-        return None
-
-    if not build['build_started_at']:
-        status = "queued"
-    elif not build['build_finished_at']:
-        status = "in_progress"
-        extra['started_at'] = datetime.strptime(
-            build['build_started_at'],
-            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
-    else:
-        status = "completed"
-        extra['conclusion'] = GITHUB_CHECK_MAP[build['build_status']]
-        extra['started_at'] = datetime.strptime(
-            build['build_started_at'],
-            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
-        extra['completed_at'] = datetime.strptime(
-            build['build_finished_at'],
-            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
-
-    if build['build_status'] == "failed" and build['build_allow_failure'] == True:
-        extra['conclusion'] = "neutral"
-
-    check = {
-        "name":
-            "%s/%s" % (FFCONFIG.github['context'], build['build_name']),
-        "head_sha":
-            build['sha'],
-        "status":
-            status,
-        "external_id":
-            json.dumps({
-                'project': build['project_id'],
-                'build': build['build_id']
-            }),
-        "details_url":
-            build['repository']['homepage'] + "/builds/%s" % build['build_id'],
-        "output": {
-            "title":
-                "%s/%s" % (build['build_stage'], build['build_name']),
-            "summary":
-                "'%s/%s" % (build['build_name'], status),
-            "text":
-                "# %s/%s" % (build['build_stage'], build['build_name']) +
-                "\n\n ## Trace available: %s" % build['repository']['homepage']
-                + "/builds/%s" % build['build_id']
-        },  # noqa
-        "actions":
-            _task_actions()
-    }
-
-    for k, v in extra.items():
-        if v is not None:
-            check[k] = v
-
-    logger.info(check)
-    return githubclient.create_check(github_repo, check)
+    return githubclient.create_check(github_repo, checkstatus.render_check())
 
 
 @app.task(bind=True, base=JobBase)
@@ -331,12 +181,17 @@ def update_pipeline_hook(self, event):
 
 @app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
           retry_backoff=True)
-def retry_build(self, external_id):
-    project_id = external_id['project']
-    build_id = external_id['build']
+def retry_build(self, external_id, sha=None):
+    project_id = external_id['project_id']
+    object_id = external_id['object_id']
+    kind = external_id['object_kind']
     gitlabclient = GitlabClient()
     try:
-        return gitlabclient.retry_build(project_id, build_id)
+        if kind == "build":
+            return gitlabclient.retry_build(project_id, object_id)
+        elif kind == "pipeline":
+            return gitlabclient.retry_pipeline(project_id, sha)
+
     except requests.exceptions.RequestException as exc:
         logger.error('Error request')
         raise self.retry(countdown=60, exc=exc)
@@ -349,8 +204,8 @@ def skip_check(self, event):
         check = {
             'status': 'completed',
             'conclusion': 'neutral',
-            'completed_at': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "actions": _task_actions()
+            'completed_at': CheckStatus.ztime(),
+            "actions": CheckStatus.task_actions()
         }
 
         githubclient = GithubClient(

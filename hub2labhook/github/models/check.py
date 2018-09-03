@@ -6,7 +6,6 @@ import logging
 from hub2labhook.config import FFCONFIG
 from hub2labhook.github.client import GITHUB_CHECK_MAP
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -14,14 +13,16 @@ class CheckStatus(object):
     def __init__(self, object):
         self.object = object
 
-    def ztime(self, timestr=None):
+    @classmethod
+    def ztime(cls, timestr=None):
         if timestr is None:
             return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
             return datetime.strptime(timestr,
                                      "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
 
-    def task_actions(self, extra_actions=None):
+    @classmethod
+    def task_actions(cls, extra_actions=None):
         actions = {
             "retry": {
                 "label": "retry",
@@ -91,23 +92,26 @@ class CheckStatus(object):
 
     @property
     def external_id(self):
-        return {'kind': self.object_kind,
-                'id': self.object_id,
-                'project_id': self.project_id}
+        return {
+            'object_kind': self.object_kind,
+            'object_id': self.object_id,
+            'project_id': self.project_id
+        }
 
     def check_name(self):
         if self.object_kind == "build":
-            return "%s/job/%s" % (FFCONFIG.github['context'], self.object['build_name'])
+            return "%s/job/%s" % (FFCONFIG.github['context'],
+                                  self.object['build_name'])
         else:
             return "%s/%s" % (FFCONFIG.github['context'], "pipeline")
 
     def check_output(self):
         if self.object_kind == "build":
             output = {
-                    "title": self.check_title(),
-                    "summary": self.check_summary(),
-                    "text": self.check_text(),
-                }
+                "title": self.check_title(),
+                "summary": self.check_summary(),
+                "text": self.check_text(),
+            }
         else:
             output = {
                 "title": self.check_pipeline_title(),
@@ -159,31 +163,29 @@ class CheckStatus(object):
         return {k: v for k, v in extra.items() if v is not None}
 
     def render_check(self):
-        check = self._set_status(self.started_at, self.finished_at, self.status)
+        check = self._set_status(self.started_at, self.finished_at,
+                                 self.status)
         check.update({
-            "name":
-                self.check_name(),
-            "head_sha":
-                self.sha,
-            "external_id":
-                json.dumps(self.external_id),
-            "details_url":
-                self.details_url,
+            "name": self.check_name(),
+            "head_sha": self.sha,
+            "external_id": json.dumps(self.external_id),
+            "details_url": self.details_url,
             "output": self.check_output(),  # noqa
-            "actions":
-                self.task_actions().values()
+            "actions": self.task_actions().values()
         })
         logger.info(check)
         return check
 
     def check_title(self):
-        return "%s/%s" % (self.object['build_stage'], self.object['build_name'])
+        return "%s/%s" % (self.object['build_stage'],
+                          self.object['build_name'])
 
     def check_summary(self):
         return "%s/%s" % (self.object['build_name'], self.status)
 
     def check_text(self):
-        return ("# %s/%s" % (self.object['build_stage'], self.object['build_name']) +
+        return ("# %s/%s" %
+                (self.object['build_stage'], self.object['build_name']) +
                 "\n\n ## Trace available: %s" % self.details_url)
 
     def check_pipeline_title(self):
