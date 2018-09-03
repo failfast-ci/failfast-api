@@ -27,6 +27,7 @@ GITHUB_STATUS_MAP = {
 }
 # success, failure, neutral, cancelled, timed_out, or action_required. When the conclusion is action_required
 GITHUB_CHECK_MAP = {
+    'allow_failure': 'neutral',
     "failed": "failure",
     "success": "success",
     "skipped": "success",

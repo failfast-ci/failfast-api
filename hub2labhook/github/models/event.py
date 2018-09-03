@@ -2,7 +2,6 @@ import json
 import logging
 from hub2labhook.exception import Unsupported
 
-
 logger = logging.getLogger(__name__)
 
 

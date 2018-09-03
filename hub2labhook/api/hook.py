@@ -68,9 +68,9 @@ def gitlab_event():
     event = headers.get("X-Gitlab-Event", None)
 
     if event == "Pipeline Hook":
-        task = tasks.update_pipeline_hook
+        task = tasks.update_github_pipeline_check
     elif event == "Job Hook":
-        task = tasks.update_github_check
+        task = tasks.update_github_build_check
     else:
         return jsonify({'ignored': True, 'event': event, 'headers': headers})
     job = task.delay(params)

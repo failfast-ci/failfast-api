@@ -70,23 +70,96 @@ def istriggered_on_pr(gevent, config=None):
 
 def _task_actions():
     return ([{
-                "label": "retry",
-                "identifier": "retry",
-                "description": "Retries the job"
-            },
-            {
-            "label": "Skip test",
-            "identifier": "skip",
-            "description": "Marks the job as neutral"
-        },   {
-            "label": "Resync status",
-            "identifier": "resync",
-            "description": "Resync the status from gitlab"
-        }])
+        "label": "retry",
+        "identifier": "retry",
+        "description": "Retries the job"
+    }, {
+        "label": "Skip test",
+        "identifier": "skip",
+        "description": "Marks the job as neutral"
+    }, {
+        "label": "Resync status",
+        "identifier": "resync",
+        "description": "Resync the status from gitlab"
+    }])
 
 
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
-def update_github_check(event):
+def update_github_pipeline_check(event):
+    gitlabclient = GitlabClient()
+    logger.info(event)
+    pipeline = event
+
+    installation_id = gitlabclient.get_variable(
+        pipeline['project_id'], 'GITHUB_INSTALLATION_ID')['value']
+    github_repo = gitlabclient.get_variable(build['project_id'],
+                                            'GITHUB_REPO')['value']
+    githubclient = GithubClient(installation_id=installation_id)
+
+    extra = {'conclusion': None, 'started_at': None, 'completed_at': None}
+
+    if build['build_status'] == "created":
+        # Ignore such builds as they are probably manuals builds
+        return None
+
+    if not build['build_started_at']:
+        status = "queued"
+    elif not build['build_finished_at']:
+        status = "in_progress"
+        extra['started_at'] = datetime.strptime(
+            build['build_started_at'],
+            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
+    else:
+        status = "completed"
+        extra['conclusion'] = GITHUB_CHECK_MAP[build['build_status']]
+        extra['started_at'] = datetime.strptime(
+            build['build_started_at'],
+            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
+        extra['completed_at'] = datetime.strptime(
+            build['build_finished_at'],
+            "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
+
+    if build['build_status'] == "failed" and build['build_allow_failure'] == True:
+        extra['conclusion'] = "neutral"
+
+    check = {
+        "name":
+            "%s/%s" % (FFCONFIG.github['context'], build['build_name']),
+        "head_sha":
+            build['sha'],
+        "status":
+            status,
+        "external_id":
+            json.dumps({
+                'project': build['project_id'],
+                'build': build['build_id']
+            }),
+        "details_url":
+            build['repository']['homepage'] + "/builds/%s" % build['build_id'],
+        "output": {
+            "title":
+                "%s/%s" % (build['build_stage'], build['build_name']),
+            "summary":
+                "'%s/%s" % (build['build_name'], status),
+            "text":
+                "# %s/%s" % (build['build_stage'], build['build_name']) +
+                "\n\n ## Trace available: %s" % build['repository']['homepage']
+                + "/builds/%s" % build['build_id']
+        },  # noqa
+        "actions":
+            _task_actions()
+    }
+
+    for k, v in extra.items():
+        if v is not None:
+            check[k] = v
+
+    logger.info(check)
+    return githubclient.create_check(github_repo, check)
+
+
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def update_github_build_check(event):
     gitlabclient = GitlabClient()
     logger.info(event)
     build = event
@@ -147,7 +220,8 @@ def update_github_check(event):
                 "\n\n ## Trace available: %s" % build['repository']['homepage']
                 + "/builds/%s" % build['build_id']
         },  # noqa
-        "actions": _task_actions()
+        "actions":
+            _task_actions()
     }
 
     for k, v in extra.items():
@@ -273,12 +347,9 @@ def retry_build(self, external_id):
 def skip_check(self, event):
     try:
         check = {
-            'status':
-                'completed',
-            'conclusion':
-                'neutral',
-            'completed_at':
-                datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            'status': 'completed',
+            'conclusion': 'neutral',
+            'completed_at': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
             "actions": _task_actions()
         }
 
