@@ -79,6 +79,10 @@ def update_github_check(event):
                                             'GITHUB_REPO')['value']
     githubclient = GithubClient(installation_id=installation_id)
 
+    # Skip queued builds as they could be 'manual'
+    if checkstatus.status == "queued" and checkstatus.object_kind == "build":
+        return None
+
     return githubclient.create_check(github_repo, checkstatus.render_check())
 
 

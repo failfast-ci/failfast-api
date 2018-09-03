@@ -7,7 +7,6 @@ from hub2labhook.config import FFCONFIG
 from hub2labhook.github.client import GITHUB_CHECK_MAP
 from hub2labhook.exception import Unexpected
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -107,10 +106,10 @@ class CheckStatus(object):
 
     def check_name(self):
         if self.object_kind == "build":
-            return "%s/job/%s" % (FFCONFIG.github['context'],
-                                  self.object['build_name'])
+            return "%s/-/%s" % (FFCONFIG.github['context'],
+                                self.object['build_name'])
         else:
-            return "%s/%s" % (FFCONFIG.github['context'], "pipeline")
+            return "%s/%s" % (FFCONFIG.github['context'], "Pipeline")
 
     def check_output(self):
         if self.object_kind == "build":
@@ -130,19 +129,48 @@ class CheckStatus(object):
     @property
     def started_at(self):
         if self.object_kind == "build":
-            return self.object['build_started_at']
+            started = self.object['build_started_at']
         elif self.object_kind == "pipeline":
-            return self.object['object_attributes']['created_at']
+            started = self.object['object_attributes']['created_at']
+
+        if started is None:
+            return None
+        return self.ztime(started)
 
     @property
     def finished_at(self):
         if self.object_kind == "build":
-            return self.object['build_finished_at']
+            finished = self.object['build_finished_at']
         else:
-            return self.object['object_attributes']['finished_at']
+            finished = self.object['object_attributes']['finished_at']
+
+        if finished is None:
+            return None
+        return self.ztime(finished)
+
+    @property
+    def completed_at(self):
+        return self.finished_at
 
     @property
     def status(self):
+        if not self.started_at:
+            check_status = "queued"
+        elif not self.finished_at:
+            check_status = "in_progress"
+        else:
+            check_status = "completed"
+        return check_status
+
+    @property
+    def conclusion(self):
+        if self.status != "completed":
+            return None
+        else:
+            return GITHUB_CHECK_MAP[self.gitlab_status]
+
+    @property
+    def gitlab_status(self):
         if self.object_kind == "build":
             # If allow_failure, set check-status to 'neutral'
             if self.object['build_status'] == "failed" and self.object['build_allow_failure'] is True:
@@ -152,34 +180,20 @@ class CheckStatus(object):
             status = self.object['object_attributes']['status']
         return status
 
-    def _set_status(self, started_at, finished_at, gitlab_status):
-        extra = {'conclusion': None, 'started_at': None, 'completed_at': None}
-        if not started_at:
-            check_status = "queued"
-        elif not finished_at:
-            check_status = "in_progress"
-            extra['started_at'] = self.ztime(started_at)
-        else:
-            check_status = "completed"
-            extra['conclusion'] = GITHUB_CHECK_MAP[gitlab_status]
-            extra['started_at'] = self.ztime(started_at)
-            extra['completed_at'] = self.ztime(finished_at)
-
-        extra['status'] = check_status
-
-        return {k: v for k, v in extra.items() if v is not None}
-
     def render_check(self):
-        check = self._set_status(self.started_at, self.finished_at,
-                                 self.status)
-        check.update({
+        check = {
             "name": self.check_name(),
+            "status": self.status,
+            "started_at": self.started_at,
+            "completed_at": self.completed_at,
+            "conclusion": self.conclusion,
             "head_sha": self.sha,
             "external_id": json.dumps(self.external_id),
             "details_url": self.details_url,
-            "output": self.check_output(),  # noqa
+            "output": self.check_output(),
             "actions": list(self.task_actions().values())
-        })
+        }
+        check = {k: v for k, v in check.items() if v is not None}
         logger.info(check)
         return check
 
