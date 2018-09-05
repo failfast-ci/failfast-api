@@ -2,9 +2,10 @@ from __future__ import absolute_import, unicode_literals
 from datetime import datetime
 import json
 import logging
+import re
 
 from hub2labhook.config import FFCONFIG
-from hub2labhook.github.client import GITHUB_CHECK_MAP
+from hub2labhook.github.client import GITHUB_CHECK_MAP, GITHUB_CHECK_ICONS
 from hub2labhook.exception import Unexpected
 
 logger = logging.getLogger(__name__)
@@ -21,8 +22,10 @@ class CheckStatus(object):
         if timestr is None:
             return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
-            return datetime.strptime(timestr,
-                                     "%Y-%m-%d %H:%M:%S %Z").isoformat() + "Z"
+            date, time = re.match(r'(.+)[ T](\d{2}:\d{2}:\d{2})', timestr).groups()
+            return datetime.strptime("%sT%s" % (date, time),
+                                     "%Y-%m-%dT%H:%M:%S").isoformat() + "Z"
+
 
     @classmethod
     def task_actions(cls, extra_actions=None):
@@ -110,10 +113,10 @@ class CheckStatus(object):
 
     def check_name(self):
         if self.object_kind == "build":
-            return "%s/-/%s" % (FFCONFIG.github['context'],
-                                self.object['build_name'])
+            return "%s Build - %s" % (FFCONFIG.github['context'],
+                                      self.object['build_name'])
         else:
-            return "%s/%s" % (FFCONFIG.github['context'], "Pipeline")
+            return "%s - %s" % (FFCONFIG.github['context'], "Pipeline")
 
     def check_output(self):
         if self.object_kind == "build":
@@ -201,11 +204,43 @@ class CheckStatus(object):
         return check
 
     def check_title(self):
-        return "%s/%s" % (self.object['build_stage'],
-                          self.object['build_name'])
+        title_map = {
+            'allow_failure': 'Build Failed (ignored)',
+            "failed": "Build Failed",
+            "success": "Build Succeeded",
+            "skipped": "Build Skipped",
+            "unknown": "Build Status unknown",
+            'manual': 'Build waiting for action',
+            "canceled": "Build Cancelled",
+            "pending": "Build Queued",
+            "created": "Build Created",
+            "running": "Build Running",
+            "warning": "Warning"
+        }
+        return title_map[self.gitlab_status]
 
     def check_summary(self):
-        return "%s/%s" % (self.object['build_name'], self.status)
+        title_map = {
+            'allow_failure': 'Failed (ignored)',
+            "failed": "Failed",
+            "success": "Succeeded",
+            "skipped": "Skipped",
+            "unknown": "Status unknown",
+            'manual': 'waiting for action',
+            "canceled": "Cancelled",
+            "pending": "Queued",
+            "created": "Created",
+            "running": "in Progress",
+            "warning": "Warning"
+        }
+        text = (
+            "<h3>  <img src='{build_icon}'  height='14'>"
+            "Build (<a href='{build_url}'>{build_id}</a>) **{build_status}**.</h3>"
+        ).format(build_url=self.details_url,
+                 build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
+                 build_id=self.object_id,
+                 build_status=title_map[self.gitlab_status])
+        return text
 
     def check_text(self):
         return ("# %s/%s" %
@@ -220,4 +255,3 @@ class CheckStatus(object):
 
     def check_pipeline_text(self):
         return "pipeline %s: %s" % (self.object_id, self.status)
-

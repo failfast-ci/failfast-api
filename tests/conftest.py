@@ -53,6 +53,16 @@ def ping_data():
 
 
 @pytest.fixture(scope="session")
+def pipeline_hook_data():
+    return get_request("gitlab/pipeline-hook")
+
+
+@pytest.fixture(scope="session")
+def build_hook_data():
+    return get_request("gitlab/build-hook")
+
+
+@pytest.fixture(scope="session")
 def pr_data():
     return get_request('pull_request')
 

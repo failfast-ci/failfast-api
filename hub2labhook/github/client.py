@@ -41,6 +41,25 @@ GITHUB_CHECK_MAP = {
 }
 
 
+def icon_url(icon):
+    return "https://storage.googleapis.com/kubespray-ci-state/ci-icons/%s-64.png" % icon
+
+
+GITHUB_CHECK_ICONS = {
+    'allow_failure': icon_url("warning"),
+    "failed": icon_url("failed"),
+    "success": icon_url("success"),
+    "skipped": icon_url("success"),
+    "unknown": icon_url("failed"),
+    'manual': icon_url('play'),
+    "canceled": icon_url("cancel"),
+    "pending": icon_url("running"),
+    "created": icon_url("running"),
+    "running": icon_url("running"),
+    "warning": icon_url("warning"),
+}
+
+
 def jwt_token():
     payload = {
         "iat": datetime.datetime.utcnow(),
