@@ -4,7 +4,7 @@ from flask import jsonify, request, Blueprint
 from hub2labhook.api.app import getvalues
 from hub2labhook.exception import (InvalidUsage, Forbidden, Unsupported)
 import hub2labhook.jobs.tasks as tasks
-
+from hub2labhook.github.models.event import GithubEvent
 from hub2labhook.config import FFCONFIG
 
 ffapi_app = Blueprint(
@@ -44,10 +44,19 @@ def github_event():
         verify_signature(request.data, hook_signature)
 
     headers = dict(request.headers.to_list())
-    task = tasks.start_pipeline(params, headers)
-    if task is None:
-        return jsonify({'ignored': True})
-    job = task.delay()
+    gevent = GithubEvent(params, headers)
+    if gevent.event_type == "check_run" and gevent.action == "rerequested":
+        job = tasks.retry_build.delay(gevent.external_id, gevent.head_sha)
+    elif gevent.event_type == "check_run" and gevent.action == "requested_action":
+        job = tasks.request_action(
+            gevent.event['requested_action']['identifier'], params).delay()
+    elif gevent.event_type == "check_suite" and gevent.action == "rerequested":
+        job = tasks.retry_pipeline.delay()
+    elif gevent.event_type in ["push", "pull_request"]:
+        job = tasks.start_pipeline(params, headers).delay()
+    else:
+        return jsonify({'ignored': True, 'event': params, 'headers': headers})
+
     return jsonify({'job_id': job.id, 'params': params})
 
 
@@ -58,12 +67,12 @@ def gitlab_event():
     headers = dict(request.headers.to_list())
     event = headers.get("X-Gitlab-Event", None)
 
-    if event == "Pipeline Hook":
-        task = tasks.update_pipeline_hook
+    if event in "Pipeline Hook":
+        task = tasks.update_github_check
     elif event == "Job Hook":
-        pass
+        task = tasks.update_github_check
     else:
-        return jsonify({'ignored': True, 'event': event})
+        return jsonify({'ignored': True, 'event': event, 'headers': headers})
     job = task.delay(params)
     return jsonify({'job_id': job.id, 'params': params})
 
@@ -71,36 +80,12 @@ def gitlab_event():
 @ffapi_app.route("/api/v1/resync/<int:gitlab_project_id>/<int:pipeline_id>",
                  methods=['POST', 'GET'], strict_slashes=False)
 def resync(gitlab_project_id, pipeline_id):
+    '''
+    Force a update of the github statuses.
+    It queries gitlab to receive the pipeline status, and update github statuses
+    '''
     task = tasks.update_pipeline_status.apply_async(
         (gitlab_project_id, pipeline_id), )
     resp = task.get()
     # redirect(resp., code=302)
     return jsonify(resp)
-
-
-@ffapi_app.route("/api/v1/github_status", methods=['POST'],
-                 strict_slashes=False)
-def github_status():
-    params = getvalues()
-    # gitlab_project_id = params['gitlab_project_id']
-    # gitlab_build_id = params['build_id']
-    # github_repo = params['github_repo']
-    # sha = params['sha']
-    # installation_id = params['installation_id']
-    delay = int(params.get('delay', 0))
-    job = tasks.update_build_status.apply_async((params, ), countdown=delay)
-    return jsonify({'job_id': job.id, 'params': params})
-
-
-@ffapi_app.route("/api/v1/github_statuses", methods=['POST'],
-                 strict_slashes=False)
-def github_statuses():
-    params = getvalues()
-    # gitlab_project_id = params['gitlab_project_id']
-    # gitlab_build_id = params['build_id']
-    # github_repo = params['github_repo']
-    # sha = params['sha']
-    # installation_id = params['installation_id']
-    delay = int(params.get('delay', 0))
-    job = tasks.update_github_statuses.apply_async((params, ), countdown=delay)
-    return jsonify({'job_id': job.id, 'params': params})

@@ -9,8 +9,6 @@ from hub2labhook.exception import ResourceNotFound
 
 from hub2labhook.config import FFCONFIG
 
-INTEGRATION_PEM = base64.b64decode(os.environ['GITHUB_INTEGRATION_PEM'])
-
 INTEGRATION_ID = int(FFCONFIG.github['integration_id'])
 
 GITHUB_STATUS_MAP = {
@@ -22,70 +20,115 @@ GITHUB_STATUS_MAP = {
     "canceled": "error",
     "pending": "pending",
     "created": "pending",
-    "running": "pending"
+    "running": "pending",
+    "warning": "success"
+}
+# success, failure, neutral, cancelled, timed_out, or action_required. When the conclusion is action_required
+GITHUB_CHECK_MAP = {
+    'allow_failure': 'neutral',
+    "failed": "failure",
+    "success": "success",
+    "skipped": "success",
+    "unknown": "failure",
+    'manual': 'action_required',
+    "canceled": "cancelled",
+    "pending": "queued",
+    "created": None,  # manual -> ignore
+    "running": "in_progress",
+    "warning": "neutral"
 }
 
 
-def jwt_token():
+def icon_url(icon):
+    return "https://storage.googleapis.com/kubespray-ci-state/ci-icons/%s-64.png" % icon
+
+
+GITHUB_CHECK_ICONS = {
+    'allow_failure': icon_url("warning"),
+    "failed": icon_url("failed"),
+    "success": icon_url("success"),
+    "skipped": icon_url("skip"),
+    "unknown": icon_url("failed"),
+    'manual': icon_url('play'),
+    "canceled": icon_url("cancel"),
+    "pending": icon_url("running"),
+    "created": icon_url("running"),
+    "running": icon_url("running"),
+    "warning": icon_url("warning"),
+}
+
+
+def jwt_token(integration_id, integration_pem):
     payload = {
         "iat": datetime.datetime.utcnow(),
         "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=60)),
-        "iss": INTEGRATION_ID
+        "iss": integration_id
     }
 
-    return jwt.encode(payload, INTEGRATION_PEM,
+    return jwt.encode(payload, integration_pem,
                       algorithm='RS256').decode("utf-8")
-
-
-def get_integration_pem():
-    return INTEGRATION_PEM
 
 
 class GithubClient(object):
     def __init__(self, installation_id):
         self.installation_id = installation_id
-        self.integration_pem = get_integration_pem()
-        self._headers = None
         self._token = None
+        self.endpoint = "https://api.github.com"
+        self._integration_pem = None
 
     @property
-    def headers(self):
-        if not self._headers:
-            self._headers = {
-                'Content-Type': 'application/json',
-                "Accept": "application/vnd.github.machine-man-preview+json",
-                'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
-                'Authorization': "token %s" % self.token
-            }
-        return self._headers
+    def integration_pem(self):
+        if self._integration_pem is None:
+            self._integration_pem = base64.b64decode(
+                os.environ['GITHUB_INTEGRATION_PEM'])
+        return self._integration_pem
+
+    def headers(self, extra=None):
+        headers = {
+            'Content-Type': 'application/json',
+            "Accept": "application/vnd.github.machine-man-preview+json",
+            'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
+            'Authorization': "token %s" % self.token
+        }
+        if extra:
+            headers.update(extra)
+        return headers
+
+    def _url(self, path):
+        """ Construct the url from a relative path """
+        return self.endpoint + path
 
     @property
     def token(self):
         if not self._token:
             headers = {
-                'Content-Type': 'application/json',
-                "Accept": 'application/vnd.github.machine-man-preview+json',
-                'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
-                'Authorization': "Bearer %s" % jwt_token()
+                'Content-Type':
+                    'application/json',
+                "Accept":
+                    'application/vnd.github.machine-man-preview+json',
+                'User-Agent':
+                    "hub2lab: %s" % hub2labhook.__version__,
+                'Authorization':
+                    "Bearer %s" % jwt_token(INTEGRATION_ID, self.integration_pem)
             }
-            path = "https://api.github.com/installations/%s/access_tokens" % self.installation_id
+            path = self._url(
+                "/installations/%s/access_tokens" % self.installation_id)
+
             resp = requests.post(path, headers=headers)
             resp.raise_for_status()
             self._token = resp.json()['token']
         return self._token
 
     def post_status(self, body, github_repo, sha):
-        path = "https://api.github.com/repos/%s/commits/%s/statuses" % (
-            github_repo, sha)
-        resp = requests.post(path, data=json.dumps(body), headers=self.headers,
-                             timeout=5)
+        path = self._url("/repos/%s/commits/%s/statuses" % (github_repo, sha))
+        resp = requests.post(path, data=json.dumps(body),
+                             headers=self.headers(), timeout=5)
         resp.raise_for_status()
         return resp.json()
 
     def fetch_file(self, repo, file_path, ref="master"):
-        path = "https://api.github.com/repos/%s/contents/%s" % (repo,
-                                                                file_path)
-        resp = requests.get(path, headers=self.headers, params={'ref': ref},
+        path = self._url("/repos/%s/contents/%s" % (repo, file_path))
+        resp = requests.get(path, headers=self.headers(), params={'ref': ref},
                             timeout=30)
         resp.raise_for_status()
         content = resp.json()
@@ -95,7 +138,7 @@ class GithubClient(object):
         return filecontent
 
     def get_json(self, path, params={}):
-        resp = requests.get(path, headers=self.headers, params=params)
+        resp = requests.get(path, headers=self.headers(), params=params)
         resp.raise_for_status()
         return resp.json()
 
@@ -110,3 +153,32 @@ class GithubClient(object):
                     raise e
         if content is None:
             raise ResourceNotFound("no .gitlab-ci.yml or .failfail-ci.jsonnet")
+
+    def get_checks(self, github_repo, sha):
+        path = self._url("/repos/%s/commits/%s/check-runs" % (github_repo,
+                                                              sha))
+        resp = requests.get(path, headers=self.headers({
+            'Accept': 'application/vnd.github.antiope-preview+json'
+        }), params={})
+        resp.raise_for_status()
+        return resp.json()
+
+    def create_check(self, github_repo, check_body):
+        path = self._url("/repos/%s/check-runs" % github_repo)
+        resp = requests.post(
+            path, data=json.dumps(check_body), headers=self.headers({
+                'Accept': 'application/vnd.github.antiope-preview+json'
+            }))
+        return resp.json()
+
+    def update_check_run(self, github_repo, check_body, check_id):
+        path = self._url("/repos/%s/check-runs/%s" % (github_repo, check_id))
+        resp = requests.patch(
+            path, data=json.dumps(check_body), headers=self.headers({
+                'Accept': 'application/vnd.github.antiope-preview+json'
+            }))
+
+        return resp.json()
+
+    def check_run(self, github_repo, sha):
+        return self._url("/repos/:%s/check-runs" % github_repo)

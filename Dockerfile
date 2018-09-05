@@ -9,6 +9,7 @@ RUN pip install -U pip && pip install setuptools -U
 RUN rm -rf $workdir
 RUN mkdir -p $workdir
 COPY . $workdir
+COPY .style.yapf $workdir
 WORKDIR $workdir
 RUN pip install gunicorn -U && pip install -e .
 

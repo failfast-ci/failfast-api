@@ -22,8 +22,8 @@ gitlab:
   namespace: failfast-ci
   privacy: internal
   repo: null
-  robot-user: falifast-ci-robot
+  robot-user: ant31
   runner_tags: [failfast-ci]
-  secret_token: WpCFJMbxCJoBEFNDvkiM
+  secret_token: Esuk3ZMSqnh-RFmiYvSy
   timeout: 30
 

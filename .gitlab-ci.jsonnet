@@ -25,6 +25,7 @@ local jobs = {
   'build-image': baseJobs.dockerBuild(images.ci.failfast) +
                  {
                    stage: stages.build_image,
+
                  },
 
   pylint: baseJobs.job {
@@ -75,6 +76,17 @@ local jobs = {
       "pip install -r requirements_test.txt",
     ],
     stage: stages.tests,
+    script: [
+      "make test",
+    ],
+  },
+
+  'unit-tests-manual': baseJobs.job {
+    before_script+: [
+      "pip install -r requirements_test.txt",
+    ],
+    stage: stages.tests,
+    when: "manual",
     script: [
       "make test",
     ],

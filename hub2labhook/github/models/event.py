@@ -1,4 +1,8 @@
+import json
+import logging
 from hub2labhook.exception import Unsupported
+
+logger = logging.getLogger(__name__)
 
 
 class GithubEvent(object):
@@ -8,11 +12,23 @@ class GithubEvent(object):
         self._refname = None
 
     @property
+    def external_id(self):
+        if self.event_type in ["check_run"]:
+            logger.info(self.event['check_run']['external_id'])
+            return json.loads(self.event['check_run']['external_id'])
+        else:
+            self._raise_unsupported()
+
+    @property
     def ref(self):
         if self.event_type == "push":
             ref = self.event['ref']
         elif self.event_type == "pull_request":
             ref = self.event['pull_request']['head']['ref']
+        elif self.event_type == "check_run":
+            ref = self.event["check_run"]["pull_requests"][0]["ref"]
+        elif self.event_type == "check_suite":
+            ref = self.event["check_suite"]["pull_requests"][0]["ref"]
         else:
             self._raise_unsupported()
         return ref
@@ -61,7 +77,9 @@ class GithubEvent(object):
 
     @property
     def refname(self):
-        if self.event_type not in ["push", "pull_request"]:
+        if self.event_type not in [
+                "push", "pull_request", "check_suite", "check_run"
+        ]:
             self._raise_unsupported()
 
         if not self._refname:
@@ -114,6 +132,10 @@ class GithubEvent(object):
             sha = self.event['head_commit']['id']
         elif self.event_type == "pull_request":
             sha = self.event['pull_request']['head']['sha']
+        elif self.event_type == "check_run":
+            sha = self.event["check_run"]["head_sha"]
+        elif self.event_type == "check_suite":
+            sha = self.event["check_suite"]["head_sha"]
         else:
             self._raise_unsupported()
         return sha
@@ -125,7 +147,9 @@ class GithubEvent(object):
 
     @property
     def repo(self):
-        if self.event_type not in ["push", "pull_request"]:
+        if self.event_type not in [
+                "push", "pull_request", "check_run", "check_suite"
+        ]:
             self._raise_unsupported()
 
         return self.event['repository']['full_name']

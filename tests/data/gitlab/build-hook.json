@@ -1,0 +1,43 @@
+{
+    "object_kind": "build",
+    "ref": "pr-51-github_checks",
+    "tag": false,
+    "before_sha": "0000000000000000000000000000000000000000",
+    "sha": "9b73fee59d9d53469ecae08bed259b38fe493fa5",
+    "build_id": 92764974,
+    "build_name": "mypy_compile",
+    "build_stage": "tests",
+    "build_status": "success",
+    "build_started_at": "2018-08-28 14:57:10 UTC",
+    "build_finished_at": "2018-08-28 14:57:26 UTC",
+    "build_duration": 16.310186,
+    "build_allow_failure": false,
+    "project_id": 4799622,
+    "project_name": "failfast-ci / failfast-ci_failfast-api",
+    "user": {
+        "id": 887487,
+        "name": "Failfast",
+        "email": "ant.legrand@gmail.com"
+    },
+    "commit": {
+        "id": 28873017,
+        "sha": "9b73fee59d9d53469ecae08bed259b38fe493fa5",
+        "message": "Create check for each gitlab build\n",
+        "author_name": "Antoine Legrand",
+        "author_email": "2t.antoine@gmail.com",
+        "author_url": "https://gitlab.com/ant31",
+        "status": "success",
+        "duration": 125,
+        "started_at": "2018-08-28 14:55:17 UTC",
+        "finished_at": "2018-08-28 14:57:27 UTC"
+    },
+    "repository": {
+        "name": "failfast-ci_failfast-api",
+        "url": "git@gitlab.com:failfast-ci/failfast-ci_failfast-api.git",
+        "description": null,
+        "homepage": "https://gitlab.com/failfast-ci/failfast-ci_failfast-api",
+        "git_http_url": "https://gitlab.com/failfast-ci/failfast-ci_failfast-api.git",
+        "git_ssh_url": "git@gitlab.com:failfast-ci/failfast-ci_failfast-api.git",
+        "visibility_level": 10
+    }
+}

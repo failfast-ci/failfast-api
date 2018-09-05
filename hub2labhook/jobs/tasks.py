@@ -1,10 +1,12 @@
 from __future__ import absolute_import, unicode_literals
 import logging
 import re
-import requests
-import time
+import json
 
+import requests
 from hub2labhook.github.models.event import GithubEvent
+from hub2labhook.github.models.check import CheckStatus
+
 from hub2labhook.github.client import GITHUB_STATUS_MAP, GithubClient
 from hub2labhook.gitlab.client import GitlabClient
 from hub2labhook.pipeline import Pipeline
@@ -67,25 +69,21 @@ def istriggered_on_pr(gevent, config=None):
             '*' in pr_list)
 
 
-def update_github_status(project, build, github_repo, sha, installation_id,
-                         context):
-    descriptions = {
-        "pending": "Build in-progress",
-        "success": "Build success",
-        "error": "Build in error or canceled",
-        "failure": "Build failed"
-    }
-    githubclient = GithubClient(installation_id)
-    project_url = project['web_url']
-    # sha = build['commit']['id']
-    state = GITHUB_STATUS_MAP[build['status']]
-    build_body = {
-        "state": state,
-        "target_url": (project_url + "/builds/%s") % build['id'],
-        "description": descriptions[GITHUB_STATUS_MAP[build['status']]],
-        "context": "%s/%s/%s" % (context, build['stage'], build['name'])
-    }
-    return githubclient.post_status(build_body, github_repo, sha)
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def update_github_check(event):
+    gitlabclient = GitlabClient()
+    checkstatus = CheckStatus(event)
+    installation_id = gitlabclient.get_variable(
+        checkstatus.project_id, 'GITHUB_INSTALLATION_ID')['value']
+    github_repo = gitlabclient.get_variable(checkstatus.project_id,
+                                            'GITHUB_REPO')['value']
+    githubclient = GithubClient(installation_id=installation_id)
+
+    # Skip queued builds as they could be 'manual'
+    if checkstatus.status == "queued" and checkstatus.object_kind == "build":
+        return None
+
+    return githubclient.create_check(github_repo, checkstatus.render_check())
 
 
 @app.task(bind=True, base=JobBase)
@@ -94,23 +92,6 @@ def pipeline(self, event, headers):
     config = FFCONFIG
     build = Pipeline(gevent, config)
     return build.trigger_pipeline()
-
-
-@app.task(bind=True, base=JobBase)
-def update_build_status(self, params):
-    try:
-        gitlab_project_id = params['ci_project_id']
-        github_repo = params['github_repo']
-        sha = params['sha']
-        installation_id = params['installation_id']
-        build_id = params['build_id']
-        gitlabclient = GitlabClient()
-        project = gitlabclient.get_project(gitlab_project_id)
-        build = gitlabclient.get_job(project['id'], build_id)
-        return update_github_status(project, build, github_repo, sha,
-                                    installation_id, params['context'])
-    except Exception as exc:
-        raise self.retry(countdown=60, exc=exc)
 
 
 @app.task(bind=True, base=JobBase)
@@ -127,71 +108,10 @@ def update_github_statuses_failure(self, request, exc, traceback, event,
     return githubclient.post_status(body, gevent.repo, gevent.head_sha)
 
 
-@app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
-          retry_backoff=True)
-def update_github_statuses(self, trigger):
-    descriptions = {
-        "pending": "Pipeline in-progress",
-        "success": "Pipeline success",
-        "error": "Pipeline in error or canceled",
-        "failure": "Pipeline failed"
-    }
-
-    gitlab_project_id = trigger['ci_project_id']
-    github_repo = trigger['github_repo']
-    sha = trigger['sha']
-    installation_id = trigger['installation_id']
-    context = FFCONFIG.github['context']
-    ref = trigger['ci_ref']
-    pending = False
-    gitlabclient = GitlabClient()
-    githubclient = GithubClient(installation_id=installation_id)
-    try:
-        pipelines = {}
-        project = gitlabclient.get_project(gitlab_project_id)
-        project_url = project['web_url']
-        pipelines = gitlabclient.get_pipelines(int(gitlab_project_id), ref=ref)
-        if not pipelines:
-            logger.info('no pipelines')
-            raise self.retry(countdown=60)
-        pipe = pipelines[0]
-        state = GITHUB_STATUS_MAP[pipe['status']]
-        pending = state == "pending"
-        pipeline_body = {
-            "state": state,
-            "target_url": project_url + "/pipelines/%s" % pipe['id'],
-            "description": descriptions[state],
-            "context": "%s/pipeline" % context
-        }
-        resp = []
-        resp.append(githubclient.post_status(pipeline_body, github_repo, sha))
-        builds = gitlabclient.get_jobs(project['id'], pipe['id'])
-        if not builds:
-            logger.info('no builds')
-            raise self.retry(countdown=60)
-        pdict = {'builds': {}}
-        for build in builds:
-            if build['name'] not in pdict['builds']:
-                pdict[build['name']] = []
-            pdict[build['name']].append(build)
-
-        for _, builds in pdict['builds'].items():
-            build = sorted(builds, key=lambda x: x['id'], reverse=True)[0]
-            if build['status'] not in ['skipped', 'created']:
-                resp.append(
-                    update_github_status(project, build, github_repo, sha,
-                                         installation_id, context))
-        if pending:
-            logger.info('still pending: retry')
-            time.sleep(10)
-            raise self.retry(exc=None, countdown=60)
-        return resp
-    except requests.exceptions.RequestException as exc:
-        logger.error('Error request')
-        raise self.retry(countdown=60, exc=exc)
-
-
 def post_pipeline_status(project, pipeline_attr):
+    '''
+    POST the pipeline status on GitHub
+    '''
     descriptions = {
         "pending": "Pipeline in-progress",
         "success": "Pipeline success",
@@ -235,6 +155,9 @@ def post_pipeline_status(project, pipeline_attr):
 
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
 def update_pipeline_status(gitlab_project_id, pipeline_id):
+    '''
+    Queries GitLab to get the pipeline status and then update the GitHub statuses
+    '''
     gitlabclient = GitlabClient()
     project = gitlabclient.get_project(gitlab_project_id)
     pipeline_attr = gitlabclient.get_pipeline_status(gitlab_project_id,
@@ -246,6 +169,10 @@ def update_pipeline_status(gitlab_project_id, pipeline_id):
 @app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
           retry_backoff=True)
 def update_pipeline_hook(self, event):
+    '''
+    The job triggered when GitLab POST a webhook
+    `Pipeline Hook` and then update GitHub statuses
+    '''
     logger.info(event)
     pipeline_attr = event['object_attributes']
     project = event['project']
@@ -256,7 +183,62 @@ def update_pipeline_hook(self, event):
         raise self.retry(countdown=60, exc=exc)
 
 
+@app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
+          retry_backoff=True)
+def retry_build(self, external_id, sha=None):
+    project_id = external_id['project_id']
+    object_id = external_id['object_id']
+    kind = external_id['object_kind']
+    gitlabclient = GitlabClient()
+    try:
+        if kind == "build":
+            return gitlabclient.retry_build(project_id, object_id)
+        elif kind == "pipeline":
+            return gitlabclient.retry_pipeline(project_id, sha)
+
+    except requests.exceptions.RequestException as exc:
+        logger.error('Error request')
+        raise self.retry(countdown=60, exc=exc)
+
+
+@app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
+          retry_backoff=True)
+def skip_check(self, event):
+    try:
+        check = {
+            'status': 'completed',
+            'conclusion': 'neutral',
+            'completed_at': CheckStatus.ztime(),
+            "actions": CheckStatus.list_task_actions()
+        }
+
+        githubclient = GithubClient(
+            installation_id=event['installation']['id'])
+        return githubclient.update_check_run(event['repository']['full_name'],
+                                             check, event['check_run']['id'])
+    except requests.exceptions.RequestException as exc:
+        logger.error('Error request')
+        raise self.retry(countdown=60, exc=exc)
+
+
+def request_action(action, event):
+    if action == "skip":
+        return skip_check.s(event)
+    if action == "retry":
+        return retry_build.s(json.loads(event['check_run']['external_id']))
+
+
+@app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
+          retry_backoff=True)
+def retry_pipeline(self, external_id):
+    pass
+
+
 def start_pipeline(event, headers):
+    '''
+    start_pipeline is launching the job 'pipeline' if conditions are met.
+    The pipeline job clone the github-repo and push it to gitlab
+    '''
     gevent = GithubEvent(event, headers)
     config = FFCONFIG
     trigger_build = (
@@ -265,9 +247,6 @@ def start_pipeline(event, headers):
         istriggered_on_labels(gevent, config))
     if trigger_build:
         task = pipeline.s(event, headers)
-        # status_sig = signature('hub2labhook.jobs.tasks.update_github_status',
-        #                        args=(), countdown=10)
-        # task.link(status_sig)
         task.link_error(update_github_statuses_failure.s(event, headers))
         return task
     else:
