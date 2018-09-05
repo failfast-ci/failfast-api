@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 import logging
 import re
-
+from hub2labhook.utils import pretty_time_delta
 from hub2labhook.config import FFCONFIG
 from hub2labhook.github.client import GITHUB_CHECK_MAP, GITHUB_CHECK_ICONS
 from hub2labhook.exception import Unexpected
@@ -113,10 +113,10 @@ class CheckStatus(object):
 
     def check_name(self):
         if self.object_kind == "build":
-            return "%s Build - %s" % (FFCONFIG.github['context'],
+            return "%s - %s" % (FFCONFIG.github['context'],
                                       self.object['build_name'])
         else:
-            return "%s - %s" % (FFCONFIG.github['context'], "Pipeline")
+            return "%s %s" % (FFCONFIG.github['context'], "Pipeline")
 
     def check_output(self):
         if self.object_kind == "build":
@@ -221,7 +221,7 @@ class CheckStatus(object):
 
     def check_summary(self):
         title_map = {
-            'allow_failure': 'failed (allowed)',
+            'allow_failure': '**Failed** (allowed failure)',
             "failed":  '**Failed**',
             "success": "**Succeeded**",
             "skipped": "was **Skipped**",
@@ -234,17 +234,45 @@ class CheckStatus(object):
             "warning": "has failed with a **Warning**"
         }
         text = (
-            "<img src='{build_icon}'  height='20'>  "
-            "The <a href='{build_url}'>Build</a> {build_status}."
-        ).format(build_url=self.details_url,
-                 build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
-                 build_status=title_map[self.gitlab_status])
+            "<img src='{build_icon}'  height='25' style='max-width:100%;vertical-align: -7px;'>  "
+            "The <a href='{build_url}'>Build</a> {build_status}.").format(
+                build_url=self.details_url,
+                build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
+                build_status=title_map[self.gitlab_status])
         return text
 
     def check_text(self):
-        return ("# %s/%s" %
-                (self.object['build_stage'], self.object['build_name']) +
-                "\n\n ## Trace available: %s" % self.details_url)
+        title_map = {
+            'allow_failure': 'Failed (allowed)',
+            "failed": "Failed",
+            "success": "Succeeded",
+            "skipped": "Skipped",
+            "unknown": "Unknown",
+            'manual': 'Manual',
+            "canceled": "Cancelled",
+            "pending": "Queued",
+            "created": "Created",
+            "running": "Running",
+            "warning": "Warning"
+        }
+        status = ("<img src='{build_icon}'"
+                  "height='11' style='max-width:100%;vertical-align: -7px;'>"
+                  " **{status}**").format(
+                  build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
+                  status=title_map[self.gitlab_status])
+
+        text = """# Builds info
+        | Name |   Job Id     | Stage   | Status  | Duration |
+        | ---- |:------------:|:-------:|---------|-----|
+        | [{build_name}]({build_url}) | [{build_id}]({build_url}) | {build_stage} | {build_status}| {duration} |
+        """.format(build_stage=self.object['build_stage'],
+                   build_name=self.object['build_name'],
+                   build_url=self.details_url,
+                   duration=pretty_time_delta(self.object['build_duration']),
+                   build_id=self.object_id,
+                   build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
+                   build_status=status)
+        return text
 
     def check_pipeline_title(self):
         return "pipeline/%s" % (self.object_id)
