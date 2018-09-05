@@ -1,3 +1,9 @@
+## 0.6.0 Released on 2018-09-05
+
+    - Uses GitHub checks to report jobs statuses
+    - Actions resync/retry/skip for each jobs available from github
+	- Jobs status details available in github checks
+
 ## 0.5.0 Released on 2018-08-28
 
     - Use Gitlab hook 'pipeline' to receive Jobs/Pipeline statuses
