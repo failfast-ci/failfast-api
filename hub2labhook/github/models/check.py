@@ -361,12 +361,18 @@ class CheckStatus(object):
         build_array = []
         for build in self.object['builds']:
             build_info = {
-                'build_stage': build['stage'],
-                'build_name': build['name'],
-                'build_url': self.build_url(build['id']),
-                'build_duration': self.duration(build['started_at'], build['finished_at']),
-                'build_id': build['id'],
-                'build_status': build['status']
+                'build_stage':
+                    build['stage'],
+                'build_name':
+                    build['name'],
+                'build_url':
+                    self.build_url(build['id']),
+                'build_duration':
+                    self.duration(build['started_at'], build['finished_at']),
+                'build_id':
+                    build['id'],
+                'build_status':
+                    build['status']
             }
             build_array.append(self.build_info_row(build_info))
 
@@ -380,11 +386,10 @@ class CheckStatus(object):
 |:--------------:|:--------:|---------|----------|------|
 | [{pid}]({url}) | {status} | {details} | {duration} | {job_c}
 """.format(pid=self.object_id,
-    url=self.details_url,
-     status=status,
-    duration=pretty_time_delta(self.object['object_attributes']['duration']),
-    details=self.object['object_attributes']['detailed_status'],
-    job_c=str(len(self.object['builds'])))
+           url=self.details_url, status=status, duration=pretty_time_delta(
+               self.object['object_attributes']['duration']),
+           details=self.object['object_attributes']['detailed_status'],
+           job_c=str(len(self.object['builds'])))
 
         text += """
 ## Builds info
@@ -394,4 +399,3 @@ class CheckStatus(object):
 {build_row}
 """.format(build_row='\n'.join(build_array))
         return text
-

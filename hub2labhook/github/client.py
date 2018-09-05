@@ -9,8 +9,6 @@ from hub2labhook.exception import ResourceNotFound
 
 from hub2labhook.config import FFCONFIG
 
-INTEGRATION_PEM = base64.b64decode(os.environ['GITHUB_INTEGRATION_PEM'])
-
 INTEGRATION_ID = int(FFCONFIG.github['integration_id'])
 
 GITHUB_STATUS_MAP = {
@@ -60,27 +58,30 @@ GITHUB_CHECK_ICONS = {
 }
 
 
-def jwt_token():
+def jwt_token(integration_id, integration_pem):
     payload = {
         "iat": datetime.datetime.utcnow(),
         "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=60)),
-        "iss": INTEGRATION_ID
+        "iss": integration_id
     }
 
-    return jwt.encode(payload, INTEGRATION_PEM,
+    return jwt.encode(payload, integration_pem,
                       algorithm='RS256').decode("utf-8")
-
-
-def get_integration_pem():
-    return INTEGRATION_PEM
 
 
 class GithubClient(object):
     def __init__(self, installation_id):
         self.installation_id = installation_id
-        self.integration_pem = get_integration_pem()
         self._token = None
         self.endpoint = "https://api.github.com"
+        self._integration_pem = None
+
+    @property
+    def integration_pem(self):
+        if self._integration_pem is None:
+            self._integration_pem = base64.b64decode(
+                os.environ['GITHUB_INTEGRATION_PEM'])
+        return self._integration_pem
 
     def headers(self, extra=None):
         headers = {
@@ -101,10 +102,14 @@ class GithubClient(object):
     def token(self):
         if not self._token:
             headers = {
-                'Content-Type': 'application/json',
-                "Accept": 'application/vnd.github.machine-man-preview+json',
-                'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
-                'Authorization': "Bearer %s" % jwt_token()
+                'Content-Type':
+                    'application/json',
+                "Accept":
+                    'application/vnd.github.machine-man-preview+json',
+                'User-Agent':
+                    "hub2lab: %s" % hub2labhook.__version__,
+                'Authorization':
+                    "Bearer %s" % jwt_token(INTEGRATION_ID, self.integration_pem)
             }
             path = self._url(
                 "/installations/%s/access_tokens" % self.installation_id)
