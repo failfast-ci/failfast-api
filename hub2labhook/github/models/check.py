@@ -28,6 +28,22 @@ class CheckStatus(object):
                                      "%Y-%m-%dT%H:%M:%S").isoformat() + "Z"
 
     @classmethod
+    def duration(cls, started_at, finished_at):
+        if not finished_at:
+            finished_at = CheckStatus.ztime()
+        start_date, start_time = re.match(r'(.+)[ T](\d{2}:\d{2}:\d{2})',
+                                          started_at).groups()
+        end_date, end_time = re.match(r'(.+)[ T](\d{2}:\d{2}:\d{2})',
+                                      finished_at).groups()
+        begin = datetime.strptime("%sT%s" % (start_date, start_time),
+                                  "%Y-%m-%dT%H:%M:%S")
+        end = datetime.strptime("%sT%s" % (end_date, end_time),
+                                "%Y-%m-%dT%H:%M:%S")
+
+        timedelta = end - begin
+        return timedelta.total_seconds()
+
+    @classmethod
     def task_actions(cls, extra_actions=None):
         actions = {
             "retry": {
@@ -84,6 +100,12 @@ class CheckStatus(object):
             return self.pipeline_url(self.object_id)
         elif self.object_kind == "build":
             return self.build_url(self.object_id)
+
+    def play_url(self, build_id):
+        return self.repourl + "/jobs/%s/cancel" % build_id
+
+    def cancel_url(self, build_id):
+        return self.repourl + "/jobs/%s/play" % build_id
 
     @property
     def object_id(self):
@@ -241,7 +263,7 @@ class CheckStatus(object):
                 build_status=title_map[self.gitlab_status])
         return text
 
-    def check_text(self):
+    def build_info_row(self, build_info):
         title_map = {
             'allow_failure': 'Failed (allowed)',
             "failed": "Failed",
@@ -255,28 +277,116 @@ class CheckStatus(object):
             "running": "Running",
             "warning": "Warning"
         }
-        status = ("<img src='{build_icon}' height='11'/> {status}").format(
-            build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
-            status=title_map[self.gitlab_status])
 
-        text = """# Builds info
+        status = ("<img src='{build_icon}' height='11'/> {status}").format(
+            build_icon=GITHUB_CHECK_ICONS[build_info['build_status']],
+            status=title_map[build_info['build_status']])
+
+        row = ("| **{build_name}**| [{build_id}]({build_url}) |"
+               " {build_stage} | {build_status}|"
+               " {duration} |").format(
+                   build_stage=build_info['build_stage'],
+                   build_name=build_info['build_name'],
+                   build_url=build_info['build_url'],
+                   duration=pretty_time_delta(build_info['build_duration']),
+                   build_id=build_info['build_id'],
+                   build_icon=GITHUB_CHECK_ICONS[build_info['build_status']],
+                   build_status=status)
+        return row
+
+    def check_text(self):
+        build_info = {
+            'build_stage': self.object['build_stage'],
+            'build_name': self.object['build_name'],
+            'build_url': self.details_url,
+            'build_duration': self.object['build_duration'],
+            'build_id': self.object_id,
+            'build_status': self.gitlab_status
+        }
+        text = """# Build info
 
 | Name |   Job Id     | Stage   | Status  | Duration |
-| ---- |:------------:|:-------:|---------|-----|
-| {build_name}| [{build_id}]({build_url}) | {build_stage} | {build_status}| {duration} |
-""".format(build_stage=self.object['build_stage'],
-           build_name=self.object['build_name'],
-           build_url=self.details_url, duration=pretty_time_delta(
-               self.object['build_duration']), build_id=self.object_id,
-           build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
-           build_status=status)
+|:------:|:------------:|:-------:|---------|-----|
+{build_row}
+""".format(build_row=self.build_info_row(build_info))
+
         return text
 
     def check_pipeline_title(self):
-        return "pipeline/%s" % (self.object_id)
+        title_map = {
+            "failed": "Failed",
+            "success": "Succeeded",
+            "skipped": "Skipped",
+            "canceled": "Cancelled",
+            "pending": "Queued",
+            "created": "Created",
+            "running": "in Progress",
+        }
+        return "Pipeline %s" % title_map[self.gitlab_status]
 
     def check_pipeline_summary(self):
-        return "pipeline %s: %s" % (self.object_id, self.status)
+        title_map = {
+            'allow_failure': '**Failed** (allowed failure)',
+            "failed": '**Failed**',
+            "success": "**Succeeded**",
+            "skipped": "was **Skipped**",
+            "canceled": "was **Cancelled**",
+            "pending": "is **Queued**",
+            "created": "is **Created**",
+            "running": "is **Running**",
+        }
+        text = (
+            "<img src='{build_icon}'  height='25' style='max-width:100%;vertical-align: -7px;'/>  "
+            "The <a href='{build_url}'>Pipeline</a> {build_status}.").format(
+                build_url=self.details_url,
+                build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
+                build_status=title_map[self.gitlab_status])
+        return text
 
     def check_pipeline_text(self):
-        return "pipeline %s: %s" % (self.object_id, self.status)
+        title_map = {
+            "failed": "Failed",
+            "success": "Succeeded",
+            "skipped": "Skipped",
+            "canceled": "Cancelled",
+            "pending": "Queued",
+            "created": "Created",
+            "running": "in Progress",
+        }
+
+        build_array = []
+        for build in self.object['builds']:
+            build_info = {
+                'build_stage': build['stage'],
+                'build_name': build['name'],
+                'build_url': self.build_url(build['id']),
+                'build_duration': self.duration(build['started_at'], build['finished_at']),
+                'build_id': build['id'],
+                'build_status': build['status']
+            }
+            build_array.append(self.build_info_row(build_info))
+
+        status = ("<img src='{build_icon}' height='11'/> {status}").format(
+            build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
+            status=title_map[self.gitlab_status])
+        text = """
+## Pipeline info
+
+|   Pipeline Id  |  Status  | details | Duration | Jobs |
+|:--------------:|:--------:|---------|----------|------|
+| [{pid}]({url}) | {status} | {details} | {duration} | {job_c}
+""".format(pid=self.object_id,
+    url=self.details_url,
+     status=status,
+    duration=pretty_time_delta(self.object['object_attributes']['duration']),
+    details=self.object['object_attributes']['detailed_status'],
+    job_c=str(len(self.object['builds'])))
+
+        text += """
+## Builds info
+
+| Name |   Job Id     | Stage   | Status  | Duration |
+|:----:|:------------:|:-------:|---------|-----|
+{build_row}
+""".format(build_row='\n'.join(build_array))
+        return text
