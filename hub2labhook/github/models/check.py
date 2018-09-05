@@ -205,7 +205,7 @@ class CheckStatus(object):
 
     def check_title(self):
         title_map = {
-            'allow_failure': 'Build Failed (ignored)',
+            'allow_failure': 'Build Failed (allowed)',
             "failed": "Build Failed",
             "success": "Build Succeeded",
             "skipped": "Build Skipped",
@@ -221,24 +221,23 @@ class CheckStatus(object):
 
     def check_summary(self):
         title_map = {
-            'allow_failure': 'Failed (ignored)',
-            "failed": "Failed",
-            "success": "Succeeded",
-            "skipped": "Skipped",
-            "unknown": "Status unknown",
-            'manual': 'waiting for action',
-            "canceled": "Cancelled",
-            "pending": "Queued",
-            "created": "Created",
-            "running": "in Progress",
-            "warning": "Warning"
+            'allow_failure': 'failed (allowed)',
+            "failed":  '**Failed**',
+            "success": "**Succeeded**",
+            "skipped": "was **Skipped**",
+            "unknown": "status is **Unknown**",
+            'manual': 'is waiting for **action**',
+            "canceled": "was **Cancelled**",
+            "pending": "is **Queued**",
+            "created": "is **Created**",
+            "running": "is **Running**",
+            "warning": "has failed with a **Warning**"
         }
         text = (
-            "<h3>  <img src='{build_icon}'  height='14'>"
-            "Build (<a href='{build_url}'>{build_id}</a>) **{build_status}**.</h3>"
+            "<img src='{build_icon}'  height='20'>  "
+            "The <a href='{build_url}'>Build</a> {build_status}."
         ).format(build_url=self.details_url,
                  build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
-                 build_id=self.object_id,
                  build_status=title_map[self.gitlab_status])
         return text
 
