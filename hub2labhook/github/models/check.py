@@ -30,7 +30,7 @@ class CheckStatus(object):
     @classmethod
     def duration(cls, started_at, finished_at):
         if not finished_at:
-            finished_at = CheckStatus.ztime()
+            finished_at = cls.ztime()
         start_date, start_time = re.match(r'(.+)[ T](\d{2}:\d{2}:\d{2})',
                                           started_at).groups()
         end_date, end_time = re.match(r'(.+)[ T](\d{2}:\d{2}:\d{2})',
@@ -360,7 +360,7 @@ class CheckStatus(object):
                 'build_stage': build['stage'],
                 'build_name': build['name'],
                 'build_url': self.build_url(build['id']),
-                'build_duration': self.duration(build['started_at'], build['finished_at']),
+                'build_duration': self.duration(str(build['started_at']), str(build['finished_at'])),
                 'build_id': build['id'],
                 'build_status': build['status']
             }
@@ -390,3 +390,4 @@ class CheckStatus(object):
 {build_row}
 """.format(build_row='\n'.join(build_array))
         return text
+
