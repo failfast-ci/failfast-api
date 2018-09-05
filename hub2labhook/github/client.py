@@ -49,7 +49,7 @@ GITHUB_CHECK_ICONS = {
     'allow_failure': icon_url("warning"),
     "failed": icon_url("failed"),
     "success": icon_url("success"),
-    "skipped": icon_url("success"),
+    "skipped": icon_url("skip"),
     "unknown": icon_url("failed"),
     'manual': icon_url('play'),
     "canceled": icon_url("cancel"),
