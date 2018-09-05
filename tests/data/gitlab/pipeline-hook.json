@@ -1,0 +1,259 @@
+{
+    "object_kind": "pipeline",
+    "object_attributes": {
+        "id": 14650392,
+        "ref": "pr-36-failfast-configuration",
+        "tag": false,
+        "sha": "7b8421f7919f4cb92089eb38514e4043c92eea17",
+        "before_sha": "7b8421f7919f4cb92089eb38514e4043c92eea17",
+        "status": "failed",
+        "detailed_status": "failed",
+        "stages": [
+            "build_image",
+            "tests",
+            "github-status-update"
+        ],
+        "created_at": "2017-12-02T15:38:02.569Z",
+        "finished_at": "2017-12-02T15:49:27.230Z",
+        "duration": 245
+    },
+    "user": {
+        "name": "Failfast",
+        "username": "failfastci-bot",
+        "avatar_url": "https://secure.gravatar.com/avatar/cb9b2c87a1c3e91cdd08e2c2f9cc5dea?s=80&d=identicon"
+    },
+    "project": {
+        "id": 4799622,
+        "name": "failfast-ci_failfast-api",
+        "description": null,
+        "web_url": "https://gitlab.com/failfast-ci/failfast-ci_failfast-api",
+        "avatar_url": null,
+        "git_ssh_url": "git@gitlab.com:failfast-ci/failfast-ci_failfast-api.git",
+        "git_http_url": "https://gitlab.com/failfast-ci/failfast-ci_failfast-api.git",
+        "namespace": "failfast-ci",
+        "visibility_level": 10,
+        "path_with_namespace": "failfast-ci/failfast-ci_failfast-api",
+        "default_branch": "master",
+        "ci_config_path": null
+    },
+    "commit": {
+        "id": "7b8421f7919f4cb92089eb38514e4043c92eea17",
+        "message": "build de92e9d03327bbbd809984ee60d0aefd62a3ec5f\n\n @ https://github.com/failfast-ci/failfast-api/pull/36\n",
+        "timestamp": "2017-12-02T15:37:59Z",
+        "url": "https://gitlab.com/failfast-ci/failfast-ci_failfast-api/commit/7b8421f7919f4cb92089eb38514e4043c92eea17",
+        "author": {
+            "name": "FailFast-ci Bot",
+            "email": "failfastci-bot@failfast-ci.io"
+        }
+    },
+    "builds": [{
+        "id": 42878020,
+        "stage": "tests",
+        "name": "pylint",
+        "status": "success",
+        "created_at": "2017-12-02T15:38:02.758Z",
+        "started_at": "2017-12-02T15:48:27.452Z",
+        "finished_at": "2017-12-02T15:49:27.141Z",
+        "when": "on_success",
+        "manual": false,
+        "user": {
+            "name": "Failfast",
+            "username": "failfastci-bot",
+            "avatar_url": "https://secure.gravatar.com/avatar/cb9b2c87a1c3e91cdd08e2c2f9cc5dea?s=80&d=identicon"
+        },
+        "runner": {
+            "id": 174655,
+            "description": "gitlab-dedibox",
+            "active": true,
+            "is_shared": false
+        },
+        "artifacts_file": {
+            "filename": null,
+            "size": 6966
+        }
+    },
+    {
+        "id": 42878021,
+        "stage": "tests",
+        "name": "unit-tests",
+        "status": "success",
+        "created_at": "2017-12-02T15:38:02.794Z",
+        "started_at": "2017-12-02T15:48:28.030Z",
+        "finished_at": "2017-12-02T15:49:05.407Z",
+        "when": "on_success",
+        "manual": false,
+        "user": {
+            "name": "Failfast",
+            "username": "failfastci-bot",
+            "avatar_url": "https://secure.gravatar.com/avatar/cb9b2c87a1c3e91cdd08e2c2f9cc5dea?s=80&d=identicon"
+        },
+        "runner": {
+            "id": 174655,
+            "description": "gitlab-dedibox",
+            "active": true,
+            "is_shared": false
+        },
+        "artifacts_file": {
+            "filename": null,
+            "size": 9230
+        }
+    },
+    {
+        "id": 42878019,
+        "stage": "tests",
+        "name": "mypy_compile",
+        "status": "success",
+        "created_at": "2017-12-02T15:38:02.717Z",
+        "started_at": "2017-12-02T15:48:26.745Z",
+        "finished_at": "2017-12-02T15:48:52.989Z",
+        "when": "on_success",
+        "manual": false,
+        "user": {
+            "name": "Failfast",
+            "username": "failfastci-bot",
+            "avatar_url": "https://secure.gravatar.com/avatar/cb9b2c87a1c3e91cdd08e2c2f9cc5dea?s=80&d=identicon"
+        },
+        "runner": {
+            "id": 174655,
+            "description": "gitlab-dedibox",
+            "active": true,
+            "is_shared": false
+        },
+        "artifacts_file": {
+            "filename": null,
+            "size": 2198
+        }
+    },
+    {
+        "id": 42878022,
+        "stage": "tests",
+        "name": "yapf",
+        "status": "failed",
+        "created_at": "2017-12-02T15:38:02.830Z",
+        "started_at": "2017-12-02T15:48:28.611Z",
+        "finished_at": "2017-12-02T15:48:46.534Z",
+        "when": "on_success",
+        "manual": false,
+        "user": {
+            "name": "Failfast",
+            "username": "failfastci-bot",
+            "avatar_url": "https://secure.gravatar.com/avatar/cb9b2c87a1c3e91cdd08e2c2f9cc5dea?s=80&d=identicon"
+        },
+        "runner": {
+            "id": 174655,
+            "description": "gitlab-dedibox",
+            "active": true,
+            "is_shared": false
+        },
+        "artifacts_file": {
+            "filename": null,
+            "size": 4917
+        }
+    },
+    {
+        "id": 42878018,
+        "stage": "tests",
+        "name": "flake8",
+        "status": "failed",
+        "created_at": "2017-12-02T15:38:02.675Z",
+        "started_at": "2017-12-02T15:48:26.227Z",
+        "finished_at": "2017-12-02T15:48:42.212Z",
+        "when": "on_success",
+        "manual": false,
+        "user": {
+            "name": "Failfast",
+            "username": "failfastci-bot",
+            "avatar_url": "https://secure.gravatar.com/avatar/cb9b2c87a1c3e91cdd08e2c2f9cc5dea?s=80&d=identicon"
+        },
+        "runner": {
+            "id": 174655,
+            "description": "gitlab-dedibox",
+            "active": true,
+            "is_shared": false
+        },
+        "artifacts_file": {
+            "filename": null,
+            "size": 2312
+        }
+    },
+    {
+        "id": 42878356,
+        "stage": "build_image",
+        "name": "build-image",
+        "status": "success",
+        "created_at": "2017-12-02T15:45:30.208Z",
+        "started_at": "2017-12-02T15:45:32.129Z",
+        "finished_at": "2017-12-02T15:48:23.285Z",
+        "when": "on_success",
+        "manual": false,
+        "user": {
+            "name": "ant31",
+            "username": "ant31",
+            "avatar_url": "https://secure.gravatar.com/avatar/ce438ee427d51da767ed23488500f9c7?s=80&d=identicon"
+        },
+        "runner": {
+            "id": 174655,
+            "description": "gitlab-dedibox",
+            "active": true,
+            "is_shared": false
+        },
+        "artifacts_file": {
+            "filename": null,
+            "size": 13733
+        }
+    },
+
+    {
+        "id": 42878017,
+        "stage": "build_image",
+        "name": "build-image",
+        "status": "failed",
+        "created_at": "2017-12-02T15:38:02.632Z",
+        "started_at": "2017-12-02T15:40:35.421Z",
+        "finished_at": "2017-12-02T15:40:46.061Z",
+        "when": "on_success",
+        "manual": false,
+        "user": {
+            "name": "Failfast",
+            "username": "failfastci-bot",
+            "avatar_url": "https://secure.gravatar.com/avatar/cb9b2c87a1c3e91cdd08e2c2f9cc5dea?s=80&d=identicon"
+        },
+        "runner": {
+            "id": 174655,
+            "description": "gitlab-dedibox",
+            "active": true,
+            "is_shared": false
+        },
+        "artifacts_file": {
+            "filename": null,
+            "size": 3078
+        }
+    },
+    {
+        "id": 42878023,
+        "stage": "github-status-update",
+        "name": "report-status",
+        "status": "success",
+        "created_at": "2017-12-02T15:38:02.868Z",
+        "started_at": "2017-12-02T15:40:47.073Z",
+        "finished_at": "2017-12-02T15:41:00.980Z",
+        "when": "always",
+        "manual": false,
+        "user": {
+            "name": "Failfast",
+            "username": "failfastci-bot",
+            "avatar_url": "https://secure.gravatar.com/avatar/cb9b2c87a1c3e91cdd08e2c2f9cc5dea?s=80&d=identicon"
+        },
+        "runner": {
+            "id": 174655,
+            "description": "gitlab-dedibox",
+            "active": true,
+            "is_shared": false
+        },
+        "artifacts_file": {
+            "filename": null,
+            "size": 5966
+        }
+    }
+]
+}
