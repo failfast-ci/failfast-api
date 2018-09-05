@@ -30,7 +30,7 @@ class CheckStatus(object):
     @classmethod
     def duration(cls, started_at, finished_at):
         if started_at is None:
-            return 0
+            return None
 
         if finished_at is None:
             finished_at = cls.ztime()

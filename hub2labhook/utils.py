@@ -14,6 +14,8 @@ class DelayedRequest(Thread):
 
 
 def pretty_time_delta(seconds):
+    if seconds is None:
+        return "-"
     seconds = int(seconds)
     days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)
