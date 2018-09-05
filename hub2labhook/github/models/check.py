@@ -22,10 +22,10 @@ class CheckStatus(object):
         if timestr is None:
             return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
-            date, time = re.match(r'(.+)[ T](\d{2}:\d{2}:\d{2})', timestr).groups()
+            date, time = re.match(r'(.+)[ T](\d{2}:\d{2}:\d{2})',
+                                  timestr).groups()
             return datetime.strptime("%sT%s" % (date, time),
                                      "%Y-%m-%dT%H:%M:%S").isoformat() + "Z"
-
 
     @classmethod
     def task_actions(cls, extra_actions=None):
@@ -114,7 +114,7 @@ class CheckStatus(object):
     def check_name(self):
         if self.object_kind == "build":
             return "%s - %s" % (FFCONFIG.github['context'],
-                                      self.object['build_name'])
+                                self.object['build_name'])
         else:
             return "%s %s" % (FFCONFIG.github['context'], "Pipeline")
 
@@ -222,7 +222,7 @@ class CheckStatus(object):
     def check_summary(self):
         title_map = {
             'allow_failure': '**Failed** (allowed failure)',
-            "failed":  '**Failed**',
+            "failed": '**Failed**',
             "success": "**Succeeded**",
             "skipped": "was **Skipped**",
             "unknown": "status is **Unknown**",
@@ -234,7 +234,7 @@ class CheckStatus(object):
             "warning": "has failed with a **Warning**"
         }
         text = (
-            "<img src='{build_icon}'  height='25' style='max-width:100%;vertical-align: -7px;'>  "
+            "<img src='{build_icon}'  height='25' style='max-width:100%;vertical-align: -7px;'/>  "
             "The <a href='{build_url}'>Build</a> {build_status}.").format(
                 build_url=self.details_url,
                 build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
@@ -255,23 +255,21 @@ class CheckStatus(object):
             "running": "Running",
             "warning": "Warning"
         }
-        status = ("<img src='{build_icon}'"
-                  "height='11' style='max-width:100%;vertical-align: -7px;'>"
-                  " **{status}**").format(
-                  build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
-                  status=title_map[self.gitlab_status])
+        status = ("<img src='{build_icon}' height='11'/> {status}").format(
+            build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
+            status=title_map[self.gitlab_status])
 
         text = """# Builds info
-        | Name |   Job Id     | Stage   | Status  | Duration |
-        | ---- |:------------:|:-------:|---------|-----|
-        | [{build_name}]({build_url}) | [{build_id}]({build_url}) | {build_stage} | {build_status}| {duration} |
-        """.format(build_stage=self.object['build_stage'],
-                   build_name=self.object['build_name'],
-                   build_url=self.details_url,
-                   duration=pretty_time_delta(self.object['build_duration']),
-                   build_id=self.object_id,
-                   build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
-                   build_status=status)
+
+| Name |   Job Id     | Stage   | Status  | Duration |
+| ---- |:------------:|:-------:|---------|-----|
+| {build_name}| [{build_id}]({build_url}) | {build_stage} | {build_status}| {duration} |
+""".format(build_stage=self.object['build_stage'],
+           build_name=self.object['build_name'],
+           build_url=self.details_url, duration=pretty_time_delta(
+               self.object['build_duration']), build_id=self.object_id,
+           build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
+           build_status=status)
         return text
 
     def check_pipeline_title(self):
