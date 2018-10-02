@@ -83,6 +83,9 @@ def update_github_check(event):
     if checkstatus.status == "queued" and checkstatus.object_kind == "build":
         return None
 
+    if checkstatus.object_kind == "pipeline":
+        githubclient.post_status(checkstatus.render_pipeline_status(),
+                                 github_repo, checkstatus.sha)
     return githubclient.create_check(github_repo, checkstatus.render_check())
 
 
@@ -226,6 +229,8 @@ def request_action(action, event):
         return skip_check.s(event)
     if action == "retry":
         return retry_build.s(json.loads(event['check_run']['external_id']))
+    if action == "resync":
+        pass
 
 
 @app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},

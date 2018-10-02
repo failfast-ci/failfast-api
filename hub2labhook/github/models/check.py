@@ -5,9 +5,8 @@ import logging
 import re
 from hub2labhook.utils import pretty_time_delta
 from hub2labhook.config import FFCONFIG
-from hub2labhook.github.client import GITHUB_CHECK_MAP, GITHUB_CHECK_ICONS
+from hub2labhook.github.client import GITHUB_CHECK_MAP, GITHUB_CHECK_ICONS, GITHUB_STATUS_MAP
 from hub2labhook.exception import Unexpected
-
 logger = logging.getLogger(__name__)
 
 
@@ -211,6 +210,17 @@ class CheckStatus(object):
             return self.object['build_status']
         else:
             return self.object['object_attributes']['status']
+
+    def render_pipeline_status(self):
+        context = FFCONFIG.github['context-status']
+        state = GITHUB_STATUS_MAP[self.gitlab_status]
+        status_body = {
+            "state": state,
+            "target_url": self.details_url,
+            "description": self.check_pipeline_title,
+            "context": "%s/pipeline" % context
+        }
+        return status_body
 
     def render_check(self):
         check = {

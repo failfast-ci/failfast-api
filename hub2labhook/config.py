@@ -136,6 +136,7 @@ class FailFastConfig(object):
             },
             'github': {
                 'context': GITHUB_CONTEXT,
+                'context-status': GITHUB_CONTEXT,
                 'secret_token': GITHUB_SECRET_TOKEN,
                 'integration_id': GITHUB_INTEGRATION_ID,
             },
