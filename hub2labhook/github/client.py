@@ -109,7 +109,8 @@ class GithubClient(object):
                 'User-Agent':
                     "hub2lab: %s" % hub2labhook.__version__,
                 'Authorization':
-                    "Bearer %s" % jwt_token(INTEGRATION_ID, self.integration_pem)
+                    "Bearer %s" % jwt_token(INTEGRATION_ID,
+                                            self.integration_pem)
             }
             path = self._url(
                 "/installations/%s/access_tokens" % self.installation_id)
