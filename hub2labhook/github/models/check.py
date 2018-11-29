@@ -217,7 +217,7 @@ class CheckStatus(object):
         status_body = {
             "state": state,
             "target_url": self.details_url,
-            "description": self.check_pipeline_title,
+            "description": self.check_pipeline_title(),
             "context": "%s/pipeline" % context
         }
         return status_body
