@@ -68,6 +68,9 @@ class Pipeline(object):
                 'expected_sha': gevent.head_sha,
                 'sha': gitbin.rev_parse('HEAD')
             })
+
+        if FFCONFIG.failfast['build']['rebase'] is True:
+            gitbin.rebase("master")
         return gitbin
 
     def _get_ci_file(self, repo_path):

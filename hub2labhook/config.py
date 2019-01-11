@@ -5,6 +5,8 @@ Acquire runtime configuration from environment variables (etc).
 import os
 import yaml
 
+from hub2labhook.utils import strtobool
+
 
 def logfile_path(jsonfmt=False, debug=False):
     """
@@ -14,7 +16,7 @@ def logfile_path(jsonfmt=False, debug=False):
       - conf/logging_debug.conf      # jsonfmt=false, debug=true
       - conf/logging.conf            # jsonfmt=false, debug=false
     Can be parametrized via envvars: JSONLOG=true, DEBUGLOG=true
-  """
+    """
     _json = ""
     _debug = ""
 
@@ -89,7 +91,7 @@ if GITLAB_REPO_PRIVACY not in ("private", "internal", "public"):
 GITHUB_CONTEXT = getenv("GITHUB_CONTEXT", "gitlab-ci")
 GITHUB_INTEGRATION_ID = getenv("GITHUB_INTEGRATION_ID", "000")
 GITHUB_SECRET_TOKEN = getenv("GITHUB_SECRET_TOKEN", None)
-
+FAILFASTCI_TEST_REBASE = getenv("FAILFASTCI_TEST_REBASE", "true", strtobool)
 FAILFASTCI_NAMESPACE = getenv("FAILFASTCI_NAMESPACE", "failfast-ci")
 FAILFASTCI_API = getenv("FAILFAST_CI_API", "https://jobs.failfast-ci.com")
 
@@ -121,6 +123,7 @@ class FailFastConfig(object):
                 'env': APP_ENVIRON,
                 'failfast_url': FAILFASTCI_API,
                 'build': {
+                    'rebase': FAILFASTCI_TEST_REBASE,
                     'on-pullrequests': ['*'],
                     'on-branches': ['master'],
                     'on-labels': [

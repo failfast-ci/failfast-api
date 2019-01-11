@@ -136,7 +136,7 @@ fmt-ci:
 	find . -iname "*.jsonnet" | xargs jsonnet fmt -i -n 2
 	find . -iname "*.libsonnet" | xargs jsonnet fmt -i -n 2
 
-gen-ci: fmt-ci
+gen-ci:
 	ffctl gen
 
 mypy:
