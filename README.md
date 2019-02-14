@@ -52,7 +52,7 @@ _Note:_ If you're going to install failfast-api via helm, you'll need to double 
 
 ### GitLab Configuration
 
-To configure GitLab to use failfast-ci, add a robot user, a group, and make the robot a master of the group.
+To configure GitLab to use failfast-ci, add a robot user, a group, and make the robot a maintainer of the group.
 
 1. From the _"Users"_ section of the _Admin Area_ create a _"New User"_.
 1. Give it a _"Name"_, _"User Name"_, and _"Email"_.
