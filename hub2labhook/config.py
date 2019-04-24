@@ -62,8 +62,6 @@ GITLAB_SECRET_TOKEN = getenv("GITLAB_TOKEN", GITLAB_SECRET_TOKEN_DEFAULT)
 
 GITLAB_API = getenv("GITLAB_API", "https://gitlab.com")
 GITLAB_REPO = getenv("GITLAB_REPO", None)
-GITLAB_BRANCH = getenv("GITLAB_BRANCH", None)
-GITLAB_TRIGGER = getenv("GITLAB_TRIGGER", None)
 GITLAB_USER = getenv("GITLAB_USER", None)
 GITLAB_ENABLE_JOBS = True  # without this, CI is moot.
 
@@ -98,9 +96,6 @@ FAILFASTCI_REQUIRE_RUNNER_TAG = getenv("FAILFASTCI_RUNNER_TAG", "failfast-ci")
 
 if FAILFASTCI_REQUIRE_RUNNER_TAG.lower() in ('none', ):
     FAILFASTCI_REQUIRE_RUNNER_TAG = None
-
-BUILD_PULL_REQUEST = getenv("BUILD_PULL_REQUEST", "true")
-BUILD_PUSH = getenv("BUILD_PUSH", "false")
 
 FFCI_SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
 FFCI_ROOT_DIR = os.path.abspath(os.path.join(FFCI_SOURCE_DIR, "../"))
