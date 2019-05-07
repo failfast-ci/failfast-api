@@ -108,7 +108,7 @@ def update_github_statuses_failure(self, request, exc, traceback, event,
         target_url=(gevent.commit_url),  # TODO: link the gitlab YAML
         description="An error occurred in pipeline execution. %s: %s" % (exc,
             exc.message),
-        context="%s/%s" % (FFCONFIG.github['context'], "pipeline"))
+        context="%s/%s" % (FFCONFIG.github['context-status'], "pipeline"))
     return githubclient.post_status(body, gevent.repo, gevent.head_sha)
 
 
