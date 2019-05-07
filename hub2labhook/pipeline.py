@@ -86,26 +86,27 @@ class Pipeline(object):
         gevent = self.ghevent
         gitlab_user = self.config.gitlab['robot-user']
         dirpath = tempfile.mkdtemp()
-        repo_path = os.path.join(dirpath, "repo")
+        repo_path = os.path.join(str(dirpath), "repo")
         gitbin = self._checkout_repo(gevent, repo_path)
 
         try:
             ci_file = self._get_ci_file(repo_path)
         except ResourceNotFound:
-            raise Unexpected("Could not find a CI config file in: %s" %
-                             (repo_path))
+            raise Unexpected(
+                "Could not find a CI config file in: %s" % (repo_path))
 
         try:
             content = self._parse_ci_file(ci_file['content'], ci_file['file'])
         except YAMLComposeError:
             raise Unexpected("Could not parse CI file: %s" % (ci_file['file']),
                              {})
-
-        lint_resp = GitlabClient().gitlabci_lint(ci_file['content'])
-        logger.error(lint_resp)
-        logger.error(content)
-        if 'status' not in lint_resp or lint_resp['status'] != 'valid':
-            raise Unexpected(".gitlab-ci.yml syntax error", {})
+        if self.config.failfast['enable_linter']:
+            lint_resp = GitlabClient().gitlabci_lint(ci_file['content'])
+            logger.error(lint_resp)
+            logger.error(content)
+            if 'status' not in lint_resp or lint_resp['status'] != 'valid':
+                raise Unexpected(".gitlab-ci.yml syntax error",
+                                 {'r': lint_resp})
 
         variables = content.get('variables', dict())
 

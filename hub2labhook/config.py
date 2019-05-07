@@ -90,7 +90,8 @@ GITHUB_SECRET_TOKEN = getenv("GITHUB_SECRET_TOKEN", None)
 
 FAILFASTCI_NAMESPACE = getenv("FAILFASTCI_NAMESPACE", "failfast-ci")
 FAILFASTCI_API = getenv("FAILFAST_CI_API", "https://jobs.failfast-ci.com")
-
+FAILFASTCI_ENABLE_LINTER = getenv("FAILFASTCI_ENABLE_LINTER", default=True,
+                                  convert=envbool)
 # The GitLab runner tag to require on CI jobs introduced by failfast
 FAILFASTCI_REQUIRE_RUNNER_TAG = getenv("FAILFASTCI_RUNNER_TAG", "failfast-ci")
 
@@ -114,6 +115,7 @@ class FailFastConfig(object):
             'failfast': {
                 'debug': False,
                 'env': APP_ENVIRON,
+                'enable_linter': FAILFASTCI_ENABLE_LINTER,
                 'failfast_url': FAILFASTCI_API,
                 'build': {
                     'on-pullrequests': ['*'],
