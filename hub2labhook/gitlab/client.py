@@ -239,6 +239,44 @@ class GitlabClient(object):
         resp.raise_for_status()
         return resp.json()
 
+    def get_branches(self, project_id, search=None):
+        branches = []
+        page = 1
+        page_count = 100
+        while page <= page_count:
+            params = {"page": page, "per_page": 50}
+            if search:
+                params['search'] = search
+            path = self._url("/projects/%s/repository/branches" % (self.get_project_id(project_id)))
+            resp = requests.get(path, headers=self.headers, params=params)
+            resp.raise_for_status()
+            branches += resp.json()
+            page_count = resp.headers['X-Total-Pages']
+            if not resp.headers['X-Next-Page']:
+                break
+            page = resp.headers['X-Next-Page']
+        return branches
+
+    def delete_old_branches(self, project_id, branches, days_old):
+        from datetime import datetime, timedelta
+        delta = timedelta(days_old)
+        max_date = datetime.utcnow() - delta
+        project_id = self.get_project_id(project_id)
+        delete_branches = 0
+        for branch in branches:
+            date = datetime.fromisoformat(branch['commit']['committed_date']).replace(tzinfo=None)
+            if date < max_date and branch['name'] != "master":
+                self.delete_branch(project_id, branch['name'])
+                delete_branches += 1
+        return delete_branches
+
+    def delete_branch(self, project_id, branch):
+        path = self._url("/projects/%s/repository/branches/%s" %
+                         (self.get_project_id(project_id), urllib.parse.quote_plus(branch)))
+        resp = requests.delete(path, headers=self.headers, timeout=self.config.gitlab['timeout'])
+        resp.raise_for_status()
+        return True
+
     def initialize_project(self, project_name: str, namespace: str = None):
         project = self.get_or_create_project(project_name, namespace)
         branch = "master"
