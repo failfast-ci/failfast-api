@@ -3,7 +3,6 @@ celery[redis]
 iziconf
 requests
 flask
-Flask>=0.10.1
 flask-cors
 PyJWT
 PyYaml
@@ -12,3 +11,6 @@ cryptography
 celery
 flower
 jaeger-client
+celery-prometheus-exporter
+prometheus_client
+prometheus_flask_exporter

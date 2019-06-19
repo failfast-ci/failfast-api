@@ -13,6 +13,7 @@ info_app = Blueprint(
 logger = logging.getLogger(__name__)
 
 
+
 @info_app.route("/")
 def index():
     return version()

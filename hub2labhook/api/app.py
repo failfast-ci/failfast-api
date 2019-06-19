@@ -1,5 +1,8 @@
+import sys
+import os
 from flask import Flask, request
 from flask_cors import CORS
+
 from hub2labhook.config import FFCONFIG
 from hub2labhook.exception import Hub2LabException
 from hub2labhook.api.handlers.errors import render_error
@@ -7,12 +10,15 @@ from hub2labhook.api.handlers.request_logging import before_request_log, after_r
 from hub2labhook.api.flaskapp import FlaskApp
 
 
-def getvalues():
-    jsonbody = request.get_json(force=True, silent=True)
-    values = request.values.to_dict()
-    if jsonbody:
-        values.update(jsonbody)
-    return values
+def init_metrics(app):
+    from prometheus_client import multiprocess
+    from prometheus_client.core import CollectorRegistry
+    from prometheus_flask_exporter import PrometheusMetrics
+
+    metrics_dir = FFCONFIG.failfast['metrics_dir']
+    registry = CollectorRegistry()
+    multiprocess.MultiProcessCollector(registry, path=metrics_dir)
+    return PrometheusMetrics(app, registry=registry)
 
 
 class FailfastApp(FlaskApp):
@@ -25,11 +31,12 @@ class FailfastApp(FlaskApp):
     error_handler_funcs = [(Exception, render_error), (Hub2LabException,
                                                        render_error)]
 
-
 def create_app():
+
     app = Flask(__name__)
     CORS(app)
     ffapp = FailfastApp(app)
+    init_metrics(app)
     # app.logger.addHandler(logging.StreamHandler(sys.stdout))
     # app.logger.setLevel(logging.INFO)
     if FFCONFIG.failfast['env'] != 'production':
@@ -44,4 +51,5 @@ def create_app():
 
 if __name__ == "__main__":
     application = create_app().app
+
     application.run(host='0.0.0.0')

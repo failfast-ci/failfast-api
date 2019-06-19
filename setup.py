@@ -17,7 +17,8 @@ requirements = [
     'iziconf',
     'requests',
     'flask',
-    'Flask>=0.10.1',
+    'prometheus_client',
+    'prometheus_flask_exporter',    
     'flask-cors',
     'PyJWT',
     'PyYaml',
@@ -26,7 +27,7 @@ requirements = [
     'celery',
     'flower',
     'mypy',
-    'jaeger-client'
+
 ]
 
 test_requirements = [

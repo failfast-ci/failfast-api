@@ -104,6 +104,9 @@ FFCI_CONF_DIR = os.getenv("FFCI_CONF_DIR", os.path.join(
     FFCI_ROOT_DIR, "conf/"))
 
 FFCI_CONF_FILE = os.getenv("FFCI_CONF_FILE", None)
+FAILFASTCI_METRICS_DIR = os.getenv("FAILFASTCI_METRICS_DIR",
+                                   os.path.abspath(os.path.join(FFCI_ROOT_DIR,
+                                                                "metrics-db")))
 
 
 class FailFastConfig(object):
@@ -113,6 +116,7 @@ class FailFastConfig(object):
     def __init__(self, defaults=None, confpath=None):
         self.settings = {
             'failfast': {
+                'metrics_dir': FAILFASTCI_METRICS_DIR,
                 'debug': False,
                 'env': APP_ENVIRON,
                 'enable_linter': FAILFASTCI_ENABLE_LINTER,

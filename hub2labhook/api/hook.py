@@ -1,16 +1,25 @@
 import hmac
 import hashlib
 from flask import jsonify, request, Blueprint
-from hub2labhook.api.app import getvalues
+
 from hub2labhook.exception import (InvalidUsage, Forbidden, Unsupported)
 import hub2labhook.jobs.tasks as tasks
 from hub2labhook.github.models.event import GithubEvent
 from hub2labhook.config import FFCONFIG
 
+
 ffapi_app = Blueprint(
     'ffapi',
     __name__,
 )  # type: Blueprint
+
+
+def getvalues():
+    jsonbody = request.get_json(force=True, silent=True)
+    values = request.values.to_dict()
+    if jsonbody:
+        values.update(jsonbody)
+    return values
 
 
 @ffapi_app.route("/test_error")
