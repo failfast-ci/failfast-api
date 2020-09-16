@@ -113,7 +113,7 @@ class GithubClient(object):
                                             self.integration_pem)
             }
             path = self._url(
-                "/installations/%s/access_tokens" % self.installation_id)
+                "/app/installations/%s/access_tokens" % self.installation_id)
 
             resp = requests.post(path, headers=headers)
             resp.raise_for_status()
