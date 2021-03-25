@@ -36,6 +36,20 @@ class GitlabClient(object):
         """ Construct the url from a relative path """
         return self.endpoint + API_VERSION + path
 
+    def create_webhooks(self, project_id):
+        body = {
+        'job_events': True,
+        'pipeline_events': True,
+        'deployment_events': True,
+        'url': self.config.gitlab['webhook_url'],
+        }
+        path = self._url("/projects/%s/hooks" % project_id)
+        resp = requests.post(path, data=json.dumps(body).encode(),
+                             headers=self.headers,
+                             timeout=self.config.gitlab['timeout'])
+        resp.raise_for_status()
+        return resp
+
     @property
     def headers(self):
         """ Configure requests headers with the private token """
@@ -173,35 +187,22 @@ class GitlabClient(object):
         group_id = self.get_namespace_id(group_name)
         path = self._url("/projects")
         body = {
-            "name":
-                project_name,
-            "namespace_id":
-                group_id,
-            "issues_enabled":
-                self.config.gitlab['enable_issues'],
-            "merge_requests_enabled":
-                self.config.gitlab['enable_merge_requests'],
-            "jobs_enabled":
-                self.config.gitlab['enable_jobs'],
-            "wiki_enabled":
-                self.config.gitlab['enable_wiki'],
-            "snippets_enabled":
-                self.config.gitlab['enable_snippets'],
-            "container_registry_enabled":
-                self.config.gitlab['enable_container_registry'],
-            "shared_runners_enabled":
-                self.config.gitlab['enable_shared_runners'],
-            "public":
-                repo_public,
-            "visibility": ("public"
-                           if repo_public else self.config.gitlab['privacy']),
-            "public_jobs":
-                repo_public,
+            "name": project_name,
+            "namespace_id": group_id,
+            "builds_access_level": 'enabled',
+            "operations_access_level": 'enabled',
+            "merge_requests_access_level": 'enabled',
+            "public_builds": False,
+            'repository_access_level': 'enabled',
+            'shared_runners_enabled': False,
+            "visibility": "private"
         }
+
         resp = requests.post(path, data=json.dumps(body).encode(),
                              headers=self.headers,
                              timeout=self.config.gitlab['timeout'])
         resp.raise_for_status()
+        _ = self.create_webhooks(resp.json()['id'])
         return resp.json()
 
     def push_file(self, project_id, file_path, file_content, branch, message,
@@ -280,6 +281,7 @@ class GitlabClient(object):
     def initialize_project(self, project_name: str, namespace: str = None):
         project = self.get_or_create_project(project_name, namespace)
         branch = "master"
+
         branch_path = self._url("/projects/%s/repository/branches/%s" %
                                 (project['id'], branch))
         resp = requests.get(branch_path, headers=self.headers,
