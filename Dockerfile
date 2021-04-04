@@ -8,6 +8,7 @@ RUN apk --no-cache add --virtual build-dependencies \
 RUN pip install -U pip && pip install setuptools -U
 RUN rm -rf $workdir
 RUN mkdir -p $workdir
+
 COPY . $workdir
 COPY .style.yapf $workdir
 WORKDIR $workdir

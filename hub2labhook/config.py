@@ -80,7 +80,7 @@ GITLAB_ENABLE_MERGE_REQUESTS = getenv("GITLAB_MERGE_REQUESTS", default=False,
 GITLAB_ENABLE_ISSUES = getenv("GITLAB_ISSUES", default=False, convert=envbool)
 
 GITLAB_REPO_PRIVACY = getenv("GITLAB_REPO_PRIVACY", default="internal")
-
+GITLAB_WEBHOOK_URL = getenv("GITLAB_WEBHOOK_URL", default="https://jobs.failfast-ci.com/api/v1/gitlab_event")
 if GITLAB_REPO_PRIVACY not in ("private", "internal", "public"):
     GITLAB_REPO_PRIVACY = "private"
 
@@ -153,6 +153,7 @@ class FailFastConfig(object):
                 'enable_snippets': GITLAB_ENABLE_SNIPPETS,
                 'enable_issues': GITLAB_ENABLE_ISSUES,
                 'enable_merge_requests': GITLAB_ENABLE_MERGE_REQUESTS,
+                'webhook_url': GITLAB_WEBHOOK_URL
             }
         }
         if defaults:
