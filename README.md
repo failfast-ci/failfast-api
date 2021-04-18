@@ -96,3 +96,9 @@ To add or modify the jobs edit the `.gitlab-ci.jsonnet` or the files in the `.gi
 pip install ffctl
 make gen-ci
 ```
+
+## Architecture
+
+![architecture diagram](Documentation/failfast-ci.svg)
+
+
