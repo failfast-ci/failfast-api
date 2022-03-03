@@ -40,19 +40,18 @@ GITHUB_CHECK_MAP = {
 
 
 def icon_url(icon):
-    return "https://storage.googleapis.com/kubespray-ci-state/ci-icons/%s-64.png" % icon
-
+    return "https://s3.conny.dev/public/icons-failfast/%s.png" % icon
 
 GITHUB_CHECK_ICONS = {
     'allow_failure': icon_url("warning"),
-    "failed": icon_url("failed"),
-    "success": icon_url("success"),
+    "failed": icon_url("failed2"),
+    "success": icon_url("happy-agnes-icon_43743"),
     "skipped": icon_url("skip"),
-    "unknown": icon_url("failed"),
+    "unknown": icon_url("failed2"),
     'manual': icon_url('play'),
     "canceled": icon_url("cancel"),
-    "pending": icon_url("running"),
-    "created": icon_url("running"),
+    "pending": icon_url("waiting"),
+    "created": icon_url("waiting"),
     "running": icon_url("running"),
     "warning": icon_url("warning"),
 }

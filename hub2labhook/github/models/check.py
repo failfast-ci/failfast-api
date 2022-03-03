@@ -270,7 +270,7 @@ class CheckStatus(object):
             "warning": "has failed with a **Warning**"
         }
         text = (
-            "<img src='{build_icon}'  height='25' style='max-width:100%;vertical-align: -7px;'/>  "
+            "<img src='{build_icon}'  height='64px' style='max-width:100%;vertical-align: -7px;'/>  "
             "The <a href='{build_url}'>Build</a> {build_status}.").format(
                 build_url=self.details_url,
                 build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
@@ -292,7 +292,7 @@ class CheckStatus(object):
             "warning": "Warning"
         }
 
-        status = ("<img src='{build_icon}' height='11'/> {status}").format(
+        status = ("<img src='{build_icon}' height='32px'/> {status}").format(
             build_icon=GITHUB_CHECK_ICONS[build_info['build_status']],
             status=title_map[build_info['build_status']])
 
@@ -350,7 +350,7 @@ class CheckStatus(object):
             "running": "is **Running**",
         }
         text = (
-            "<img src='{build_icon}'  height='25' style='max-width:100%;vertical-align: -7px;'/>  "
+            "<img src='{build_icon}'  height='64px' style='max-width:100%;vertical-align: -7px;'/>  "
             "The <a href='{build_url}'>Pipeline</a> {build_status}.").format(
                 build_url=self.details_url,
                 build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
@@ -386,7 +386,7 @@ class CheckStatus(object):
             }
             build_array.append(self.build_info_row(build_info))
 
-        status = ("<img src='{build_icon}' height='11'/> {status}").format(
+        status = ("<img src='{build_icon}' height='32px'/> {status}").format(
             build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
             status=title_map[self.gitlab_status])
         text = """
