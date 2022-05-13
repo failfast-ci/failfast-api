@@ -156,7 +156,8 @@ def post_pipeline_status(project, pipeline_attr):
     return githubclient.post_status(pipeline_body, github_repo, sha)
 
 
-@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5},
+          retry_backoff=True)
 def update_pipeline_status(gitlab_project_id, pipeline_id):
     '''
     Queries GitLab to get the pipeline status and then update the GitHub statuses
@@ -230,13 +231,94 @@ def request_action(action, event):
     if action == "retry":
         return retry_build.s(json.loads(event['check_run']['external_id']))
     if action == "resync":
-        pass
+        return resync_action.s(event)
 
 
 @app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
           retry_backoff=True)
-def retry_pipeline(self, external_id):
+def retry_pipeline(self, event):
     pass
+
+
+@app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
+          retry_backoff=True)
+def resync_action(self, event):
+    status_mappings = {
+        'created': {
+            'status': 'requested',
+            'conclusion': None
+        },
+        'waiting_for_resource': {
+            'status': 'requested',
+            'conclusion': None,
+        },
+        'preparing': {
+            'status': 'requested',
+            'conclusion': None,
+        },
+        'pending': {
+            'status': 'requested',
+            'conclusion': None,
+        },
+        'running': {
+            'status': 'in_progress',
+            'conclusion': None,
+        },
+        'success': {
+            'status': 'completed',
+            'conclusion': 'success',
+        },
+        'failed': {
+            'status': 'completed',
+            'conclusion': 'failure',
+        },
+        'canceled': {
+            'status': 'completed',
+            'conclusion': 'cancelled',
+        },
+        'skipped': {
+            'status': 'completed',
+            'conclusion': 'neutral',
+        },
+        'manual': {
+            'status': 'completed',
+            'conclusion': 'neutral',
+        },
+        'scheduled': {
+            'status': 'requested',
+            'conclusion': None,
+        }
+    }
+    try:
+        external_id = json.loads(event['check_run']['external_id'])
+        gitlabclient = GitlabClient()
+        if external_id['object_kind'] == 'pipeline':
+            pipeline_attr = gitlabclient.get_pipeline_status(external_id['project_id'],
+                                                             external_id['object_id'])
+            result = status_mappings[pipeline_attr['status']]
+            project = gitlabclient.get_project(external_id['project_id'])
+            post_pipeline_status(project, pipeline_attr)
+
+        elif external_id['object_kind'] == 'build':
+            job_attr = gitlabclient.get_job(external_id['project_id'],
+                                            external_id['object_id'])
+            result = status_mappings[job_attr['status']]
+            if job_attr['status'] == 'failed' and job_attr['allow_failure']:
+                result['conclusion'] = 'neutral'
+
+        check = {
+            'completed_at': CheckStatus.ztime(),
+            'actions': CheckStatus.list_task_actions()
+        }
+        check.update(result)
+
+        githubclient = GithubClient(
+            installation_id=event['installation']['id'])
+        return githubclient.update_check_run(event['repository']['full_name'],
+                                             check, event['check_run']['id'])
+    except requests.exceptions.RequestException as exc:
+        logger.error('Error request')
+        raise self.retry(countdown=60, exc=exc)
 
 
 def start_pipeline(event, headers):
