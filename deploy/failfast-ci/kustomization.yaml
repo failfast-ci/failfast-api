@@ -1,0 +1,47 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: failfast-ci
+
+resources:
+- manifests/failfast-ci.ingress.yaml
+- manifests/ff-api.yaml
+- manifests/ff-worker.yaml
+- manifests/redis.yaml
+
+configMapGenerator:
+- envs:
+  - manifests/configs/failfast-ci-envs.conf
+  name: failfast-ci-envs
+- files:
+  - manifests/configs/failfast-ci.yaml
+  name: failfast-ci
+
+patches:
+- patch: |-
+    - op: replace
+      path: /metadata/annotations
+      value:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+    - op: replace
+      path: /spec/rules/0/host
+      value: failfast-ci.replace-me.com
+    - op: replace
+      path: /spec/tls/0/hosts/0
+      value: faiflast-ci.replace-me.com
+  target:
+    kind: Ingress
+    name: failfast-ci
+
+secretGenerator:
+- files:
+  - manifests/secrets/integration_pem
+  name: failfast-ci
+  type: Opaque
+
+commonLabels:
+  app.kubernetes.io/name: failfast-ci
+
+images:
+ - name: quay.io/failfast-ci/failfast
+   newTag: dev

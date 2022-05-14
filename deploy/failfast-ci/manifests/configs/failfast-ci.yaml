@@ -2,20 +2,20 @@ failfast:
   authorized_groups: [COLLABORATOR, MEMBER, OWNER]
   authorized_users: []
   build:
-    on-branches: [master]
+    on-branches: [master, main, production]
     on-comments: [/retest, /test]
     on-labels: [ok-to-test]
     on-pullrequests: ['*']
   debug: false
   env: development
   # Ingress url to the failfast api
-  failfast_url: https://$CHANGEME
-
+  failfast_url: https://failfast-ci.com
+  enable_linter: false
 
 github:
-  context: failfast-ci-dev
-  integration_id: $CHANGEME
-  secret_token: null
+  context: failfast-ci
+  integration_id: 100000
+  secret_token: '' # "GITHUB_HOOK_SECRET"
 
 gitlab:
   enable_container_registry: false
@@ -26,13 +26,15 @@ gitlab:
   enable_snippets: false
   enable_wiki: false
   gitlab_url: https://gitlab.com
+
   # Default group on gitlab
-  namespace: $CHANGEME
-  privacy: internal
+  namespace: failfast-ci
+  webhook_url: "https://failfast-ci.com/api/v1/gitlab_event"
+  privacy: private
   repo: null
   # Gitlab robot user to add as owner
-  robot-user: $CHANGEME
+  robot-user: antoine.legrand
   runner_tags:
     - failfast-ci
-  secret_token: $CHANGEME
+  secret_token: $GITLAB_ACCESS_TOKEN
   timeout: 30
