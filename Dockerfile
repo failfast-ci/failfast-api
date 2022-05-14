@@ -1,17 +1,17 @@
-# FROM python:3.6.2-alpine
-FROM registry.gitlab.com/failfast-ci/hub2lab-hook:v0.3.0
-
-ENV workdir=/opt/failfast-ci
-RUN apk --no-cache --update add openssl ca-certificates
-RUN apk --no-cache add --virtual build-dependencies \
-    libffi-dev build-base openssl-dev bash git
-RUN pip install -U pip && pip install setuptools -U
-RUN rm -rf $workdir
+FROM python:3.10-slim as build
+ENV workdir=/app
 RUN mkdir -p $workdir
+WORKDIR $workdir
+RUN apt-get update
+RUN apt-get install -y openssl ca-certificates
+RUN apt-get install -y libffi-dev build-essential libssl-dev git rustc cargo
+RUN pip install pip -U
+COPY requirements.txt $workdir
+RUN pip install -r requirements.txt -U
+run pip install gunicorn -U
+RUN apt-get remove --purge -y libffi-dev build-essential libssl-dev git rustc cargo
+RUN rm -rf /root/.cargo
 
 COPY . $workdir
-COPY .style.yapf $workdir
-WORKDIR $workdir
-RUN pip install gunicorn -U && pip install -e .
-
+ENV PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
 CMD ["./run-server.sh"]
