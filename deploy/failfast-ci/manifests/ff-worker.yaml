@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -26,15 +26,14 @@ spec:
         volumeMounts:
           - name: failfast-config
             mountPath: /etc/failfast-ci
+        envFrom:
+          - configMapRef:
+              name: failfast-ci-envs
         env:
         - name: K8S_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: CELERY_BACKEND
-          value: redis://failfast-redis.$K8S_NAMESPACE.svc.cluster.local:6379
-        - name: CELERY_BROKER
-          value: redis://failfast-redis.$K8S_NAMESPACE.svc.cluster.local:6379
         - name: GITHUB_INTEGRATION_PEM
           valueFrom:
             secretKeyRef:
@@ -42,7 +41,7 @@ spec:
               name: failfast-ci
         - name: FFCI_CONF_FILE
           value: /etc/failfast-ci/failfast-ci.yaml
-        image: quay.io/failfast-ci/failfast:v0.4.0
+        image: quay.io/failfast-ci/failfast:v0.6.1
         imagePullPolicy: Always
         name: failfast-ci-worker
       volumes:
