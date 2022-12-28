@@ -6,10 +6,11 @@ failfast:
     on-comments: [/retest, /test]
     on-labels: [ok-to-test]
     on-pullrequests: ['*']
+    rebase: 'true'
   debug: false
   env: development
   failfast_url: https://jobs.failfast-ci.com
-github: {context: gitlab-ci, integration_id: '6059', secret_token: null}
+github: {context: gitlab-ci, context-status: gitlab-ci, integration_id: '6059', secret_token: null}
 gitlab:
   enable_container_registry: false
   enable_issues: false
