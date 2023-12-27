@@ -1,0 +1,71 @@
+[tool.poetry]
+name = "ffci"
+version = "0.10.0"
+description = ""
+authors = ["ant31 <2t.antoine@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.scripts]
+ffci = 'ffci.main:main'
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4"
+
+asyncio = "^3"
+pydantic = "^2.1"
+click = "^8"
+pyyaml = "*"
+requests = "^2"
+
+paramiko = "*"
+sentry-sdk = {extras = ["fastapi"], version = "^1.29.2"}
+temporalio = { version = "*", extras = ["opentelemetry"] }
+temporalloop = {git = "https://github.com/connylabs/temporal-loop"}
+# temporalloop = {path = "../temporalrunner", develop = true}
+aiohttp = {extras = ["speedups"], version = "*"}
+fastapi = {version = "^0.101", extras = ["all"]}
+typing-extensions = "*"
+aiohttp-prometheus-exporter = "*"
+starlette-exporter = "^0.15.1"
+jsonpointer = "^2.3"
+boto3 = "^1.26.157"
+pydantic-settings = "^2.0.2"
+
+[tool.poetry.dev-dependencies]
+black = "*"
+ipython = "*"
+pylint = "*"
+pyre-check = "*"
+types-requests = "*"
+isort = "*"
+pytest = "*"
+coverage = "*"
+pytest-cov = "*"
+bumpversion = "*"
+pytest-ordering = "*"
+pytest-asyncio = "*"
+pyright = "*"
+pytest-aioresponses = "*"
+
+[tool.poetry.group.dev.dependencies]
+aioresponses = "^0.7.4"
+pyreadline = "^2.1"
+pylint-pydantic = "^0.2.4"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 88
+skip_gitignore = true
+
+[tool.pytest]
+testpaths = "tests/"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

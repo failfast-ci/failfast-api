@@ -16,7 +16,7 @@ github:
   context: failfast-ci
   integration_id: 100000
   secret_token: '' # "GITHUB_HOOK_SECRET"
-
+  integration_pem: "base64"
 gitlab:
   enable_container_registry: false
   enable_issues: false

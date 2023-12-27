@@ -1,6 +1,6 @@
 import pytest
-from hub2labhook.exception import Unsupported
-from hub2labhook.github.models.event import GithubEvent
+from ffci.exception import Unsupported
+from ffci.github.models.event import GithubEvent
 
 
 def test_ping_event(ping_data, ping_headers):

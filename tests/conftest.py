@@ -9,7 +9,7 @@ LOCAL_DIR = os.path.dirname(__file__)
 
 @pytest.fixture
 def app():
-    from hub2labhook.api.app import create_app
+    from ffci.api.app import create_app
     app = create_app().app
     return app
 

@@ -1,0 +1,369 @@
+Request method: POST
+Accept: */*
+Content-Type: application/json
+User-Agent: GitHub-Hookshot/e6f0c4e
+X-GitHub-Delivery: e5eeb5d0-a4b0-11ee-8bcd-3dd3756f6940
+X-GitHub-Event: check_run
+X-GitHub-Hook-ID: 284666055
+X-GitHub-Hook-Installation-Target-ID: 103188
+X-GitHub-Hook-Installation-Target-Type: integration
+X-Hub-Signature: sha1=64cdf82acab51f6047014d181f2c745a3f90346a
+X-Hub-Signature-256: sha256=a90aa0ad494bee3d0eb14249b3c43270535630eef42dcf6633f961b55a8e50e2
+Payload
+{
+  "action": "requested_action",
+  "check_run": {
+    "id": 19979416064,
+    "name": "conny-ci - generate conny-prod-hz",
+    "node_id": "CR_kwDOFSueHc8AAAAEpt2yAA",
+    "head_sha": "2d2142b7df5613fa6843d7ff3e30c51a1d344926",
+    "external_id": "{\"object_kind\": \"build\", \"object_id\": 5825677293, \"project_id\": 28847190}",
+    "url": "https://api.github.com/repos/mietright/deployments/check-runs/19979416064",
+    "html_url": "https://github.com/mietright/deployments/runs/19979416064",
+    "details_url": "https://gitlab.com/connylegal/mietright_deployments/builds/5825677293",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2023-12-27T11:25:55Z",
+    "completed_at": "2023-12-27T11:26:21Z",
+    "output": {
+      "title": "Build Succeeded",
+      "summary": "<img src='https://s3.conny.dev/public/icons-failfast/happy-agnes-icon_43743.png'  height='64px' style='max-width:100%;vertical-align: -7px;'/>  The <a href='https://gitlab.com/connylegal/mietright_deployments/builds/5825677293'>Build</a> **Succeeded**.",
+      "text": "# Build info\n\n| Name |   Job Id     | Stage   | Status  | Duration |\n|:------:|:------------:|:-------:|---------|-----|\n| **generate conny-prod-hz**| [5825677293](https://gitlab.com/connylegal/mietright_deployments/builds/5825677293) | test | <img src='https://s3.conny.dev/public/icons-failfast/happy-agnes-icon_43743.png' height='32px'/> Succeeded| 26s |\n",
+      "annotations_count": 0,
+      "annotations_url": "https://api.github.com/repos/mietright/deployments/check-runs/19979416064/annotations"
+    },
+    "check_suite": {
+      "id": 19345718632,
+      "node_id": "CS_kwDOFSueHc8AAAAEgRg9aA",
+      "head_branch": "deploy/prod/conny/engine/e5b0333d",
+      "head_sha": "2d2142b7df5613fa6843d7ff3e30c51a1d344926",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://api.github.com/repos/mietright/deployments/check-suites/19345718632",
+      "before": "0000000000000000000000000000000000000000",
+      "after": "2d2142b7df5613fa6843d7ff3e30c51a1d344926",
+      "pull_requests": [
+        {
+          "url": "https://api.github.com/repos/mietright/deployments/pulls/6236",
+          "id": 1657974714,
+          "number": 6236,
+          "head": {
+            "ref": "deploy/prod/conny/engine/e5b0333d",
+            "sha": "2d2142b7df5613fa6843d7ff3e30c51a1d344926",
+            "repo": {
+              "id": 355180061,
+              "url": "https://api.github.com/repos/mietright/deployments",
+              "name": "deployments"
+            }
+          },
+          "base": {
+            "ref": "main",
+            "sha": "f6282308641034a2671b5295977c475faa7977bd",
+            "repo": {
+              "id": 355180061,
+              "url": "https://api.github.com/repos/mietright/deployments",
+              "name": "deployments"
+            }
+          }
+        }
+      ],
+      "app": {
+        "id": 103188,
+        "slug": "conny-ci",
+        "node_id": "MDM6QXBwMTAzMTg4",
+        "owner": {
+          "login": "mietright",
+          "id": 24452996,
+          "node_id": "MDEyOk9yZ2FuaXphdGlvbjI0NDUyOTk2",
+          "avatar_url": "https://avatars.githubusercontent.com/u/24452996?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/mietright",
+          "html_url": "https://github.com/mietright",
+          "followers_url": "https://api.github.com/users/mietright/followers",
+          "following_url": "https://api.github.com/users/mietright/following{/other_user}",
+          "gists_url": "https://api.github.com/users/mietright/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/mietright/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/mietright/subscriptions",
+          "organizations_url": "https://api.github.com/users/mietright/orgs",
+          "repos_url": "https://api.github.com/users/mietright/repos",
+          "events_url": "https://api.github.com/users/mietright/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/mietright/received_events",
+          "type": "Organization",
+          "site_admin": false
+        },
+        "name": "Conny CI",
+        "description": "Trigger CI jobs on Gitlab from Github and report the statuses",
+        "external_url": "https://conny.dev",
+        "html_url": "https://github.com/apps/conny-ci",
+        "created_at": "2021-03-03T21:46:27Z",
+        "updated_at": "2021-03-18T17:16:00Z",
+        "permissions": {
+          "actions": "write",
+          "checks": "write",
+          "contents": "read",
+          "deployments": "write",
+          "environments": "write",
+          "issues": "write",
+          "metadata": "read",
+          "pull_requests": "write",
+          "single_file": "write",
+          "statuses": "write",
+          "workflows": "write"
+        },
+        "events": [
+          "check_run",
+          "check_suite",
+          "create",
+          "delete",
+          "deployment",
+          "deployment_review",
+          "deployment_status",
+          "deploy_key",
+          "issues",
+          "issue_comment",
+          "label",
+          "pull_request",
+          "pull_request_review",
+          "pull_request_review_comment",
+          "push",
+          "status"
+        ]
+      },
+      "created_at": "2023-12-27T11:25:40Z",
+      "updated_at": "2023-12-27T11:26:28Z"
+    },
+    "app": {
+      "id": 103188,
+      "slug": "conny-ci",
+      "node_id": "MDM6QXBwMTAzMTg4",
+      "owner": {
+        "login": "mietright",
+        "id": 24452996,
+        "node_id": "MDEyOk9yZ2FuaXphdGlvbjI0NDUyOTk2",
+        "avatar_url": "https://avatars.githubusercontent.com/u/24452996?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/mietright",
+        "html_url": "https://github.com/mietright",
+        "followers_url": "https://api.github.com/users/mietright/followers",
+        "following_url": "https://api.github.com/users/mietright/following{/other_user}",
+        "gists_url": "https://api.github.com/users/mietright/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/mietright/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/mietright/subscriptions",
+        "organizations_url": "https://api.github.com/users/mietright/orgs",
+        "repos_url": "https://api.github.com/users/mietright/repos",
+        "events_url": "https://api.github.com/users/mietright/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/mietright/received_events",
+        "type": "Organization",
+        "site_admin": false
+      },
+      "name": "Conny CI",
+      "description": "Trigger CI jobs on Gitlab from Github and report the statuses",
+      "external_url": "https://conny.dev",
+      "html_url": "https://github.com/apps/conny-ci",
+      "created_at": "2021-03-03T21:46:27Z",
+      "updated_at": "2021-03-18T17:16:00Z",
+      "permissions": {
+        "actions": "write",
+        "checks": "write",
+        "contents": "read",
+        "deployments": "write",
+        "environments": "write",
+        "issues": "write",
+        "metadata": "read",
+        "pull_requests": "write",
+        "single_file": "write",
+        "statuses": "write",
+        "workflows": "write"
+      },
+      "events": [
+        "check_run",
+        "check_suite",
+        "create",
+        "delete",
+        "deployment",
+        "deployment_review",
+        "deployment_status",
+        "deploy_key",
+        "issues",
+        "issue_comment",
+        "label",
+        "pull_request",
+        "pull_request_review",
+        "pull_request_review_comment",
+        "push",
+        "status"
+      ]
+    },
+    "pull_requests": [
+      {
+        "url": "https://api.github.com/repos/mietright/deployments/pulls/6236",
+        "id": 1657974714,
+        "number": 6236,
+        "head": {
+          "ref": "deploy/prod/conny/engine/e5b0333d",
+          "sha": "2d2142b7df5613fa6843d7ff3e30c51a1d344926",
+          "repo": {
+            "id": 355180061,
+            "url": "https://api.github.com/repos/mietright/deployments",
+            "name": "deployments"
+          }
+        },
+        "base": {
+          "ref": "main",
+          "sha": "f6282308641034a2671b5295977c475faa7977bd",
+          "repo": {
+            "id": 355180061,
+            "url": "https://api.github.com/repos/mietright/deployments",
+            "name": "deployments"
+          }
+        }
+      }
+    ]
+  },
+  "requested_action": {
+    "identifier": "retry"
+  },
+  "repository": {
+    "id": 355180061,
+    "node_id": "MDEwOlJlcG9zaXRvcnkzNTUxODAwNjE=",
+    "name": "deployments",
+    "full_name": "mietright/deployments",
+    "private": true,
+    "owner": {
+      "login": "mietright",
+      "id": 24452996,
+      "node_id": "MDEyOk9yZ2FuaXphdGlvbjI0NDUyOTk2",
+      "avatar_url": "https://avatars.githubusercontent.com/u/24452996?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/mietright",
+      "html_url": "https://github.com/mietright",
+      "followers_url": "https://api.github.com/users/mietright/followers",
+      "following_url": "https://api.github.com/users/mietright/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mietright/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/mietright/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mietright/subscriptions",
+      "organizations_url": "https://api.github.com/users/mietright/orgs",
+      "repos_url": "https://api.github.com/users/mietright/repos",
+      "events_url": "https://api.github.com/users/mietright/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/mietright/received_events",
+      "type": "Organization",
+      "site_admin": false
+    },
+    "html_url": "https://github.com/mietright/deployments",
+    "description": "Production / staging deployments configuration",
+    "fork": false,
+    "url": "https://api.github.com/repos/mietright/deployments",
+    "forks_url": "https://api.github.com/repos/mietright/deployments/forks",
+    "keys_url": "https://api.github.com/repos/mietright/deployments/keys{/key_id}",
+    "collaborators_url": "https://api.github.com/repos/mietright/deployments/collaborators{/collaborator}",
+    "teams_url": "https://api.github.com/repos/mietright/deployments/teams",
+    "hooks_url": "https://api.github.com/repos/mietright/deployments/hooks",
+    "issue_events_url": "https://api.github.com/repos/mietright/deployments/issues/events{/number}",
+    "events_url": "https://api.github.com/repos/mietright/deployments/events",
+    "assignees_url": "https://api.github.com/repos/mietright/deployments/assignees{/user}",
+    "branches_url": "https://api.github.com/repos/mietright/deployments/branches{/branch}",
+    "tags_url": "https://api.github.com/repos/mietright/deployments/tags",
+    "blobs_url": "https://api.github.com/repos/mietright/deployments/git/blobs{/sha}",
+    "git_tags_url": "https://api.github.com/repos/mietright/deployments/git/tags{/sha}",
+    "git_refs_url": "https://api.github.com/repos/mietright/deployments/git/refs{/sha}",
+    "trees_url": "https://api.github.com/repos/mietright/deployments/git/trees{/sha}",
+    "statuses_url": "https://api.github.com/repos/mietright/deployments/statuses/{sha}",
+    "languages_url": "https://api.github.com/repos/mietright/deployments/languages",
+    "stargazers_url": "https://api.github.com/repos/mietright/deployments/stargazers",
+    "contributors_url": "https://api.github.com/repos/mietright/deployments/contributors",
+    "subscribers_url": "https://api.github.com/repos/mietright/deployments/subscribers",
+    "subscription_url": "https://api.github.com/repos/mietright/deployments/subscription",
+    "commits_url": "https://api.github.com/repos/mietright/deployments/commits{/sha}",
+    "git_commits_url": "https://api.github.com/repos/mietright/deployments/git/commits{/sha}",
+    "comments_url": "https://api.github.com/repos/mietright/deployments/comments{/number}",
+    "issue_comment_url": "https://api.github.com/repos/mietright/deployments/issues/comments{/number}",
+    "contents_url": "https://api.github.com/repos/mietright/deployments/contents/{+path}",
+    "compare_url": "https://api.github.com/repos/mietright/deployments/compare/{base}...{head}",
+    "merges_url": "https://api.github.com/repos/mietright/deployments/merges",
+    "archive_url": "https://api.github.com/repos/mietright/deployments/{archive_format}{/ref}",
+    "downloads_url": "https://api.github.com/repos/mietright/deployments/downloads",
+    "issues_url": "https://api.github.com/repos/mietright/deployments/issues{/number}",
+    "pulls_url": "https://api.github.com/repos/mietright/deployments/pulls{/number}",
+    "milestones_url": "https://api.github.com/repos/mietright/deployments/milestones{/number}",
+    "notifications_url": "https://api.github.com/repos/mietright/deployments/notifications{?since,all,participating}",
+    "labels_url": "https://api.github.com/repos/mietright/deployments/labels{/name}",
+    "releases_url": "https://api.github.com/repos/mietright/deployments/releases{/id}",
+    "deployments_url": "https://api.github.com/repos/mietright/deployments/deployments",
+    "created_at": "2021-04-06T12:27:30Z",
+    "updated_at": "2023-02-21T09:41:05Z",
+    "pushed_at": "2023-12-27T11:26:34Z",
+    "git_url": "git://github.com/mietright/deployments.git",
+    "ssh_url": "git@github.com:mietright/deployments.git",
+    "clone_url": "https://github.com/mietright/deployments.git",
+    "svn_url": "https://github.com/mietright/deployments",
+    "homepage": null,
+    "size": 11014,
+    "stargazers_count": 0,
+    "watchers_count": 0,
+    "language": "Makefile",
+    "has_issues": true,
+    "has_projects": true,
+    "has_downloads": true,
+    "has_wiki": true,
+    "has_pages": false,
+    "has_discussions": false,
+    "forks_count": 0,
+    "mirror_url": null,
+    "archived": false,
+    "disabled": false,
+    "open_issues_count": 11,
+    "license": null,
+    "allow_forking": false,
+    "is_template": false,
+    "web_commit_signoff_required": false,
+    "topics": [
+
+    ],
+    "visibility": "private",
+    "forks": 0,
+    "open_issues": 11,
+    "watchers": 0,
+    "default_branch": "main",
+    "custom_properties": {
+
+    }
+  },
+  "organization": {
+    "login": "mietright",
+    "id": 24452996,
+    "node_id": "MDEyOk9yZ2FuaXphdGlvbjI0NDUyOTk2",
+    "url": "https://api.github.com/orgs/mietright",
+    "repos_url": "https://api.github.com/orgs/mietright/repos",
+    "events_url": "https://api.github.com/orgs/mietright/events",
+    "hooks_url": "https://api.github.com/orgs/mietright/hooks",
+    "issues_url": "https://api.github.com/orgs/mietright/issues",
+    "members_url": "https://api.github.com/orgs/mietright/members{/member}",
+    "public_members_url": "https://api.github.com/orgs/mietright/public_members{/member}",
+    "avatar_url": "https://avatars.githubusercontent.com/u/24452996?v=4",
+    "description": ""
+  },
+  "sender": {
+    "login": "ant31",
+    "id": 1044332,
+    "node_id": "MDQ6VXNlcjEwNDQzMzI=",
+    "avatar_url": "https://avatars.githubusercontent.com/u/1044332?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/ant31",
+    "html_url": "https://github.com/ant31",
+    "followers_url": "https://api.github.com/users/ant31/followers",
+    "following_url": "https://api.github.com/users/ant31/following{/other_user}",
+    "gists_url": "https://api.github.com/users/ant31/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/ant31/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/ant31/subscriptions",
+    "organizations_url": "https://api.github.com/users/ant31/orgs",
+    "repos_url": "https://api.github.com/users/ant31/repos",
+    "events_url": "https://api.github.com/users/ant31/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/ant31/received_events",
+    "type": "User",
+    "site_admin": false
+  },
+  "installation": {
+    "id": 15103869,
+    "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMTUxMDM4Njk="
+  }
+}

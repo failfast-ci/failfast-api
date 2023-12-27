@@ -1,5 +1,5 @@
 import sys
-from hub2labhook.gitlab.client import GitlabClient
+from ffci.gitlab.client import GitlabClient
 
 def migrate_variables(project_source_id, project_target_id):
     client = GitlabClient()

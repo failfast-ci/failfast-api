@@ -16,7 +16,7 @@ spec:
       containers:
       - command:
         - gunicorn
-        - hub2labhook.api.wsgi:app
+        - ffci.api.wsgi:app
         - -b
         - :5000
         - --timeout

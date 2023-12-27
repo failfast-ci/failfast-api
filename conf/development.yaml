@@ -1,5 +1,0 @@
----
-celery:
-  broker: 'redis://'
-  backend: 'redis://'
-  enable_utc: True

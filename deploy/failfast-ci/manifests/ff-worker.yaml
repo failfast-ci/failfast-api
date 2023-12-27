@@ -19,7 +19,7 @@ spec:
       - command:
         - celery
         - -A
-        - hub2labhook.jobs.runner
+        - ffci.jobs.runner
         - worker
         - -l
         - debug

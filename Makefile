@@ -1,16 +1,8 @@
-.PHONY: clean-pyc clean-build docs clean test test-all
-define BROWSER_PYSCRIPT
-import os, webbrowser, sys
-try:
-	from urllib import pathname2url
-except:
-	from urllib.request import pathname2url
+.PHONY: black black-test check clean clean-build clean-pyc clean-test coverage install pylint pylint-quick pyre test publish poetry-check publish isort isort-check
 
-webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
-endef
-export BROWSER_PYSCRIPT
-BROWSER := python -c "$$BROWSER_PYSCRIPT"
-VERSION = `cat VERSION`
+
+VERSION := `cat VERSION`
+package := "ffci"
 
 help:
 	@echo "clean - remove all build, test, coverage and Python artifacts"
@@ -39,110 +31,76 @@ clean-pyc:
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
-	find . -name '#*#' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
+	find . -name '.mypy_cache' -exec rm -fr {} +
+	find . -name '.pyre' -exec rm -fr {} +
 
 clean-test:
 	rm -fr .tox/
 	rm -f .coverage
 	rm -fr htmlcov/
-
-
-.virtenv/.date: requirements_dev.txt requirements_test.txt requirements.txt
-	virtualenv -p python3.6 $(shell dirname $@)
-	. $(shell dirname $@)/bin/activate && for f in $<; do pip install -r $$f; done && pip install -e .
-	touch -r $< $@
-
-test-env-setup: .virtenv/.date
-	@echo "To use the provided virtual environment: \n\tsource $(shell dirname $<)/bin/activate && make test"
-
-lint:
-	flake8 hub2lab-hook tests
-
+	rm -f coverage.xml
+	rm -f report.xml
 test:
-	py.test --cov=hub2labhook --cov-report=html --cov-report=term-missing  --verbose tests
-
-test-all:
-	py.test --cov=hub2labhook --cov-report=html --cov-report=term-missing  --verbose tests
-
-tox:
-	tox
+	HUB2LABHOOK_CONFIG=tests/data/test_config.yaml poetry run py.test --cov=$(package) --verbose tests --cov-report=html --cov-report=term --cov-report xml:coverage.xml --cov-report=term-missing --junitxml=report.xml --asyncio-mode=auto
 
 coverage:
-	coverage run --source hub2lab-hook setup.py test
-	coverage report -m
-	coverage html
+	poetry run coverage run --source $(package) setup.py test
+	poetry run coverage report -m
+	poetry run coverage html
 	$(BROWSER) htmlcov/index.html
 
-docs: install
-	rm -f test1
-	sphinx-apidoc  -f -P -o docs/test1 hub2lab-hook
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
-	$(BROWSER) docs/_build/html/index.html
-
-servedocs: docs
-	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
-
-release: clean
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
-
-gen-config:
-	python scripts/generate-conf-doc.py > Documentation/config/failfast-ci.yaml
-
-dist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel
-	ls -l dist
-
 install: clean
-	python setup.py install
+	poetry install
 
-flake8:
-	python setup.py flake8
-
-coveralls: test
-	coveralls
+pylint-quick:
+	poetry run pylint --rcfile=.pylintrc $(package)  -E -r y
 
 pylint:
-	pylint --rcfile=".pylintrc" hub2labhook -E -r y
+	poetry run pylint --rcfile=".pylintrc" $(package)
 
-pylint-all:
-	pylint --rcfile=".pylintrc" hub2labhook
+check: black-test isort-check poetry-check pylint pyre-check
 
-yapf:
-	yapf -r hub2labhook -i
+pyre:
+	poetry run pyre
 
-yapf-diff:
-	yapf -r hub2labhook -d
+pyre-check:
+	poetry run pyre --noninteractive check 2>/dev/null
 
-yapf-test: yapf-diff
-	if [ `yapf -r hub2labhook -d | wc -l` -gt 0 ] ; then false ; else true ;fi
+black:
+	poetry run black -t py310 tests $(package)
 
+black-test:
+	poetry run black -t py310 tests $(package) --check
 
-dockerfile: clean dist
-	tar xvf dist/hub2lab-hook-${VERSION}.tar.gz -C dist
-	git rev-parse HEAD > dist/GIT_HEAD
-	docker build --build-arg version=$(VERSION) -f Dockerfile -t quay.io/failfast-ci/failfast:v$(VERSION) .
+poetry-check:
+	poetry lock --check
 
-dockerfile-canary: clean
-	docker build -t quay.io/failfast-ci/failfast:master .
-	docker push quay.io/failfast-ci/failfast:master
+publish: clean
+	poetry build
+	poetry publish
 
-dockerfile-push: dockerfile
-	docker push quay.io/failfast-ci/failfast:v$(VERSION)
+isort:
+	poetry run isort .
 
-fmt-ci:
-	find . -iname "*.jsonnet" | xargs jsonnet fmt -i -n 2
-	find . -iname "*.libsonnet" | xargs jsonnet fmt -i -n 2
+isort-check:
+	poetry run isort --diff --check .
 
-gen-ci: fmt-ci
-	ffctl gen
+.ONESHELL:
+pyrightconfig:
+	jq \
+      --null-input \
+      --arg venv "$$(basename $$(poetry env info -p))" \
+      --arg venvPath "$$(dirname $$(poetry env info -p))" \
+      '{ "venv": $$venv, "venvPath": $$venvPath }' \
+      > pyrightconfig.json
 
-mypy:
-	mypy hub2labhook --ignore-missing-imports
+rename:
+	ack ffci -l | xargs -i{} sed -r -i "s/ffci/ffci/g" {}
+	# ack Hemporalloop -i -l | xargs -i{} sed -r -i "s/Temporalloop/Hub2labhook/g" {}
 
-check: pylint flake8 mypy yapf-test gen-ci gen-config
+run-worker:
+	poetry run bin/ffci worker --config=localconfig.yaml
 
-prepare: yapf gen-ci check
+run-server:
+	poetry run bin/ffci server --config localconfig.yaml

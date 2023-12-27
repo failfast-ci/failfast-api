@@ -1,4 +1,4 @@
-from hub2labhook.github.models.check import CheckStatus
+from ffci.github.models.check import CheckStatus
 
 
 def test_checkstatus_pipeline_init(pipeline_hook_data):
