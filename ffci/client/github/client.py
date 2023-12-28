@@ -1,14 +1,20 @@
+import asyncio
+from urllib.parse import ParseResult, urlparse
+import aiohttp
+from aiohttp_prometheus_exporter.trace import PrometheusTraceConfig
+import logging
 import json
 import datetime
 import base64
 import jwt
 import requests
 import ffci
-from ffci.exception import ResourceNotFound
+from ffci.server.exception import ResourceNotFound
 
 from ffci.config import GConfig
 
 
+logger = logging.getLogger(__name__)
 
 GITHUB_STATUS_MAP = {
     "failed": "failure",

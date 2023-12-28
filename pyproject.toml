@@ -30,6 +30,7 @@ starlette-exporter = "^0.15.1"
 jsonpointer = "^2.3"
 boto3 = "^1.26.157"
 pydantic-settings = "^2.0.2"
+jwt = "^1.3.1"
 
 [tool.poetry.dev-dependencies]
 black = "*"

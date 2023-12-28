@@ -56,7 +56,7 @@ class GitlabClient(object):
         if not self._headers:
             self._headers = {
                 'Content-Type': 'application/json',
-                'User-Agent': "hub2lab: %s" % ffci.__version__,
+                'User-Agent': "ffci: %s" % ffci.__version__,
                 'PRIVATE-TOKEN': self.gitlab_token
             }
         return self._headers

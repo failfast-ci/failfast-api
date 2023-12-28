@@ -31,7 +31,7 @@ def slow_req():
 
 @info_app.route("/version")
 def version():
-    return jsonify({"hub2lab-api": ffci.__version__})
+    return jsonify({"ffci-api": ffci.__version__})
 
 
 @info_app.route("/routes")
