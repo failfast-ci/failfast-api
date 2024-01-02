@@ -1,14 +1,16 @@
-import hmac
 import hashlib
-from flask import jsonify, request, Blueprint
-from ffci.api.app import getvalues
-from ffci.exception import (InvalidUsage, Forbidden, Unsupported)
+import hmac
+
+from flask import Blueprint, jsonify, request
+
 import ffci.jobs.tasks as tasks
-from ffci.github.models.event import GithubEvent
+from ffci.api.app import getvalues
 from ffci.config import FFCONFIG
+from ffci.exception import Forbidden, InvalidUsage, Unsupported
+from ffci.github.models.event import GithubEvent
 
 ffapi_app = Blueprint(
-    'ffapi',
+    "ffapi",
     __name__,
 )  # type: Blueprint
 
@@ -19,23 +21,25 @@ def test_error():
 
 
 def verify_signature(payload_body, signature):
-    secret_token = FFCONFIG.github.get('secret_token', None)
+    secret_token = FFCONFIG.github.get("secret_token", None)
     if secret_token is None:
         raise Unsupported(
-            "GITHUB_SECRET_TOKEN isn't configured, failed to verify signature")
-    digest = 'sha1=' + hmac.new(secret_token.encode(), payload_body,
-                                hashlib.sha1).hexdigest()
+            "GITHUB_SECRET_TOKEN isn't configured, failed to verify signature"
+        )
+    digest = (
+        "sha1="
+        + hmac.new(secret_token.encode(), payload_body, hashlib.sha1).hexdigest()
+    )
 
     if not hmac.compare_digest(signature, digest):
-        raise Forbidden("Signature mismatch expected %s but got %s" %
-                        (signature, digest), {
-                            "signature": signature
-                        })
+        raise Forbidden(
+            "Signature mismatch expected %s but got %s" % (signature, digest),
+            {"signature": signature},
+        )
     return True
 
 
-@ffapi_app.route("/api/v1/github_event", methods=['POST'],
-                 strict_slashes=False)
+@ffapi_app.route("/api/v1/github_event", methods=["POST"], strict_slashes=False)
 def github_event():
     params = getvalues()
     hook_signature = request.headers.get("X-Hub-Signature", None)
@@ -49,19 +53,19 @@ def github_event():
         job = tasks.retry_build.delay(gevent.external_id, gevent.head_sha)
     elif gevent.event_type == "check_run" and gevent.action == "requested_action":
         job = tasks.request_action(
-            gevent.event['requested_action']['identifier'], params).delay()
+            gevent.event["requested_action"]["identifier"], params
+        ).delay()
     elif gevent.event_type == "check_suite" and gevent.action == "rerequested":
         job = tasks.retry_pipeline.delay()
     elif gevent.event_type in ["push", "pull_request"]:
         job = tasks.start_pipeline(params, headers).delay()
     else:
-        return jsonify({'ignored': True, 'event': params, 'headers': headers})
+        return jsonify({"ignored": True, "event": params, "headers": headers})
 
-    return jsonify({'job_id': job.id, 'params': params})
+    return jsonify({"job_id": job.id, "params": params})
 
 
-@ffapi_app.route("/api/v1/gitlab_event", methods=['POST', 'GET'],
-                 strict_slashes=False)
+@ffapi_app.route("/api/v1/gitlab_event", methods=["POST", "GET"], strict_slashes=False)
 def gitlab_event():
     params = getvalues()
     headers = dict(request.headers.to_list())
@@ -72,20 +76,24 @@ def gitlab_event():
     elif event == "Job Hook":
         task = tasks.update_github_check
     else:
-        return jsonify({'ignored': True, 'event': event, 'headers': headers})
+        return jsonify({"ignored": True, "event": event, "headers": headers})
     job = task.delay(params)
-    return jsonify({'job_id': job.id, 'params': params})
+    return jsonify({"job_id": job.id, "params": params})
 
 
-@ffapi_app.route("/api/v1/resync/<int:gitlab_project_id>/<int:pipeline_id>",
-                 methods=['POST', 'GET'], strict_slashes=False)
+@ffapi_app.route(
+    "/api/v1/resync/<int:gitlab_project_id>/<int:pipeline_id>",
+    methods=["POST", "GET"],
+    strict_slashes=False,
+)
 def resync(gitlab_project_id, pipeline_id):
-    '''
+    """
     Force a update of the github statuses.
     It queries gitlab to receive the pipeline status, and update github statuses
-    '''
+    """
     task = tasks.update_pipeline_status.apply_async(
-        (gitlab_project_id, pipeline_id), )
+        (gitlab_project_id, pipeline_id),
+    )
     resp = task.get()
     # redirect(resp., code=302)
     return jsonify(resp)

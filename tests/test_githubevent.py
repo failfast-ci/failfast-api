@@ -1,4 +1,5 @@
 import pytest
+
 from ffci.exception import Unsupported
 from ffci.github.models.event import GithubEvent
 

@@ -22,7 +22,7 @@ sentry-sdk = {extras = ["fastapi"], version = "^1.29.2"}
 temporalio = { version = "*", extras = ["opentelemetry"] }
 temporalloop = {git = "https://github.com/connylabs/temporal-loop"}
 # temporalloop = {path = "../temporalrunner", develop = true}
-aiohttp = {extras = ["speedups"], version = "*"}
+aiohttp = {extras = ["speedups"], version = "^3.9.1"}
 fastapi = {version = "^0.101", extras = ["all"]}
 typing-extensions = "*"
 aiohttp-prometheus-exporter = "*"
@@ -30,7 +30,10 @@ starlette-exporter = "^0.15.1"
 jsonpointer = "^2.3"
 boto3 = "^1.26.157"
 pydantic-settings = "^2.0.2"
-jwt = "^1.3.1"
+pyjwt = "^2.8.0"
+gitpython = "^3.1.40"
+aiodns = "^3.1.1"
+brotli = "^1.1.0"
 
 [tool.poetry.dev-dependencies]
 black = "*"

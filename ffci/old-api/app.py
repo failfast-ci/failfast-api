@@ -1,10 +1,11 @@
 from flask import Flask, request
 from flask_cors import CORS
+
+from ffci.api.flaskapp import FlaskApp
+from ffci.api.handlers.errors import render_error
+from ffci.api.handlers.request_logging import after_request_log, before_request_log
 from ffci.config import FFCONFIG
 from ffci.exception import Hub2LabException
-from ffci.api.handlers.errors import render_error
-from ffci.api.handlers.request_logging import before_request_log, after_request_log
-from ffci.api.flaskapp import FlaskApp
 
 
 def getvalues():
@@ -22,8 +23,7 @@ class FailfastApp(FlaskApp):
     blueprints = [(ffapi_app, ""), (info_app, "")]
     before_request_funcs = [before_request_log]
     after_request_funcs = [after_request_log]
-    error_handler_funcs = [(Exception, render_error), (Hub2LabException,
-                                                       render_error)]
+    error_handler_funcs = [(Exception, render_error), (Hub2LabException, render_error)]
 
 
 def create_app():
@@ -32,11 +32,10 @@ def create_app():
     ffapp = FailfastApp(app)
     # app.logger.addHandler(logging.StreamHandler(sys.stdout))
     # app.logger.setLevel(logging.INFO)
-    if FFCONFIG.failfast['env'] != 'production':
-        ffapp.app.config.from_object(
-            'ffci.api.config.DevelopmentConfig')
+    if FFCONFIG.failfast["env"] != "production":
+        ffapp.app.config.from_object("ffci.api.config.DevelopmentConfig")
     else:
-        ffapp.app.config.from_object('ffci.api.config.ProductionConfig')
+        ffapp.app.config.from_object("ffci.api.config.ProductionConfig")
 
     ffapp.app.logger.info("Start service")
     return ffapp
@@ -44,4 +43,4 @@ def create_app():
 
 if __name__ == "__main__":
     application = create_app().app
-    application.run(host='0.0.0.0')
+    application.run(host="0.0.0.0")

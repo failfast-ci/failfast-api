@@ -4,13 +4,13 @@
 # pylint: disable=too-few-public-methods
 import datetime
 import logging
-
 from enum import StrEnum
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger(__name__)
+
 
 class ModelWithExtra(BaseModel):
     model_config = ConfigDict(extra="allow")
@@ -28,7 +28,6 @@ class GithubHeaders(ModelWithExtra):
     x_github_hook_installation_target_type: str = Field(
         alias="X-GitHub-Hook-Installation-Target-Type"
     )
-
 
 
 class GithubCheckRunOutput(ModelWithExtra):

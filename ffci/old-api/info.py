@@ -1,12 +1,13 @@
-import time
 import logging
+import time
 
-from flask import (jsonify, Blueprint, current_app, url_for)
-from ffci.exception import Forbidden
+from flask import Blueprint, current_app, jsonify, url_for
+
 import ffci
+from ffci.exception import Forbidden
 
 info_app = Blueprint(
-    'info',
+    "info",
     __name__,
 )
 
@@ -37,15 +38,17 @@ def version():
 @info_app.route("/routes")
 def routes():
     import urllib
+
     output = []
     for rule in current_app.url_map.iter_rules():
         options = {}
         for arg in rule.arguments:
             options[arg] = "[{0}]".format(arg)
-        methods = ','.join(rule.methods)
+        methods = ",".join(rule.methods)
         url = url_for(rule.endpoint, **options)
-        line = urllib.parse.unquote("{:50s} {:20s} {}".format(
-            rule.endpoint, methods, url))
+        line = urllib.parse.unquote(
+            "{:50s} {:20s} {}".format(rule.endpoint, methods, url)
+        )
         output.append(line)
     lines = []
     for line in sorted(output):

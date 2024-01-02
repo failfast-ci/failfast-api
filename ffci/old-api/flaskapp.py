@@ -1,5 +1,7 @@
-from typing import Tuple, List, Any, Callable, Type  # noqa
+from typing import Any, Callable, List, Tuple, Type  # noqa
+
 import flask  # noqa
+
 from ffci.exception import Hub2LabException  # noqa
 
 
@@ -8,8 +10,9 @@ class FlaskApp(object):
     after_request_funcs = []  # type: List[Callable[[flask.Response], None]]
     before_request_funcs = []  # type: List[Callable[[], None]]
     teardown_request_funcs = []  # type: List[Callable[[flask.Response], None]]
-    error_handler_funcs = [
-    ]  # type: List[Tuple[Type[Exception], Callable[[Exception], flask.Response]]]
+    error_handler_funcs = (
+        []
+    )  # type: List[Tuple[Type[Exception], Callable[[Exception], flask.Response]]]
 
     def __init__(self, app) -> None:
         self._app = app
@@ -28,7 +31,7 @@ class FlaskApp(object):
             self.app.register_blueprint(blueprint, url_prefix=prefix)
 
     def register_after_requests(self):
-        """ Register all after requests handlers """
+        """Register all after requests handlers"""
         for func in self.after_request_funcs:
             self.app.after_request(func)
 

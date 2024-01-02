@@ -7,13 +7,7 @@ from temporalio import activity
 
 from ffci.config import GConfig, S3ConfigSchema
 from ffci.mapper import GMapper
-from ffci.models import (
-    EngineMapper,
-    EngineResponse,
-    EngineTrigger,
-    FunnelsType,
-    S3Dest,
-)
+from ffci.models import EngineMapper, EngineResponse, EngineTrigger, FunnelsType, S3Dest
 
 logger = logging.getLogger(__name__)
 

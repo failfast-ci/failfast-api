@@ -108,6 +108,7 @@ class FFCIBuildRules(BaseConfig):
     on_tags: list[str] = Field(default=["*"])
     on_labels: list[str] = Field(default_factory=list)
 
+
 class GitlabNewRepoConfigSchema(BaseConfig):
     enable_container_registry: bool = Field(default=False)
     enable_issues: bool = Field(default=False)
@@ -119,12 +120,16 @@ class GitlabNewRepoConfigSchema(BaseConfig):
 
 
 class GitlabConfigSchema(BaseConfig):
-    repo_config: GitlabNewRepoConfigSchema = Field(default_factory=GitlabNewRepoConfigSchema)
+    repo_config: GitlabNewRepoConfigSchema = Field(
+        default_factory=GitlabNewRepoConfigSchema
+    )
     gitlab_url: str = Field(default="https://gitlab.com")
     namespace: str = Field(default="ffci")
     webhook_url: str = Field(default="https://ffci.com/api/v1/gitlab_event")
-    robot_user: str = Field(default="ffci-bot", description="Owner of the gitlab repository")
-    runner_tags: list[str] = Field(['ffco'])
+    robot_user: str = Field(
+        default="ffci-bot", description="Owner of the gitlab repository"
+    )
+    runner_tags: list[str] = Field(["ffco"])
     secret_token: str = Field(default="$GITLAB_ACCESS_TOKEN")
     timeout: int = Field(default=30)
 
@@ -132,8 +137,12 @@ class GitlabConfigSchema(BaseConfig):
 class GithubConfigSchema(BaseConfig):
     context: str = Field(default="ffci")
     integration_id: int = Field(default=100000, description="github app integration id")
-    secret_token: str = Field(default="", description="leave empty to not check the secret" )
-    integration_pem: str = Field(default="BASE64_PEM, or use FFCI_GITHUB_INTEGRATION_PEM env var")
+    secret_token: str = Field(
+        default="", description="leave empty to not check the secret"
+    )
+    integration_pem: str = Field(
+        default="BASE64_PEM, or use FFCI_GITHUB_INTEGRATION_PEM env var"
+    )
 
 
 class FFCIConfigSchema(BaseConfig):
@@ -198,7 +207,6 @@ class Config:
     @property
     def github(self) -> GithubConfigSchema:
         return self.conf.github
-    
 
     @property
     def ffci(self) -> FfciConfigSchema:
