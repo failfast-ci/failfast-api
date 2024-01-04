@@ -5,7 +5,7 @@ from temporalloop.main import main as looper_main
 from .default_config import default_config
 from .server import server
 from .version import version
-
+from .github import github
 
 @click.group()
 @click.pass_context
@@ -22,11 +22,10 @@ def main():
     cli.add_command(version)
     # Show default config
     cli.add_command(default_config)
+    # Github client test API
+    cli.add_command(github)
 
     # Parse cmd-line arguments and options
     # pylint: disable=no-value-for-parameter
     cli()
 
-
-if __name__ == "__main__":
-    main()

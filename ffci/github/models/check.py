@@ -5,9 +5,9 @@ import logging
 import re
 from datetime import datetime
 
-from ffci.config import FFCONFIG
-from ffci.exception import Unexpected
-from ffci.github.client import GITHUB_CHECK_ICONS, GITHUB_CHECK_MAP, GITHUB_STATUS_MAP
+from ffci.config import GConfig
+from ffci.server.exception import Unexpected
+from ffci.client.github.client import GITHUB_CHECK_ICONS, GITHUB_CHECK_MAP, GITHUB_STATUS_MAP
 from ffci.utils import pretty_time_delta
 
 logger = logging.getLogger(__name__)

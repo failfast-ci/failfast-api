@@ -1,0 +1,99 @@
+app:
+  env: test
+  prometheus_dir: /tmp/prometheus
+ffci:
+  authorized_groups: []
+  authorized_users: []
+  rules:
+    on_branches:
+    - main
+    - master
+    on_labels: []
+    on_tags:
+    - '*'
+github:
+  context: ffci
+  installation_id: 366
+  integration_id: 266
+  integration_pem: aW50ZWdyYXRpb25fcGVtCg==
+  secret_token: 'secret'
+gitlab:
+  gitlab_url: https://gitlab.com
+  namespace: ffci
+  repo_config:
+    enable_container_registry: false
+    enable_issues: false
+    enable_merge_requests: false
+    enable_shared_runners: false
+    enable_snippets: false
+    enable_wiki: false
+    privacy: private
+  robot_user: ffci-bot
+  runner_tags:
+  - ffci
+  secret_token: $GITLAB_ACCESS_TOKEN
+  timeout: 30
+  webhook_url: https://ffci.com/api/v1/gitlab_event
+logging:
+  level: info
+  log_config:
+    disable_existing_loggers: false
+    formatters:
+      default:
+        (): ffci.logutils.DefaultFormatter
+        fmt: '%(levelprefix)s %(message)s'
+        use_colors: null
+    handlers:
+      default:
+        class: logging.StreamHandler
+        formatter: default
+        level: INFO
+        stream: ext://sys.stdout
+    loggers:
+      ffci:
+        handlers:
+        - default
+        level: INFO
+        propagate: true
+      temporalio:
+        handlers:
+        - default
+        level: INFO
+        propagate: true
+      temporalloop:
+        handlers:
+        - default
+        level: INFO
+        propagate: true
+    version: 1
+  use_colors: true
+sentry:
+  dsn: null
+  environment: null
+  release: null
+  traces_sample_rate: null
+server:
+  cors:
+    allow_credentials: false
+    allow_headers:
+    - '*'
+    allow_methods:
+    - '*'
+    allow_origin_regex: .*
+    allow_origins:
+    - http://localhost:8080
+    - http://localhost:8000
+    - http://localhost
+  host: 0.0.0.0
+  middlewares: []
+  port: 8080
+  reload: false
+  token: ''
+temporalio:
+  converter: null
+  default_factory: temporalloop.worker:WorkerFactory
+  host: localhost:7233
+  interceptors: []
+  namespace: default
+  pre_init: []
+  workers: []

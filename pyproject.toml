@@ -34,6 +34,7 @@ pyjwt = "^2.8.0"
 gitpython = "^3.1.40"
 aiodns = "^3.1.1"
 brotli = "^1.1.0"
+pytest-aiohttp = "^1.0.5"
 
 [tool.poetry.dev-dependencies]
 black = "*"

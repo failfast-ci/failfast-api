@@ -42,7 +42,7 @@ clean-test:
 	rm -f coverage.xml
 	rm -f report.xml
 test:
-	HUB2LABHOOK_CONFIG=tests/data/test_config.yaml poetry run py.test --cov=$(package) --verbose tests --cov-report=html --cov-report=term --cov-report xml:coverage.xml --cov-report=term-missing --junitxml=report.xml --asyncio-mode=auto
+	FFCI_CONFIG=tests/data/config.yaml poetry run py.test --cov=$(package) --verbose tests --cov-report=html --cov-report=term --cov-report xml:coverage.xml --cov-report=term-missing --junitxml=report.xml --asyncio-mode=auto
 
 coverage:
 	poetry run coverage run --source $(package) setup.py test

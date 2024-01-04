@@ -1,7 +1,7 @@
 import json
 import logging
 from ffci.exception import Unsupported
-from pydantic import BaseModel
+
 logger = logging.getLogger(__name__)
 
 

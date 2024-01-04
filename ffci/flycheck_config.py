@@ -129,7 +129,7 @@ class GitlabConfigSchema(BaseConfig):
     robot_user: str = Field(
         default="ffci-bot", description="Owner of the gitlab repository"
     )
-    runner_tags: list[str] = Field(default=["ffci"])
+    runner_tags: list[str] = Field(["ffci"])
     secret_token: str = Field(default="$GITLAB_ACCESS_TOKEN")
     timeout: int = Field(default=30)
 
@@ -137,7 +137,6 @@ class GitlabConfigSchema(BaseConfig):
 class GithubConfigSchema(BaseConfig):
     context: str = Field(default="ffci")
     integration_id: int = Field(default=100000, description="github app integration id")
-    installation_id: int = Field(default=100000, description="github app installation id")
     secret_token: str = Field(
         default="", description="leave empty to not check the secret"
     )
@@ -322,6 +321,5 @@ class GConfig(Config):
             cls.__instance__ = Config.auto_config(path)
         return cls.__instance__
 
-    @classmethod
-    def reinit(cls) -> None:
-        cls.__instance__ = None
+    def reinit(self) -> None:
+        self.__instance__ = None

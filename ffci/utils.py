@@ -1,6 +1,7 @@
 import time
 from threading import Thread
 
+T = TypeVar("T")
 
 class DelayedRequest(Thread):
     def __init__(self, delay, func):

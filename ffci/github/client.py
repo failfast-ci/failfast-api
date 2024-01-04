@@ -1,17 +1,15 @@
-import asyncio
 import base64
 import datetime
 import logging
-from typing import Any, Literal
-from urllib.parse import ParseResult, urlparse
+from typing import Any
 
-import aiohttp
 import jwt
-import requests
-from aiohttp_prometheus_exporter.trace import PrometheusTraceConfig
+import aiohttp
 
-from ffci.config import GConfig
-from ffci.server.exception import ResourceNotFound
+from ffci.client_base import BaseClient
+from ffci.github.models import UpdateGithubCheckRun, GithubCheckRun, CreateGithubCheckRun
+
+
 from ffci.version import VERSION
 
 logger = logging.getLogger(__name__)
@@ -66,100 +64,28 @@ GITHUB_CHECK_ICONS = {
 
 def jwt_token(integration_id: int, integration_pem: bytes) -> str:
     payload = {
-        "iat": datetime.datetime.utcnow(),
-        "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=60)),
+        "iat": datetime.datetime.now(datetime.UTC),
+        "exp": (datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=60)),
         "iss": integration_id,
     }
     return jwt.encode(payload, integration_pem, algorithm="RS256")
 
 
-class BaseClient:
-    session: aiohttp.ClientSession
-    verify_tls: bool
-
-    def __init__(
-        self, endpoint: str, client_name: str = "client", requests_verify: bool = True
-    ) -> None:
-        self.endpoint: ParseResult = self._configure_endpoint(endpoint)
-        self._headers: dict[str, str] = {
-            "Content-Type": "application/json",
-            "User-Agent": f"ffci-cli/{client_name}-{VERSION.app_version}",
-        }
-        self.verify_tls = requests_verify
-        self.session = aiohttp.ClientSession(
-            trace_configs=[PrometheusTraceConfig(client_name=client_name)]
-        )
-
-    def __del__(self):
-        asyncio.shield(self.session.close())
-
-    @property
-    def ssl_mode(self) -> bool | None:
-        return None if self.verify_tls else False
-
-    # pylint: disable=too-many-arguments
-    async def log_request(
-        self,
-        path: str,
-        params: dict[str, Any],
-        body: dict[str, Any],
-        method: str,
-        headers: dict[str, str],
-        resp: aiohttp.ClientResponse,
-    ) -> None:
-        raw = await resp.text()
-        logger.debug(
-            {
-                "query": {
-                    "params": params,
-                    "body": body,
-                    "path": path,
-                    "method": method,
-                    "headers": headers,
-                },
-                "response": {"status": resp.status, "raw": raw},
-            }
-        )
-
-    def _url(self, path) -> str:
-        """Construct the url from a relative path"""
-        return self.endpoint.geturl() + path
-
-    def _configure_endpoint(self, endpoint: str) -> ParseResult:
-        return urlparse(endpoint)
-
-    def headers(
-        self,
-        content_type: Literal["json", "form"] = "json",
-        extra: dict[str, str] | None = None,
-    ) -> dict[str, str]:
-        headers: dict[str, str] = {}
-        headers.update(self._headers)
-
-        if content_type == "json":
-            headers["Content-Type"] = "application/json"
-        elif content_type == "form":
-            headers["Content-Type"] = "application/x-www-form-urlencoded"
-
-        if extra:
-            headers.update(extra)
-
-        return headers
-
-
 class GithubClient(BaseClient):
-    def __init__(self, installation_id: int) -> None:
-        super().__init__("https://api.github.com")
+    def __init__(self, *, installation_id: int, integration_id: int, integration_pem_b64: str) -> None:
+        super().__init__(endpoint="https://api.github.com", client_name="gh")
         self.installation_id = installation_id
         self._token: str = ""
-        integration_pem_b64 = GConfig().github.integration_pem
         self.integration_pem: bytes = base64.b64decode(integration_pem_b64)
-        self._integration_id: int = GConfig().github.integration_id
+        self.integration_id: int = integration_id
 
-    def headers(self, extra: dict[str, str] | None = None) -> dict[str, str]:
+    def jwt_token(self):
+        return jwt_token(self.integration_id, self.integration_pem)
+
+    async def headers(self, extra: dict[str, str] | None = None) -> dict[str, str]:
         headers = {
             "Accept": "application/vnd.github.machine-man-preview+json",
-            "Authorization": f"token {self.get_token()}",
+            "Authorization": f"token {await self.get_token()}",
         }
         if extra is not None:
             headers.update(extra)
@@ -169,10 +95,10 @@ class GithubClient(BaseClient):
         if not self._token:
             headers = {
                 "Content-Type": "application/json",
-                "Accept": "application/vnd.github.machine-man-preview+json",
+                "Accept": "application/vnd.github+json",
                 "User-Agent": "ffci: %s" % VERSION.app_version,
                 "Authorization": "Bearer %s"
-                % jwt_token(self._integration_id, self.integration_pem),
+                % jwt_token(self.integration_id, self.integration_pem),
             }
             path = self._url(f"/app/installations/{self.installation_id}/access_tokens")
             resp = await self.session.post(
@@ -197,7 +123,7 @@ class GithubClient(BaseClient):
         self, body: dict[str, Any], github_repo: str, sha: str
     ) -> dict[str, Any]:
         path = self._url(f"/repos/{github_repo}/commits/{sha}/statuses")
-        headers = self.headers()
+        headers = await self.headers()
         resp = await self.session.post(
             path,
             json=body,
@@ -220,7 +146,7 @@ class GithubClient(BaseClient):
     async def fetch_file(self, repo: str, file_path: str, ref: str = "master") -> bytes:
         path = self._url(f"/repos/{repo}/contents/{file_path}")
         params: dict[str, str] = {"ref": ref}
-        headers = self.headers()
+        headers = await self.headers()
         resp = await self.session.get(
             path, ssl=self.ssl_mode, params=params, headers=headers, timeout=30
         )
@@ -240,43 +166,23 @@ class GithubClient(BaseClient):
         return filecontent
 
     async def get_ci_file(self, source_repo: str, ref: str) -> dict[str, Any] | None:
-        content = None
+        last_exception: aiohttp.ClientResponseError | None = None
         for filepath in [".gitlab-ci.yml", ".failfast-ci.jsonnet"]:
             try:
                 content = await self.fetch_file(source_repo, filepath, ref=ref)
                 return {"content": content, "file": filepath}
-            except requests.exceptions.HTTPError as e:
-                if e.response and e.response.status_code != 404:
-                    raise e
-        if content is None:
-            raise ResourceNotFound("no .gitlab-ci.yml or .failfail-ci.jsonnet")
-        return None
-
-    async def get_checks(self, github_repo: str, sha: str) -> dict[str, Any]:
-        path = self._url(f"/repos/{github_repo}/commits/{sha}/check-runs")
-        headers = self.headers(
-            extra={"Accept": "application/vnd.github.antiope-preview+json"}
-        )
-        resp = await self.session.get(
-            path, params={}, headers=headers, ssl=self.ssl_mode, timeout=30
-        )
-        await self.log_request(
-            path=path,
-            params={},
-            body={},
-            method="GET",
-            headers=headers,
-            resp=resp,
-        )
-
-        resp.raise_for_status()
-        return await resp.json()
+            except aiohttp.ClientResponseError as exc:
+                last_exception = exc
+                if exc.status != 404:
+                    raise exc
+        if last_exception:
+            raise(last_exception)
 
     async def create_check(
-        self, github_repo: str, check_body: dict[str, Any]
-    ) -> dict[str, Any]:
+        self, github_repo: str, check_body: CreateGithubCheckRun
+    ) -> GithubCheckRun:
         path = self._url(f"/repos/{github_repo}/check-runs")
-        headers = self.headers(
+        headers = await self.headers(
             extra={"Accept": "application/vnd.github.antiope-preview+json"}
         )
         resp = await self.session.post(
@@ -286,33 +192,37 @@ class GithubClient(BaseClient):
         await self.log_request(
             path=path,
             params={},
-            body=check_body,
+            body=check_body.model_dump(exclude_defaults=True),
             method="POST",
             headers=headers,
             resp=resp,
         )
         resp.raise_for_status()
-        return await resp.json()
+        return GithubCheckRun.model_validate(await resp.json())
 
     async def update_check_run(
-        self, github_repo: str, check_body: dict[str, Any], check_id: str
-    ) -> dict[str, Any]:
+        self, github_repo: str, check_body: UpdateGithubCheckRun, check_id: int
+    ) -> GithubCheckRun:
         path = self._url(f"/repos/{github_repo}/check-runs/{check_id}")
-        headers = self.headers(
+        headers = await self.headers(
             extra={"Accept": "application/vnd.github.antiope-preview+json"}
         )
         resp = await self.session.patch(
-            path, json=check_body, headers=headers, ssl=self.ssl_mode, timeout=30
+            path, json=check_body.model_dump(exclude_defaults=True), headers=headers, ssl=self.ssl_mode, timeout=30
         )
 
         await self.log_request(
             path=path,
             params={},
-            body=check_body,
+            body=check_body.model_dump(exclude_defaults=True),
             method="PATCH",
             headers=headers,
             resp=resp,
         )
         resp.raise_for_status()
 
-        return await resp.json()
+        return  GithubCheckRun.model_validate(await resp.json())
+
+    async def close(self):
+        if self.session.closed is False:
+            await self.session.close()

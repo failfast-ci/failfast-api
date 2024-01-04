@@ -1,11 +1,30 @@
+import jwt
 import base64
 import json
 import os
 
 import pytest
-
+from ffci.config import GConfig
 LOCAL_DIR = os.path.dirname(__file__)
 
+
+@pytest.fixture(autouse=True)
+def mock_jwttoken(monkeypatch):
+    def jwttoken(*args, **kwargs):
+        return "mocked-token"
+    monkeypatch.setattr(jwt, "encode", jwttoken)
+
+@pytest.fixture(autouse=True)
+def reset_config():
+    GConfig.reinit()
+    GConfig()
+
+@pytest.fixture()
+def mock_gh_token(aioresponses):
+    GConfig.reinit()
+    installation_id = GConfig().github.installation_id
+    token = f"https://api.github.com/app/installations/{installation_id}/access_tokens"
+    aioresponses.post(token, status=200, payload={"token": "valid-access-token"})
 
 @pytest.fixture
 def app():
@@ -31,8 +50,8 @@ def testenv(monkeypatch):
 def push_headers():
     return {
         "User-Agent": " GitHub-Hookshot/d9ba1f0",
-        "X-GITHUB-DELIVERY": "5ca32b80-b638-11e6-8213-373827616e33",
-        "X-GITHUB-EVENT": "push",
+        "X-GitHub-Delivery": "5ca32b80-b638-11e6-8213-373827616e33",
+        "X-GitHub-Event": "push",
     }
 
 
@@ -40,17 +59,32 @@ def push_headers():
 def pr_headers():
     return {
         "User-Agent": " GitHub-Hookshot/d9ba1f0",
-        "X-GITHUB-DELIVERY": "5ca32b80-c638-11e6-8213-373827616e33",
-        "X-GITHUB-EVENT": "pull_request",
-    }
+        "X-GitHub-Delivery": "5ca32b80-c638-11e6-8213-373827616e33",
+        "X-GitHub-Event": "pull_request",
+   }
 
 
 @pytest.fixture()
 def ping_headers():
     return {
         "User-Agent": "GitHub-Hookshot/d9ba1f0",
-        "X-GITHUB-DELIVERY": "1766f700-b56f-11e6-929b-85ab127f9469",
-        "X-GITHUB-EVENT": "ping",
+        "X-GitHub-Delivery": "1766f700-b56f-11e6-929b-85ab127f9469",
+        "X-GitHub-Event": "ping",
+    }
+
+@pytest.fixture()
+def checkrun_headers():
+    return {
+        "User-Agent": "GitHub-Hookshot/d9ba1f0",
+        "X-GitHub-Delivery": "1766f700-b56f-11e6-929b-85ab127f9469",
+        "X-GitHub-Event": "check_run",
+    }
+@pytest.fixture()
+def checksuite_headers():
+    return {
+        "User-Agent": "GitHub-Hookshot/d9ba1f0",
+        "X-GitHub-Delivery": "1766f700-b56f-11e6-929b-85ab127f9469",
+        "X-GitHub-Event": "check_suite",
     }
 
 
@@ -58,6 +92,14 @@ def ping_headers():
 def ping_data():
     return get_request("ping")
 
+@pytest.fixture(scope="session")
+def checkrun_data():
+    return get_request("checkrun")
+
+
+@pytest.fixture(scope="session")
+def checksuite_data():
+    return get_request("checksuite")
 
 @pytest.fixture(scope="session")
 def pipeline_hook_data():
