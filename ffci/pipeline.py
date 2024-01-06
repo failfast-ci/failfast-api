@@ -175,21 +175,3 @@ class Pipeline(object):
                 "github_repo": gevent.repo,
                 "context": self.config.github["context"],
             }
-        else:
-            self.sync_only_ci_file(gevent, content, ci_project, ci_file)
-
-    # @TODO this is a partial implem
-    def sync_only_ci_file(self, gevent, content, ci_project, ci_file):
-        """Push only the .failfast-ci.yaml and set token to clone"""
-        tokenkey = "GH_TOKEN_%s" % str.upper(uuid.uuid4().hex)
-        clone_url = gevent.clone_url.replace("https://", "https://bot:$%s:" % tokenkey)
-        ci_branch = gevent.refname
-        content["variables"].update({"SOURCE_REPO": clone_url})
-        self.gitlab.set_variables(ci_project["id"], {tokenkey: self.github.token})
-        return self.gitlab.push_file(
-            project_id=ci_project["id"],
-            file_path=ci_file["file"],
-            file_content=yaml.safe_dump(content),
-            branch=ci_branch,
-            message=gevent.commit_message,
-        )

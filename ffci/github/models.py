@@ -11,6 +11,8 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 logger = logging.getLogger(__name__)
 
+class ModelWithExtra(BaseModel):
+    model_config = ConfigDict(extra="allow")
 
 class CheckSuiteActionsEnum(StrEnum):
     REQUESTED = "requested"
@@ -66,10 +68,6 @@ class GithubCheckRunConclusionEnum(StrEnum):
     ACTION_REQUIRED = "action_required"
     STALE = "stale"
     SKIPPED = "skipped"
-
-
-class ModelWithExtra(BaseModel):
-    model_config = ConfigDict(extra="allow")
 
 
 class GithubHeaders(ModelWithExtra):
@@ -507,6 +505,32 @@ class CreateGithubCheckRun(SetGithubCheckRun):
 
 class UpdateGithubCheckRun(SetGithubCheckRun):
     pass
+
+class GithubCommitStatusStateEnum(StrEnum):
+    ERROR = "error"
+    FAILURE = "failure"
+    PENDING = "pending"
+    SUCCESS = "success"
+
+
+class CreateGithubCommitStatus(ModelWithExtra):
+    state: GithubCommitStatusStateEnum = Field(default=GithubCommitStatusStateEnum.PENDING)
+    target_url: str = Field(default="")
+    description: str = Field(default="")
+    context: str = Field(default="ffci")
+
+class GithubCommitStatus(ModelWithExtra):
+    state: GithubCommitStatusStateEnum = Field(default=GithubCommitStatusStateEnum.PENDING)
+    target_url: str = Field(default="")
+    description: str = Field(default="")
+    context: str = Field(default="ffci")
+    created_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
+    updated_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
+    id: int = Field(default=0)
+    url: str = Field(default="")
+    avatar_url: str = Field(default="")
+    creator: GithubUser = Field(default_factory=GithubUser)
+
 
 GithubEvents: TypeAlias = Union[
     GithubEventPing,

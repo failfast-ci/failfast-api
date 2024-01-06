@@ -1,86 +1,129 @@
-import base64
 import json
 import time
-import urllib.parse
 
 import requests
 
-import ffci
-from ffci.config import FFCONFIG, FailFastConfig
+from ffci.gitlab.models import (
+    CreateGitlabWebhook,
+    GitlabCILint,
+    GitlabWebhook,
+    GitlabCILintContent,
+    GitlabCILintSha,
+    url_encode_id,
+)
+from ffci.client_base import BaseClient
+from ffci.config import GitlabConfigSchema
 
-API_VERSION = "/api/v4"
+GITLAB_API_VERSION = "/api/v4"
 
 
-class GitlabClient(object):
-    def __init__(
-        self, endpoint: str = None, token: str = None, config: FailFastConfig = None
-    ) -> None:
-        """Creates a gitlab-client instance initialized with the private-token and endpoint urllib
-
-        Args:
-          endpoint(:obj:`str`) the gitlab instance url,
-                               if `None` takes value from GITLAB_API env-var.
-          token (:obj:`str`) the private gitlab token,
-                              if `None` takes value from GITLAB_TOKEN env-var.
-          config (:obj:`FailFastConfig`) configuration
-        """
-        if config is None:
-            config = FFCONFIG
+class GitlabClient(BaseClient):
+    def __init__(self, config: GitlabConfigSchema) -> None:
         self.config = config
-        self.gitlab_token = token or self.config.gitlab["secret_token"]
-        self.endpoint = endpoint or self.config.gitlab["gitlab_url"]
-        self._headers = None
-        self.host = self.endpoint
+        self.gitlab_token = config.access_token
+        super().__init__(
+            endpoint=config.gitlab_url + GITLAB_API_VERSION, client_name="gitlab"
+        )
 
-    def _url(self, path):
-        """Construct the url from a relative path"""
-        return self.endpoint + API_VERSION + path
-
-    def create_webhooks(self, project_id):
-        body = {
-            "job_events": True,
-            "pipeline_events": True,
-            "deployment_events": True,
-            "url": self.config.gitlab["webhook_url"],
+    def headers(self, extra: dict[str, str] | None = None) -> dict[str, str]:
+        headers = {
+            "PRIVATE-TOKEN": self.gitlab_token,
         }
-        path = self._url("/projects/%s/hooks" % project_id)
-        resp = requests.post(
+        if extra is not None:
+            headers.update(extra)
+        return super().headers("json", extra=headers)
+
+
+    async def create_webhook(self, body: CreateGitlabWebhook) -> GitlabWebhook:
+        path = self._url(f"/projects/{body.id}/hooks")
+        headers = self.headers()
+        body_dict = body.model_dump(exclude_defaults=True)
+        resp = await self.session.post(
             path,
-            data=json.dumps(body).encode(),
-            headers=self.headers,
-            timeout=self.config.gitlab["timeout"],
+            json=body_dict,
+            headers=headers,
+            ssl=self.ssl_mode,
+            timeout=30,
+        )
+        await self.log_request(
+            path=path,
+            params={},
+            body=body_dict,
+            method="POST",
+            headers=headers,
+            resp=resp,
         )
         resp.raise_for_status()
-        return resp
+        return GitlabWebhook.model_validate(await resp.json())
 
-    @property
-    def headers(self):
-        """Configure requests headers with the private token"""
-        if not self._headers:
-            self._headers = {
-                "Content-Type": "application/json",
-                "User-Agent": "ffci: %s" % ffci.__version__,
-                "PRIVATE-TOKEN": self.gitlab_token,
-            }
-        return self._headers
+    async def gitlabci_lint(
+        self, project_id: int | str, body: GitlabCILintSha | GitlabCILintContent
+    ) -> GitlabCILint:
+        id = url_encode_id(project_id)
+        headers = self.headers()
+        path = self._url(f"/projects/{id}/ci/lint")
+        body_dict = body.model_dump(exclude_defaults=True)
+        if isinstance(body, GitlabCILintSha):
+            resp = await self.session.get(
+                path,
+                params=body_dict,
+                headers=headers,
+                ssl=self.ssl_mode,
+                timeout=30,
+            )
+            await self.log_request(
+            path=path,
+            params=body_dict,
+            body={},
+            method="GET",
+            headers=headers,
+            resp=resp,
+            )
+        elif isinstance(body, GitlabCILintContent):
+            resp = await self.session.post(
+                path,
+                json=body_dict,
+                headers=headers,
+                ssl=self.ssl_mode,
+                timeout=30,
+            )
+            await self.log_request(
+            path=path,
+            params={},
+            body=body_dict,
+            method="POST",
+            headers=headers,
+            resp=resp,
+            )
+        else:
+            raise ValueError("body must be GitlabCILintSha or GitlabCILintContent")
+        resp.raise_for_status()
+        return GitlabCILint.model_validate(await resp.json())
 
-    def gitlabci_lint(self, data):
-        path = self._url("/ci/lint")
-        resp = requests.post(
-            path,
-            json={"content": data},
-            headers=self.headers,
-            timeout=self.config.gitlab["timeout"],
-        )
-        return resp.json()
+    ###########
+    ###########
 
     def get_project(self, project_id):
         """Returns the gitlab project dict
         link: https://docs.gitlab.com/ce/api/projects.html#get-single-project
         """
-        path = self._url("/projects/%s" % project_id)
-        resp = requests.get(
-            path, headers=self.headers, timeout=self.config.gitlab["timeout"]
+        id = url_encode_id(project_id)
+        path = self._url(f"/projects/{id}")
+        headers = self.headers()
+        resp = await self.session.get(
+            path,
+            params={},
+            headers=headers,
+            ssl=self.ssl_mode,
+            timeout=30,
+        )
+        await self.log_request(
+            path=path,
+            params={},
+            body={},
+            method="GET",
+            headers=headers,
+            resp=resp,
         )
         resp.raise_for_status()
         return resp.json()
@@ -236,101 +279,6 @@ class GitlabClient(object):
         _ = self.create_webhooks(resp.json()["id"])
         return resp.json()
 
-    def push_file(
-        self, project_id, file_path, file_content, branch, message, force=True
-    ):
-        branch_path = self._url(
-            "/projects/%s/repository/branches" % self.get_project_id(project_id)
-        )
-        branch_body = {"branch": branch, "ref": "_failfastci"}
-        resp = requests.post(
-            branch_path,
-            params=branch_body,
-            headers=self.headers,
-            timeout=self.config.gitlab["timeout"],
-        )
-
-        path = self._url(
-            "/projects/%s/repository/files/%s"
-            % (self.get_project_id(project_id), urllib.parse.quote_plus(file_path))
-        )
-        body = {
-            "file_path": file_path,
-            "branch": branch,
-            "encoding": "base64",
-            "content": base64.b64encode(file_content).decode(),
-            "commit_message": message,
-        }
-        resp = requests.post(
-            path,
-            data=json.dumps(body),
-            headers=self.headers,
-            timeout=self.config.gitlab["timeout"],
-        )
-        if resp.status_code == 400 or resp.status_code == 409:
-            resp = requests.put(
-                path,
-                data=json.dumps(body),
-                headers=self.headers,
-                timeout=self.config.gitlab["timeout"],
-            )
-
-        resp.raise_for_status()
-        return resp.json()
-
-    def delete_project(self, project_id):
-        path = self._url("/projects/%s" % (self.get_project_id(project_id)))
-        resp = requests.delete(path)
-        resp.raise_for_status()
-        return resp.json()
-
-    def get_branches(self, project_id, search=None):
-        branches = []
-        page = 1
-        page_count = 100
-        while page <= page_count:
-            params = {"page": page, "per_page": 50}
-            if search:
-                params["search"] = search
-            path = self._url(
-                "/projects/%s/repository/branches" % (self.get_project_id(project_id))
-            )
-            resp = requests.get(path, headers=self.headers, params=params)
-            resp.raise_for_status()
-            branches += resp.json()
-            page_count = resp.headers["X-Total-Pages"]
-            if not resp.headers["X-Next-Page"]:
-                break
-            page = resp.headers["X-Next-Page"]
-        return branches
-
-    def delete_old_branches(self, project_id, branches, days_old):
-        from datetime import datetime, timedelta
-
-        delta = timedelta(days_old)
-        max_date = datetime.utcnow() - delta
-        project_id = self.get_project_id(project_id)
-        delete_branches = 0
-        for branch in branches:
-            date = datetime.fromisoformat(branch["commit"]["committed_date"]).replace(
-                tzinfo=None
-            )
-            if date < max_date and branch["name"] != "master":
-                self.delete_branch(project_id, branch["name"])
-                delete_branches += 1
-        return delete_branches
-
-    def delete_branch(self, project_id, branch):
-        path = self._url(
-            "/projects/%s/repository/branches/%s"
-            % (self.get_project_id(project_id), urllib.parse.quote_plus(branch))
-        )
-        resp = requests.delete(
-            path, headers=self.headers, timeout=self.config.gitlab["timeout"]
-        )
-        resp.raise_for_status()
-        return True
-
     def initialize_project(self, project_name: str, namespace: str = None):
         project = self.get_or_create_project(project_name, namespace)
         branch = "master"
@@ -387,24 +335,97 @@ class GitlabClient(object):
         resp.raise_for_status()
         return resp.json()
 
-    # TODO(ant31): dead-code
-    def trigger_build(
-        self, gitlab_project, variables=None, trigger_token=None, branch="master"
-    ):
-        if not variables:
-            variables = {}
-        project_id = self.get_project_id(gitlab_project)
-        project_branch = branch
-        trigger_token = trigger_token
+    # def get_branches(self, project_id, search=None):
+    #     branches = []
+    #     page = 1
+    #     page_count = 100
+    #     while page <= page_count:
+    #         params = {"page": page, "per_page": 50}
+    #         if search:
+    #             params["search"] = search
+    #         path = self._url(
+    #             "/projects/%s/repository/branches" % (self.get_project_id(project_id))
+    #         )
+    #         resp = requests.get(path, headers=self.headers, params=params)
+    #         resp.raise_for_status()
+    #         branches += resp.json()
+    #         page_count = resp.headers["X-Total-Pages"]
+    #         if not resp.headers["X-Next-Page"]:
+    #             break
+    #         page = resp.headers["X-Next-Page"]
+    #     return branches
 
-        body = {"token": trigger_token, "ref": project_branch, "variables": variables}
+    # def delete_old_branches(self, project_id, branches, days_old):
+    #     from datetime import datetime, timedelta
 
-        path = self._url("/projects/%s/trigger/builds" % project_id)
-        resp = requests.post(
-            path,
-            data=json.dumps(body),
-            headers=self.headers,
-            timeout=self.config.gitlab["timeout"],
-        )
-        resp.raise_for_status()
-        return resp.json()
+    #     delta = timedelta(days_old)
+    #     max_date = datetime.utcnow() - delta
+    #     project_id = self.get_project_id(project_id)
+    #     delete_branches = 0
+    #     for branch in branches:
+    #         date = datetime.fromisoformat(branch["commit"]["committed_date"]).replace(
+    #             tzinfo=None
+    #         )
+    #         if date < max_date and branch["name"] != "master":
+    #             self.delete_branch(project_id, branch["name"])
+    #             delete_branches += 1
+    #     return delete_branches
+
+    # def delete_branch(self, project_id, branch):
+    #     path = self._url(
+    #         "/projects/%s/repository/branches/%s"
+    #         % (self.get_project_id(project_id), urllib.parse.quote_plus(branch))
+    #     )
+    #     resp = requests.delete(
+    #         path, headers=self.headers, timeout=self.config.gitlab["timeout"]
+    #     )
+    #     resp.raise_for_status()
+    #     return True
+
+    # def delete_project(self, project_id):
+    #     path = self._url("/projects/%s" % (self.get_project_id(project_id)))
+    #     resp = requests.delete(path)
+    #     resp.raise_for_status()
+    #     return resp.json()
+
+    #     def push_file(
+    #     self, project_id, file_path, file_content, branch, message, force=True
+    # ):
+    #     branch_path = self._url(
+    #         "/projects/%s/repository/branches" % self.get_project_id(project_id)
+    #     )
+    #     branch_body = {"branch": branch, "ref": "_failfastci"}
+    #     resp = requests.post(
+    #         branch_path,
+    #         params=branch_body,
+    #         headers=self.headers,
+    #         timeout=self.config.gitlab["timeout"],
+    #     )
+
+    #     path = self._url(
+    #         "/projects/%s/repository/files/%s"
+    #         % (self.get_project_id(project_id), urllib.parse.quote_plus(file_path))
+    #     )
+    #     body = {
+    #         "file_path": file_path,
+    #         "branch": branch,
+    #         "encoding": "base64",
+    #         "content": base64.b64encode(file_content).decode(),
+    #         "commit_message": message,
+    #     }
+    #     resp = requests.post(
+    #         path,
+    #         data=json.dumps(body),
+    #         headers=self.headers,
+    #         timeout=self.config.gitlab["timeout"],
+    #     )
+    #     if resp.status_code == 400 or resp.status_code == 409:
+    #         resp = requests.put(
+    #             path,
+    #             data=json.dumps(body),
+    #             headers=self.headers,
+    #             timeout=self.config.gitlab["timeout"],
+    #         )
+
+    #     resp.raise_for_status()
+    #     return resp.json()

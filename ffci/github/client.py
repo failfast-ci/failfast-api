@@ -7,7 +7,7 @@ import jwt
 import aiohttp
 
 from ffci.client_base import BaseClient
-from ffci.github.models import UpdateGithubCheckRun, GithubCheckRun, CreateGithubCheckRun
+from ffci.github.models import CreateGithubCommitStatus, GithubCommitStatus, UpdateGithubCheckRun, GithubCheckRun, CreateGithubCheckRun
 
 
 from ffci.version import VERSION
@@ -78,13 +78,14 @@ class GithubClient(BaseClient):
         self._token: str = ""
         self.integration_pem: bytes = base64.b64decode(integration_pem_b64)
         self.integration_id: int = integration_id
+        self._token_expires: datetime.datetime = datetime.datetime.now(datetime.UTC)
 
     def jwt_token(self):
         return jwt_token(self.integration_id, self.integration_pem)
 
     async def headers(self, extra: dict[str, str] | None = None) -> dict[str, str]:
         headers = {
-            "Accept": "application/vnd.github.machine-man-preview+json",
+            "Accept": "application/vnd.github+json",
             "Authorization": f"token {await self.get_token()}",
         }
         if extra is not None:
@@ -92,7 +93,8 @@ class GithubClient(BaseClient):
         return super().headers("json", extra=headers)
 
     async def get_token(self):
-        if not self._token:
+        # Refresh token every 30 min (validity is supposed to be 1h)
+        if not self._token or self._token_expires < datetime.datetime.now(datetime.UTC):
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/vnd.github+json",
@@ -117,16 +119,18 @@ class GithubClient(BaseClient):
 
             resp.raise_for_status()
             self._token = (await resp.json())["token"]
+            self._token_expires = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=30)
         return self._token
 
     async def post_status(
-        self, body: dict[str, Any], github_repo: str, sha: str
-    ) -> dict[str, Any]:
+        self, body: CreateGithubCommitStatus, github_repo: str, sha: str
+    ) -> GithubCommitStatus:
         path = self._url(f"/repos/{github_repo}/commits/{sha}/statuses")
         headers = await self.headers()
+
         resp = await self.session.post(
             path,
-            json=body,
+            json=body.model_dump(exclude_defaults=True),
             headers=headers,
             ssl=self.ssl_mode,
             timeout=15,
@@ -141,7 +145,7 @@ class GithubClient(BaseClient):
         )
 
         resp.raise_for_status()
-        return await resp.json()
+        return GithubCommitStatus.model_validate(await resp.json())
 
     async def fetch_file(self, repo: str, file_path: str, ref: str = "master") -> bytes:
         path = self._url(f"/repos/{repo}/contents/{file_path}")
@@ -182,9 +186,7 @@ class GithubClient(BaseClient):
         self, github_repo: str, check_body: CreateGithubCheckRun
     ) -> GithubCheckRun:
         path = self._url(f"/repos/{github_repo}/check-runs")
-        headers = await self.headers(
-            extra={"Accept": "application/vnd.github.antiope-preview+json"}
-        )
+        headers = await self.headers()
         resp = await self.session.post(
             path, json=check_body, headers=headers, ssl=self.ssl_mode, timeout=30
         )
@@ -204,9 +206,7 @@ class GithubClient(BaseClient):
         self, github_repo: str, check_body: UpdateGithubCheckRun, check_id: int
     ) -> GithubCheckRun:
         path = self._url(f"/repos/{github_repo}/check-runs/{check_id}")
-        headers = await self.headers(
-            extra={"Accept": "application/vnd.github.antiope-preview+json"}
-        )
+        headers = await self.headers()
         resp = await self.session.patch(
             path, json=check_body.model_dump(exclude_defaults=True), headers=headers, ssl=self.ssl_mode, timeout=30
         )

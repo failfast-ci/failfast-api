@@ -130,7 +130,7 @@ class GitlabConfigSchema(BaseConfig):
         default="ffci-bot", description="Owner of the gitlab repository"
     )
     runner_tags: list[str] = Field(default=["ffci"])
-    secret_token: str = Field(default="$GITLAB_ACCESS_TOKEN")
+    access_token: str = Field(default="$GITLAB_ACCESS_TOKEN")
     timeout: int = Field(default=30)
 
 
