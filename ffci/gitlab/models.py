@@ -49,12 +49,76 @@ class GitlabCILint(ModelWithExtra):
     errors: list[str] = Field(default_factory=list, description="The list of errors")
     warnings: list[str] = Field(default_factory=list, description="The list of warnings")
 
+class CreateGitlabProjectVariable(GitlabModel):
+    key: str = Field(..., description="The key of a variable; must have no more than 255 characters; only A-Z, a-z, 0-9, and _ are allowed")
+    value: str = Field(..., description="The value of a variable")
+    description: str | None = Field(None, description="The description of the variable. Default: null. Introduced in GitLab 16.2.")
+    environment_scope: str | None = Field(None, description="The environment_scope of the variable. Default: *")
+    masked: bool | None = Field(None, description="Whether the variable is masked. Default: false")
+    protected: bool | None = Field(None, description="Whether the variable is protected. Default: false")
+    raw: bool | None = Field(None, description="Whether the variable is treated as a raw string. Default: false. When true, variables in the value are not expanded.")
+    variable_type: str | None = Field(None, description="The type of a variable. Available types are: env_var (default) and file")
+
+class UpdateGitlabProjectVariable(CreateGitlabProjectVariable):
+    """
+    filter	hash	No	Available filters: [environment_scope]. See the filter parameter details."
+    """
+    filter: dict[str, str] | None = Field(None, description="Available filters: [environment_scope]")
+
+class GitlabProjectVariable(ModelWithExtra):
+    """
+    Gitlab Project Variables model
+    https://docs.gitlab.com/ee/api/project_level_variables.html#get-a-single-variable
+    """
+    variable_type: str | None = Field(None, description="The type of the variable")
+    key: str | None = Field(None, description="The key of the variable")
+    value: str | None = Field(None, description="The value of the variable")
+    protected: bool | None = Field(None, description="Whether the variable is protected")
+    masked: bool | None = Field(None, description="Whether the variable is masked")
+    raw: bool | None = Field(None, description="Whether the variable is raw")
+    environment_scope: str | None = Field(None, description="The environment scope of the variable")
+    description: str | None = Field(None, description="The description of the variable")
+
+
+
+class GitlabProject(ModelWithExtra):
+    """Gitlab Project model"""
+    id: int | None = Field(None, description="The ID of the project")
+    description: str | None = Field(None, description="The description of the project")
+    default_branch: str | None = Field(None, description="The default branch of the project")
+    ssh_url_to_repo: str | None = Field(None, description="The SSH URL to the repository")
+    http_url_to_repo: str | None = Field(None, description="The HTTP URL to the repository")
+    web_url: str | None = Field(None, description="The HTTP URL to the project")
+    readme_url: str | None = Field(None, description="The HTTP URL to the readme file")
+    topics: list[str] = Field(default_factory=list, description="The list of tags of the project")
+    owner: dict[str, Any] = Field(default_factory=dict, description="The owner of the project")
+    name: str | None = Field(None, description="The name of the project")
+    name_with_namespace: str | None = Field(None, description="The name with namespace of the project")
+    path: str | None = Field(None, description="The path of the project")
+    path_with_namespace: str | None = Field(None, description="The path with namespace of the project")
+    created_at: datetime.datetime | None = Field(None, description="The date the project was created")
+    last_activity_at: datetime.datetime | None = Field(None, description="The date of the last activity in the project")
+    forks_count: int | None = Field(None, description="The number of forks of the project")
+    avatar_url: str | None = Field(None, description="The URL to the avatar of the project")
+    star_count: int | None = Field(None, description="The number of stars of the project")
+    forks: int | None = Field(None, description="The number of forks of the project")
+    open_issues: int | None = Field(None, description="The number of open issues of the project")
+    public_jobs: bool | None = Field(None, description="Whether the project has public jobs")
+    shared_runners_enabled: bool | None = Field(None, description="Whether shared runners are enabled")
+    only_allow_merge_if_pipeline_succeeds: bool | None = Field(None, description="Whether only merge requests with a passing pipeline can be merged into the project")
+    only_allow_merge_if_all_discussions_are_resolved: bool | None = Field(None, description="Whether merge requests can only be merged when all the discussions are resolved")
+    merge_method: str | None = Field(None, description="The merge method of the project")
+    jobs_enabled: bool | None = Field(None, description="Whether jobs are enabled")
+    runners_token: str | None = Field(None, description="The token of the project runners")
+
+
+
 class CreateGitlabWebhook(GitlabModel):
     """Gitlab webhook configuration"""
     # Requries a project ID or URL-encoded path
 
     # id is inherited from GitlabModel
-    url: str = Fie  ld(..., description="The hook URL")
+    url: str = Field(..., description="The hook URL")
 
     # Optional parameters
     confidential_issues_events: Optional[bool] = Field(default=None, description="Trigger hook on confidential issues events")
