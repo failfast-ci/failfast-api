@@ -6,6 +6,8 @@ from functools import lru_cache
 from ffci.gitlab.models import (
     CreateGitlabWebhook,
     GitlabProject,
+    GitlabJob,
+    GitlabProjectID,
     GitlabCILint,
     GitlabWebhook,
     GitlabCILintContent,
@@ -62,7 +64,7 @@ class GitlabClient(BaseClient):
         return GitlabWebhook.model_validate(await resp.json())
 
     async def gitlabci_lint(
-        self, project_id: int | str, body: GitlabCILintSha | GitlabCILintContent
+        self, project_id: GitlabProjectID, body: GitlabCILintSha | GitlabCILintContent
     ) -> GitlabCILint:
         id = url_encode_id(project_id)
         headers = self.headers()
@@ -105,7 +107,7 @@ class GitlabClient(BaseClient):
         resp.raise_for_status()
         return GitlabCILint.model_validate(await resp.json())
 
-    async def get_project(self, project_id: int | str) -> GitlabProject:
+    async def get_project(self, project_id: GitlabProjectID) -> GitlabProject:
         """Returns the gitlab project dict
         link: https://docs.gitlab.com/ce/api/projects.html#get-single-project
         """
@@ -132,14 +134,14 @@ class GitlabClient(BaseClient):
 
     # Cache the answers, ID is always the same for a project
     @lru_cache(maxsize=128, typed=True)
-    def get_project_id(self, project_name: int | str) -> int:
+    def get_project_id(self, project_name: GitlabProjectID) -> int:
         """Requests the project-id (int) from a project_name (str)"""
         if isinstance(project_name, int):
             return project_name
         project = self.get_project(project_name)
         return project.id
 
-    async def get_variables(self, project_id: int | str) -> list[GitlabProjectVariable]:
+    async def get_variables(self, project_id: GitlabProjectID) -> list[GitlabProjectVariable]:
         path = self._url(f"/projects/{self.get_project_id(project_id)}/variables")
         headers = self.headers()
         resp = await self.session.get(
@@ -161,10 +163,8 @@ class GitlabClient(BaseClient):
         resp_json = await resp.json()
         return [GitlabProjectVariable.model_validate(var) for var in resp_json]
 
-    ###########
-    ###########
 
-    async def get_variable(self, project_id: str | int, key: str) -> GitlabProjectVariable:
+    async def get_variable(self, project_id: GitlabProjectID, key: str) -> GitlabProjectVariable:
         path = self._url(f"/projects/{self.get_project_id(project_id)}/variables/{key}")
         resp = requests.get(
             path, headers=self.headers, timeout=self.config.gitlab["timeout"]
@@ -188,7 +188,7 @@ class GitlabClient(BaseClient):
         resp.raise_for_status()
         return GitlabProjectVariable.model_validate(await resp.json())
 
-   async def create_variable(self, project_id: str | int, body: CreateGitlabProjectVariable) -> GitlabProjectVariable:
+   async def create_variable(self, project_id: GitlabProjectID, body: CreateGitlabProjectVariable) -> GitlabProjectVariable:
         path = self._url(f"/projects/{self.get_project_id(project_id)}/variables")
         headers = self.headers()
         body_dict = body.model_dump(exclude_defaults=True)
@@ -210,7 +210,7 @@ class GitlabClient(BaseClient):
         resp.raise_for_status()
         return GitlabProjectVariable.model_validate(await resp.json())
 
-    async def update_variable(self, project_id: str | int, key: str, body: UpdateGitlabProjectVariable | CreateGitlabProjectVariable) -> GitlabProjectVariable:
+    async def update_variable(self, project_id: GitlabProjectID, key: str, body: UpdateGitlabProjectVariable | CreateGitlabProjectVariable) -> GitlabProjectVariable:
         path = self._url(f"/projects/{self.get_project_id(project_id)}/variables/{key}")
         headers = self.headers()
         body_dict = body.model_dump(exclude_defaults=True)
@@ -235,7 +235,7 @@ class GitlabClient(BaseClient):
     def variables_to_dict(self, variables: list[GitlabProjectVariable]) -> dict[str, GitlabProjectVariable]:
         return {var.key: var for var in variables}
 
-    async def set_variables(self, project_id: str | int, variables: dict[str, str]) -> list[GitlabProjectVariable]:
+    async def set_variables(self, project_id: GitlabProjectID, variables: dict[str, str]) -> list[GitlabProjectVariable]:
         """Create or update(if exists) pipeline variables"""
         project_variables = await self.get_variables(project_id)
         project_variables_dict = self.variables_to_dict(project_variables)
@@ -252,31 +252,58 @@ class GitlabClient(BaseClient):
                 res.append(await self.create_variable(project_id, CreateGitlabProjectVariable(value=value, key=key)))
         return res
 
-    def get_job(self, project_id, job_id):
+
+    def get_job(self, project_id: GitlabProjectID, job_id: int) -> GitlabJob:
         path = self._url(
-            "/projects/%s/jobs/%s" % (self.get_project_id(project_id), job_id)
+            f"/projects/{self.get_project_id(project_id)}/jobs/{job_id}"
         )
-        resp = requests.get(
-            path, headers=self.headers, timeout=self.config.gitlab["timeout"]
+        headers = self.headers()
+        resp = await self.session.get(
+            path,
+            headers=headers,
+            ssl=self.ssl_mode,
+            timeout=30,
+        )
+        await self.log_request(
+            path=path,
+            params={},
+            body={},
+            method="GET",
+            headers=headers,
+            resp=resp,
         )
         resp.raise_for_status()
-        return resp.json()
+        return GitlabJob.model_validate(await resp.json())
+
+    def get_jobs(self, project_id: GitlabProjectID, pipeline_id: int) -> list[GitlabJob]]:
+        path = self._url(
+            f"/projects/{self.get_project_id(project_id)}/pipelines/{pipeline_id}jobs"
+        )
+        headers = self.headers()
+        resp = await self.session.get(
+            path,
+            headers=headers,
+            ssl=self.ssl_mode,
+            timeout=30,
+        )
+        await self.log_request(
+            path=path,
+            params={},
+            body={},
+            method="GET",
+            headers=headers,
+            resp=resp,
+        )
+        resp.raise_for_status()
+        return [GitlabJob.model_validate(x) for x in await resp.json()]
+
+    ###########
+    ###########
 
     def get_statuses(self, project_id, sha):
         path = self._url(
             "/projects/%s/repository/commits/%s/statuses"
             % (self.get_project_id(project_id), sha)
-        )
-        resp = requests.get(
-            path, headers=self.headers, timeout=self.config.gitlab["timeout"]
-        )
-        resp.raise_for_status()
-        return resp.json()
-
-    def get_jobs(self, project_id, pipeline_id):
-        path = self._url(
-            "/projects/%s/pipelines/%s/jobs"
-            % (self.get_project_id(project_id), pipeline_id)
         )
         resp = requests.get(
             path, headers=self.headers, timeout=self.config.gitlab["timeout"]

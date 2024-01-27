@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#!/usr/bin/env python3
 # pylint: disable=no-name-in-module
 # pylint: disable=no-self-argument
 # pylint: disable=too-few-public-methods
@@ -11,6 +9,8 @@ from typing import Any, Literal, Optional, TypeAlias, Union
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from ffci.github.models import ModelWithExtra
+
+GitlabProjectID: TypeAlias = Union[str, int]
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +25,11 @@ class ModelWithExtra(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 class GitlabModel(ModelWithExtra):
-    id: int | str = Field(..., description="The ID or URL-encoded path of the project")
+    id: GitlabProjectID = Field(..., description="The ID or URL-encoded path of the project")
 
     @field_validator("id")
     @classmethod
-    def encode_id(cls, v: int | str) -> int | str:
+    def encode_id(cls, v: GitlabProjectID) -> GitlabProjectID:
         return url_encode_id(v)
 
 class GitlabCILintRequest(BaseModel):
@@ -146,7 +146,7 @@ class UpdateGitlabWebhook(CreateGitlabWebhook):
     def encode_hook_id(cls, v: int | str) -> int | str:
         return url_encode_id(v)
 
-class GitlabWebhook(ModelWithExtra):
+class GitlabWebhook(GitlabModel):
     # id is inherited from GitlabModel
     url: str = Field(..., description="The hook URL")
     project_id: Optional[int] = Field(default=None, description="The ID of the project")
@@ -171,3 +171,32 @@ class GitlabWebhook(ModelWithExtra):
     alert_status: Optional[str] = Field(default=None, description="Status of the webhook")
     disabled_until: Optional[datetime.datetime] = Field(default=None, description="Date the webhook was disabled until")
     repository_update_events: Optional[bool] = Field(default=None, description="Trigger hook on repository update events")
+
+class GitlabJob(GtilabModel):
+    """Gitlab Job model
+    https://docs.gitlab.com/ee/api/jobs.html#get-a-single-job
+    """
+    commit: dict[str, Any] | None = Field(default=None, description="The commit associated with the job")
+    coverage: float | None = Field(default=None, description="The coverage percentage")
+    archived: bool | None = Field(default=None, description="Whether the job is archived")
+    allow_failure: bool | None = Field(default=None, description="Whether the job is allowed to fail")
+    created_at: datetime.datetime | None = Field(default=None, description="The date the job was created")
+    started_at: datetime.datetime | None = Field(default=None, description="The date the job started")
+    finished_at: datetime.datetime | None = Field(default=None, description="The date the job finished")
+    erased_at: datetime.datetime | None = Field(default=None, description="The date the job was erased")
+    duration: float | None = Field(default=None, description="The duration of the job")
+    queued_duration: float | None = Field(default=None, description="The duration the job was queued")
+    artifacts_expire_at: datetime.datetime | None = Field(default=None, description="The date the job artifacts will expire")
+    tag_list: list[str] = Field(default_factory=list, description="The list of tags of the job")
+    id: int | None = Field(default=None, description="The ID of the job")
+    name: str | None = Field(default=None, description="The name of the job")
+    pipeline: dict[str, Any] | None = Field(default=None, description="The pipeline associated with the job")
+    ref: str | None = Field(default=None, description="The reference of the job")
+    artifacts: list[str] = Field(default_factory=list, description="The list of artifacts of the job")
+    runner: dict[str, Any] | None = Field(default=None, description="The runner associated with the job")
+    stage: str | None = Field(default=None, description="The stage of the job")
+    status: str | None = Field(default=None, description="The status of the job")
+    tag: bool | None = Field(default=None, description="Whether the job was tagged")
+    web_url: str | None = Field(default=None, description="The URL to the job")
+    project: dict[str, Any] | None = Field(default=None, description="The project associated with the job")
+    user: dict[str, Any] | None = Field(default=None, description="The user associated with the job")

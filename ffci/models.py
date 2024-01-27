@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from typing import Any, Optional, Union
 
 AnyJSON: TypeAlias = Union[dict[str, Any], list[Any]]
