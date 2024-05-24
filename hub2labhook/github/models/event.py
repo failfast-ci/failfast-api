@@ -4,6 +4,8 @@ from hub2labhook.exception import Unsupported
 
 logger = logging.getLogger(__name__)
 
+def target_refname(pr_id, refname):
+    return "pr-%s-%s" % (pr_id, refname)
 
 class GithubEvent(object):
     def __init__(self, event, headers):
@@ -18,6 +20,14 @@ class GithubEvent(object):
             return json.loads(self.event['check_run']['external_id'])
         else:
             self._raise_unsupported()
+
+    @property
+    def labels(self):
+        if self.event_type == "pull_request":
+            labels = [x["name"] for x in self.event['pull_request']['labels']]
+        else:
+            self._raise_unsupported()
+        return labels
 
     @property
     def ref(self):
@@ -92,7 +102,7 @@ class GithubEvent(object):
         if self.event_type == "push":
             return self.ref
         elif self.event_type == "pull_request":
-            return "pr-%s-%s" % (self.pr_id, self.refname)
+            return target_refname(self.pr_id, self.ref)
         else:
             self._raise_unsupported()
 

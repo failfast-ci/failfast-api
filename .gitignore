@@ -1,12 +1,19 @@
 # Byte-compiled / optimized / DLL files
+.env
+report.xml
+.python-version
+localconfig.yaml
+pyrightconfig.json
 __pycache__/
 *.py[cod]
 *$py.class
-
-.python-version
+*.mypy_cache
+**/*.mypy_cache
+.pyre/*
+# .watchmanconfig
 # C extensions
 *.so
-
+.vscode
 # Distribution / packaging
 .Python
 env/
@@ -60,12 +67,3 @@ docs/_build/
 target/
 #Ipython Notebook
 .ipynb_checkpoints
-
-.dir-locals.el
-.mypy_cache
-
-# Development environment
-.virtenv
-.vscode/
-*.orig
-deploy/myfailfast

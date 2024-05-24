@@ -97,6 +97,13 @@ class GithubClient(object):
         """ Construct the url from a relative path """
         return self.endpoint + path
 
+    def get_pr(self, github_repo, pr_id):
+        path = self._url("/repos/%s/pulls/%s" % (github_repo, pr_id))
+        return self.get_json(path)
+
+    def get_pr_from_url(self, url):
+        return self.get_json(url)
+
     @property
     def token(self):
         if not self._token:

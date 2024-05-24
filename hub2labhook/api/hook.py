@@ -45,18 +45,23 @@ def github_event():
 
     headers = dict(request.headers.to_list())
     gevent = GithubEvent(params, headers)
+    job = None
     if gevent.event_type == "check_run" and gevent.action == "rerequested":
         job = tasks.retry_build.delay(gevent.external_id, gevent.head_sha)
     elif gevent.event_type == "check_run" and gevent.action == "requested_action":
         job = tasks.request_action(
-            gevent.event['requested_action']['identifier'], params).delay()
+            gevent.event['requested_action']['identifier'], params)
+        if job is not None:
+            job.delay()
     elif gevent.event_type == "check_suite" and gevent.action == "rerequested":
-        job = tasks.retry_pipeline.delay()
+        # unsupported: missing external_id and project_id in the event
+        pass
     elif gevent.event_type in ["push", "pull_request"]:
-        job = tasks.start_pipeline(params, headers).delay()
-    else:
+        job = tasks.start_pipeline(params, headers)
+        if job is not None:
+            job.delay()
+    if job is None:
         return jsonify({'ignored': True, 'event': params, 'headers': headers})
-
     return jsonify({'job_id': job.id, 'params': params})
 
 
