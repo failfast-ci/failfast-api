@@ -88,9 +88,23 @@ def update_github_check(event):
                                  github_repo, checkstatus.sha)
     return githubclient.create_check(github_repo, checkstatus.render_check())
 
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def prep_retry_check_suite(event):
+    githubclient = GithubClient(
+        installation_id=event.installation_id)
+    check_runs = githubclient.get_json(event['check_suite']['check_runs_url'])
+    if check_runs['total_count'] == 0:
+        raise Exception("No check runs found")
+    external_id = json.loads(check_runs['check_runs'][0]['external_id'])
+    pr_id = external_id['gh_prid']
+    pull_url = event['repository']['pulls_url'].replace("{/number}", "/%s" % pr_id)
+    pull = githubclient.get_json(pull_url)
+    event['pull_request'] = pull
+    return event
 
-@app.task(bind=True, base=JobBase)
-def pipeline(self, event, headers):
+
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def pipeline(headers, event):
     gevent = GithubEvent(event, headers)
     config = FFCONFIG
     build = Pipeline(gevent, config)
@@ -198,7 +212,8 @@ def retry_build(self, external_id, sha=None):
         if kind == "build":
             return gitlabclient.retry_build(project_id, object_id)
         elif kind == "pipeline":
-            return gitlabclient.retry_pipeline(project_id, object_id)
+            # trigger a new pipeline, canceled the old one
+            return gitlabclient.new_pipeline(project_id, sha=sha, cancel_prev=True)
 
     except requests.exceptions.RequestException as exc:
         logger.error('Error request')
@@ -316,7 +331,8 @@ def resync_action(self, event):
         raise self.retry(countdown=60, exc=exc)
 
 
-def start_pipeline(event, headers):
+
+def start_pipeline(headers, event):
     '''
     start_pipeline is launching the job 'pipeline' if conditions are met.
     The pipeline job clone the github-repo and push it to gitlab
@@ -328,7 +344,7 @@ def start_pipeline(event, headers):
         istriggered_on_pr(gevent, config) or
         istriggered_on_labels(gevent, config))
     if trigger_build:
-        task = pipeline.s(event, headers)
+        task = pipeline.s(headers, event)
         task.link_error(update_github_statuses_failure.s(event, headers))
         return task
     else:

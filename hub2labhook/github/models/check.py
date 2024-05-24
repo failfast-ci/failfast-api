@@ -90,6 +90,12 @@ class CheckStatus(object):
             return self.object['object_attributes']['sha']
         else:
             return self.object['sha']
+    @property
+    def ref(self):
+        if self.object_kind == "pipeline":
+            return self.object['object_attributes']['ref']
+        else:
+            return self.object['ref']
 
     def build_url(self, build_id):
         return self.repourl + "/builds/%s" % build_id
@@ -124,12 +130,22 @@ class CheckStatus(object):
         elif self.object_kind == "build":
             return self.object['project_id']
 
+    def gh_prid(self, ref):
+        return ref.split("-")[1]
+
+    def gh_ref(self, ref):
+        return ref.split("-")[2]
+
     @property
     def external_id(self):
         return {
             'object_kind': self.object_kind,
             'object_id': self.object_id,
-            'project_id': self.project_id
+            'project_id': self.project_id,
+            'gh_prid': self.gh_prid(self.ref),
+            'gh_ref': self.gh_ref(self.ref),
+            'ref': self.ref,
+            'sha': self.sha,
         }
 
     @classmethod

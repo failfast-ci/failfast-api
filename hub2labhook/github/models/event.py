@@ -77,8 +77,6 @@ class GithubEvent(object):
 
     @property
     def clone_url(self):
-        if self.event_type not in ["push", "pull_request"]:
-            self._raise_unsupported()
         return self.event['repository']['clone_url']
 
     @property
@@ -130,7 +128,7 @@ class GithubEvent(object):
     def label(self):
         if self.event_type != "pull_request" and self.action != "labeled":
             self._raise_unsupported()
-        return self.event['label']['name']
+        return self.event['pull_request']['label']['name']
 
     @property
     def pull_request_url(self):

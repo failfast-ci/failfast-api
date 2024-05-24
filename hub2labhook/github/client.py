@@ -40,19 +40,19 @@ GITHUB_CHECK_MAP = {
 
 
 def icon_url(icon):
-    return "https://s3.conny.dev/public/icons-failfast/%s.png" % icon
+    return f"https://ffci-pub.s3.eu-central-1.amazonaws.com/icons/{icon}.png"
 
 GITHUB_CHECK_ICONS = {
     'allow_failure': icon_url("warning"),
-    "failed": icon_url("failed2"),
-    "success": icon_url("happy-agnes-icon_43743"),
-    "skipped": icon_url("skip"),
-    "unknown": icon_url("failed2"),
+    "failed": icon_url("alarm"),
+    "success": icon_url("happy"),
+    "skipped": icon_url("portal"),
+    "unknown": icon_url("alarm"),
     'manual': icon_url('play'),
-    "canceled": icon_url("cancel"),
-    "pending": icon_url("waiting"),
-    "created": icon_url("waiting"),
-    "running": icon_url("running"),
+    "canceled": icon_url("cancelled"),
+    "pending": icon_url("pending"),
+    "created": icon_url("pending"),
+    "running": icon_url("work-in-progress"),
     "warning": icon_url("warning"),
 }
 

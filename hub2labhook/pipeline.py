@@ -129,10 +129,9 @@ class Pipeline(object):
                                          "%s:%s" % (gitlab_user,
                                                     self.gitlab.gitlab_token))
         gitbin.remote('add', 'target', target_url)
-
+        labels = ','.join(gevent.labels)
         variables.update({
-            'PR_LABELS':
-                ','.join(gevent.labels),
+            'PR_LABELS': labels,
             'EVENT':
                 gevent.event_type,
             'PR_ID':

@@ -54,10 +54,15 @@ def github_event():
         if job is not None:
             job.delay()
     elif gevent.event_type == "check_suite" and gevent.action == "rerequested":
-        # unsupported: missing external_id and project_id in the event
-        pass
+        job = tasks.prep_retry_check_suite.s(params, link=tasks.pipeline.s(headers))
+        job.delay()
+    # elif gevent.event_type == "issue_comment":
+    #     gevent["body"] == "/retest"
+    #     job = tasks.prep_retry_comment.s(params, link=tasks.pipeline.s(headers))
+    #     job.link_error(tasks.update_github_statuses_failure.s(params, headers))
+    #     job.delay()
     elif gevent.event_type in ["push", "pull_request"]:
-        job = tasks.start_pipeline(params, headers)
+        job = tasks.start_pipeline(headers, params)
         if job is not None:
             job.delay()
     if job is None:
