@@ -9,7 +9,7 @@ RUN pip install pip -U
 COPY requirements.txt $workdir
 RUN pip install -r requirements.txt -U
 run pip install gunicorn -U
-RUN apt-get remove --purge -y libffi-dev build-essential libssl-dev git rustc cargo
+RUN apt-get remove --purge -y libffi-dev build-essential libssl-dev rustc cargo
 RUN rm -rf /root/.cargo
 
 COPY . $workdir

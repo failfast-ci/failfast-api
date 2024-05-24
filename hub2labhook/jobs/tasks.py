@@ -91,20 +91,21 @@ def update_github_check(event):
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
 def prep_retry_check_suite(event):
     githubclient = GithubClient(
-        installation_id=event.installation_id)
+        installation_id=event['installation']['id'])
     check_runs = githubclient.get_json(event['check_suite']['check_runs_url'])
     if check_runs['total_count'] == 0:
         raise Exception("No check runs found")
     external_id = json.loads(check_runs['check_runs'][0]['external_id'])
     pr_id = external_id['gh_prid']
     pull_url = event['repository']['pulls_url'].replace("{/number}", "/%s" % pr_id)
+    event['number'] = pr_id
     pull = githubclient.get_json(pull_url)
     event['pull_request'] = pull
     return event
 
 
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
-def pipeline(headers, event):
+def pipeline(event, headers):
     gevent = GithubEvent(event, headers)
     config = FFCONFIG
     build = Pipeline(gevent, config)
@@ -207,13 +208,14 @@ def retry_build(self, external_id, sha=None):
     project_id = external_id['project_id']
     object_id = external_id['object_id']
     kind = external_id['object_kind']
+    ref = external_id['gh_ref']
     gitlabclient = GitlabClient()
     try:
         if kind == "build":
             return gitlabclient.retry_build(project_id, object_id)
         elif kind == "pipeline":
             # trigger a new pipeline, canceled the old one
-            return gitlabclient.new_pipeline(project_id, sha=sha, cancel_prev=True)
+            return gitlabclient.new_pipeline(project_id, ref=ref, cancel_prev=True)
 
     except requests.exceptions.RequestException as exc:
         logger.error('Error request')
@@ -344,7 +346,7 @@ def start_pipeline(headers, event):
         istriggered_on_pr(gevent, config) or
         istriggered_on_labels(gevent, config))
     if trigger_build:
-        task = pipeline.s(headers, event)
+        task = pipeline.s(event, headers)
         task.link_error(update_github_statuses_failure.s(event, headers))
         return task
     else:

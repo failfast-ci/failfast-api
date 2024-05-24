@@ -168,6 +168,7 @@ class Pipeline(object):
             # Full synchronize the repo)
             options = ["-o", f"ci.skip"]
             gitbin.push("target", 'HEAD:%s' % gevent.target_refname, "-f", *options)
+            print(gevent.target_refname, gevent.event)
             pipeline = self.gitlab.new_pipeline(ci_project['id'], ref = gevent.target_refname, variables = variables)
             ci_sha = str(gitbin.rev_parse('HEAD'))
             return {  # NOTE: the GitHub reference details for subsequent tasks.

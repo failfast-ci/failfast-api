@@ -106,6 +106,7 @@ class GithubEvent(object):
 
     @property
     def event_type(self):
+        print(self.headers)
         return self.headers.get("X-GITHUB-EVENT", "push")
 
     @property

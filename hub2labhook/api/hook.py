@@ -43,7 +43,7 @@ def github_event():
     if hook_signature:
         verify_signature(request.data, hook_signature)
 
-    headers = dict(request.headers.to_list())
+    headers = dict(request.headers)
     gevent = GithubEvent(params, headers)
     job = None
     if gevent.event_type == "check_run" and gevent.action == "rerequested":
@@ -54,7 +54,11 @@ def github_event():
         if job is not None:
             job.delay()
     elif gevent.event_type == "check_suite" and gevent.action == "rerequested":
-        job = tasks.prep_retry_check_suite.s(params, link=tasks.pipeline.s(headers))
+        headers['X-GITHUB-EVENT'] = "pull_request"
+        headers['X-GITHUB-PREV-EVENT'] = "check_suite"
+        params['prev_action'] = params['action']
+        params['action'] = 'synchronize'
+        job = tasks.prep_retry_check_suite.s(params) | tasks.pipeline.s(headers)
         job.delay()
     # elif gevent.event_type == "issue_comment":
     #     gevent["body"] == "/retest"
@@ -74,7 +78,7 @@ def github_event():
                  strict_slashes=False)
 def gitlab_event():
     params = getvalues()
-    headers = dict(request.headers.to_list())
+    headers = dict(request.headers)
     event = headers.get("X-Gitlab-Event", None)
 
     if event in "Pipeline Hook":

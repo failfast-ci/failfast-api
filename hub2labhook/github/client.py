@@ -52,7 +52,7 @@ GITHUB_CHECK_ICONS = {
     "canceled": icon_url("cancelled"),
     "pending": icon_url("pending"),
     "created": icon_url("pending"),
-    "running": icon_url("work-in-progress"),
+    "running": icon_url("run"),
     "warning": icon_url("warning"),
 }
 
@@ -65,7 +65,7 @@ def jwt_token(integration_id, integration_pem):
     }
 
     return jwt.encode(payload, integration_pem,
-                      algorithm='RS256').decode("utf-8")
+                      algorithm='RS256')
 
 
 class GithubClient(object):
