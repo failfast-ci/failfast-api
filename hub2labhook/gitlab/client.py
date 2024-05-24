@@ -149,12 +149,45 @@ class GitlabClient(object):
         resp.raise_for_status()
         return resp.json()
 
-    def get_pipelines(self, project_id, ref=None):
+    def cancel_pipeline(self, project_id, pipeline_id):
+        path = self._url("/projects/%s/pipelines/%s/cancel" %
+                         (self.get_project_id(project_id), pipeline_id))
+        resp = requests.post(path, headers=self.headers,
+                             timeout=self.config.gitlab['timeout'])
+        resp.raise_for_status()
+        return resp.json()
+
+    def new_pipeline(self, project_id, ref, variables=None, cancel_prev=True):
+        if cancel_prev:
+            get_pipelines = self.get_pipelines(project_id, ref)
+            for pipeline in get_pipelines:
+                if pipeline['ref'] == ref:
+                    self.cancel_pipeline(project_id, pipeline['id'])
+        fmt_vars = []
+        if variables:
+            fmt_vars = [{"key": k, "value": v} for k, v in variables.items()]
+        path = self._url("/projects/%s/pipeline" % self.get_project_id(project_id))
+        body = {
+            "ref": ref,
+            "variables": fmt_vars,
+        }
+        resp = requests.post(path, data=json.dumps(body).encode(),
+                             headers=self.headers,
+                             timeout=self.config.gitlab['timeout'])
+        resp.raise_for_status()
+
+        return resp.json()
+
+
+    def get_pipelines(self, project_id, ref=None, sha=None):
         path = self._url("/projects/%s/pipelines" %
                          (self.get_project_id(project_id)))
         params = {}
         if ref:
             params["ref"] = ref
+
+        if sha:
+            params["sha"] = sha
         resp = requests.get(path, headers=self.headers, params=params,
                             timeout=self.config.gitlab['timeout'])
         return resp.json()
@@ -314,9 +347,9 @@ class GitlabClient(object):
         resp.raise_for_status()
         return resp.json()
 
-    def retry_pipeline(self, gitlab_project_id, sha):
-        path = self._url("/projects/%s/pipeline" % gitlab_project_id)
-        resp = requests.post(path, params={'ref': sha}, headers=self.headers,
+    def retry_pipeline(self, project_id, pipeline_id):
+        path = self._url(f"/projects/{project_id}/pipeline/{pipeline_id}/retry")
+        resp = requests.post(path, params={}, headers=self.headers,
                              timeout=self.config.gitlab['timeout'])
         resp.raise_for_status()
         return resp.json()

@@ -131,6 +131,8 @@ class Pipeline(object):
         gitbin.remote('add', 'target', target_url)
 
         variables.update({
+            'PR_LABELS':
+                ','.join(gevent.labels),
             'EVENT':
                 gevent.event_type,
             'PR_ID':
@@ -165,7 +167,9 @@ class Pipeline(object):
 
         if ((perform_sync == "true") or (DEFAULT_MODE == "sync")):
             # Full synchronize the repo)
-            gitbin.push("target", 'HEAD:%s' % gevent.target_refname, "-f")
+            options = ["-o", f"ci.skip"]
+            gitbin.push("target", 'HEAD:%s' % gevent.target_refname, "-f", *options)
+            pipeline = self.gitlab.new_pipeline(ci_project['id'], ref = gevent.target_refname, variables = variables)
             ci_sha = str(gitbin.rev_parse('HEAD'))
             return {  # NOTE: the GitHub reference details for subsequent tasks.
                 'sha': gevent.head_sha,
@@ -173,8 +177,10 @@ class Pipeline(object):
                 'ref': gevent.refname,
                 'ci_ref': gevent.target_refname,
                 'ci_project_id': ci_project['id'],
+                'pipeline_id': pipeline['id'],
                 'installation_id': gevent.installation_id,
                 'github_repo': gevent.repo,
+                'labels': labels,
                 'context': self.config.github['context']
             }
         else:

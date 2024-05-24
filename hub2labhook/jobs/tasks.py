@@ -198,7 +198,7 @@ def retry_build(self, external_id, sha=None):
         if kind == "build":
             return gitlabclient.retry_build(project_id, object_id)
         elif kind == "pipeline":
-            return gitlabclient.retry_pipeline(project_id, sha)
+            return gitlabclient.retry_pipeline(project_id, object_id)
 
     except requests.exceptions.RequestException as exc:
         logger.error('Error request')
@@ -233,12 +233,7 @@ def request_action(action, event):
     if action == "resync":
         return resync_action.s(event)
 
-
-@app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
-          retry_backoff=True)
-def retry_pipeline(self, event):
-    pass
-
+  # "error": "retry_pipeline() missing 1 required positional argument: 'event'"
 
 @app.task(bind=True, base=JobBase, retry_kwargs={'max_retries': 5},
           retry_backoff=True)
