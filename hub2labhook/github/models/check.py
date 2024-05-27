@@ -131,10 +131,16 @@ class CheckStatus(object):
             return self.object['project_id']
 
     def gh_prid(self, ref):
-        return ref.split("-")[1]
+        split = ref.split("-")
+        if split[0] == "pr":
+            return split[1]
+        return None
 
     def gh_ref(self, ref):
-        return ref.split("-")[2]
+        split = ref.split("-")
+        if split[0] == "pr":
+            return split[2]
+        return ref
 
     @property
     def external_id(self):
@@ -259,7 +265,7 @@ class CheckStatus(object):
         title_map = {
             'allow_failure': 'Build Failed (allowed)',
             "failed": "Build Failed",
-            "success": "Build Succeeded",
+            "success": "Build Success",
             "skipped": "Build Skipped",
             "unknown": "Build Status unknown",
             'manual': 'Build waiting for action',
@@ -296,8 +302,8 @@ class CheckStatus(object):
     def build_info_row(self, build_info):
         title_map = {
             'allow_failure': 'Failed (allowed)',
-            "failed": "Failed",
-            "success": "Succeeded",
+            "failed": "Fail",
+            "success": "Success",
             "skipped": "Skipped",
             "unknown": "Unknown",
             'manual': 'Manual',
@@ -307,9 +313,11 @@ class CheckStatus(object):
             "running": "Running",
             "warning": "Warning"
         }
-
-        status = ("<img src='{build_icon}' height='32px'/> {status}").format(
-            build_icon=GITHUB_CHECK_ICONS[build_info['build_status']],
+        icon = build_info['build_status']
+        if build_info['build_status'] == "success":
+            icon = "success_check"
+        status = ("<img src='{build_icon}' height='16px'/> {status}").format(
+            build_icon=GITHUB_CHECK_ICONS[icon],
             status=title_map[build_info['build_status']])
 
         row = ("| **{build_name}**| [{build_id}]({build_url}) |"
@@ -376,14 +384,16 @@ class CheckStatus(object):
     def check_pipeline_text(self):
         title_map = {
             "failed": "Failed",
-            "success": "Succeeded",
+            "success": "Success",
             "skipped": "Skipped",
             "canceled": "Cancelled",
             "pending": "Queued",
             "created": "Created",
             "running": "in Progress",
         }
-
+        icon = self.gitlab_status
+        if self.gitlab_status == "success":
+            icon = "success_check"
         build_array = []
         for build in self.object['builds']:
             build_info = {
@@ -402,8 +412,8 @@ class CheckStatus(object):
             }
             build_array.append(self.build_info_row(build_info))
 
-        status = ("<img src='{build_icon}' height='32px'/> {status}").format(
-            build_icon=GITHUB_CHECK_ICONS[self.gitlab_status],
+        status = ("<img src='{build_icon}' height='16px'/> {status}").format(
+            build_icon=GITHUB_CHECK_ICONS[icon],
             status=title_map[self.gitlab_status])
         text = """
 ## Pipeline info

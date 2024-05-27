@@ -66,7 +66,7 @@ def github_event():
     #     job.link_error(tasks.update_github_statuses_failure.s(params, headers))
     #     job.delay()
     elif gevent.event_type in ["push", "pull_request"]:
-        job = tasks.start_pipeline(headers, params)
+        job = tasks.start_pipeline(params, headers)
         if job is not None:
             job.delay()
     if job is None:

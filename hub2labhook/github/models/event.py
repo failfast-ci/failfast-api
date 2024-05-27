@@ -26,7 +26,7 @@ class GithubEvent(object):
         if self.event_type == "pull_request":
             labels = [x["name"] for x in self.event['pull_request']['labels']]
         else:
-            self._raise_unsupported()
+            return []
         return labels
 
     @property

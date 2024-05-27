@@ -1,6 +1,7 @@
 import json
 import os
 import datetime
+import random
 import base64
 import jwt
 import requests
@@ -42,19 +43,34 @@ GITHUB_CHECK_MAP = {
 def icon_url(icon):
     return f"https://ffci-pub.s3.eu-central-1.amazonaws.com/icons/{icon}.png"
 
-GITHUB_CHECK_ICONS = {
+def random_icon(name, max):
+    return f"{name}{random.randint(1, max)}"
+
+
+class Icons(dict):
+    def __missing__(self, key):
+        return icon_url("unknown")
+
+    def __getitem__(self, key):
+        item = dict.__getitem__(self, key)
+        if isinstance(item, str):
+            return item
+        return item()
+
+GITHUB_CHECK_ICONS = Icons({
     'allow_failure': icon_url("warning"),
-    "failed": icon_url("alarm"),
-    "success": icon_url("happy"),
+    "failed": icon_url("siren"),
+    "success": lambda: icon_url(random_icon("happy", 6)),
+    "success_check": icon_url("check"),
     "skipped": icon_url("portal"),
-    "unknown": icon_url("alarm"),
+    "unknown": icon_url("siren"),
     'manual': icon_url('play'),
     "canceled": icon_url("cancelled"),
-    "pending": icon_url("pending"),
-    "created": icon_url("pending"),
+    "pending": icon_url("pending2"),
+    "created": icon_url("pending2"),
     "running": icon_url("run"),
     "warning": icon_url("warning"),
-}
+})
 
 
 def jwt_token(integration_id, integration_pem):

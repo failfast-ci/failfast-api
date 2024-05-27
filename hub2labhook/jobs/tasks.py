@@ -88,6 +88,8 @@ def update_github_check(event):
                                  github_repo, checkstatus.sha)
     return githubclient.create_check(github_repo, checkstatus.render_check())
 
+
+# @TODO: retry for tags and branches (e.g. main). this code handle only PR
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
 def prep_retry_check_suite(event):
     githubclient = GithubClient(
@@ -112,8 +114,8 @@ def pipeline(event, headers):
     return build.trigger_pipeline()
 
 
-@app.task(bind=True, base=JobBase)
-def update_github_statuses_failure(self, request, exc, traceback, event,
+@app.task(base=JobBase)
+def update_github_statuses_failure(request, exc, traceback, event,
                                    headers):
     """ The pipeline has failed. Notify GitHub. """
     gevent = GithubEvent(event, headers)
@@ -334,7 +336,7 @@ def resync_action(self, event):
 
 
 
-def start_pipeline(headers, event):
+def start_pipeline(event, headers):
     '''
     start_pipeline is launching the job 'pipeline' if conditions are met.
     The pipeline job clone the github-repo and push it to gitlab
@@ -350,4 +352,6 @@ def start_pipeline(headers, event):
         task.link_error(update_github_statuses_failure.s(event, headers))
         return task
     else:
+        logger.info("No build triggered", istriggered_on_branches(gevent, config), istriggered_on_pr(gevent, config), istriggered_on_labels(gevent, config))
+        print("No build triggered", istriggered_on_branches(gevent, config), istriggered_on_pr(gevent, config), istriggered_on_labels(gevent, config))
         return None
