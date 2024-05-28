@@ -18,7 +18,7 @@ from hub2labhook.jobs.job_base import JobBase
 logger = logging.getLogger(__name__)
 
 
-def is_authorized(self, user, group=None, config=None):
+def is_authorized(user, group=None, config=None):
     if config is None:
         config = FFCONFIG
     return ((config.failfast['authorized_users'] == '*' or
@@ -67,7 +67,6 @@ def istriggered_on_pr(gevent, config=None):
     return (gevent.event_type == "pull_request" and
             gevent.action in ['opened', 'reopened', 'synchronize'] and
             '*' in pr_list)
-
 
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
 def update_github_check(event):
@@ -353,5 +352,4 @@ def start_pipeline(event, headers):
         return task
     else:
         logger.info("No build triggered", istriggered_on_branches(gevent, config), istriggered_on_pr(gevent, config), istriggered_on_labels(gevent, config))
-        print("No build triggered", istriggered_on_branches(gevent, config), istriggered_on_pr(gevent, config), istriggered_on_labels(gevent, config))
         return None

@@ -60,7 +60,7 @@ class Icons(dict):
 GITHUB_CHECK_ICONS = Icons({
     'allow_failure': icon_url("warning"),
     "failed": icon_url("siren"),
-    "success": lambda: icon_url(random_icon("happy", 6)),
+    "success": lambda: icon_url(random_icon("happy", 11)),
     "success_check": icon_url("check"),
     "skipped": icon_url("portal"),
     "unknown": icon_url("siren"),
@@ -192,6 +192,8 @@ class GithubClient(object):
             path, data=json.dumps(check_body), headers=self.headers({
                 'Accept': 'application/vnd.github.antiope-preview+json'
             }))
+
+        resp.raise_for_status()
         return resp.json()
 
     def update_check_run(self, github_repo, check_body, check_id):
@@ -200,7 +202,7 @@ class GithubClient(object):
             path, data=json.dumps(check_body), headers=self.headers({
                 'Accept': 'application/vnd.github.antiope-preview+json'
             }))
-
+        resp.raise_for_status()
         return resp.json()
 
     def check_run(self, github_repo, sha):

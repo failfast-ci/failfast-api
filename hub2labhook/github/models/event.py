@@ -16,7 +16,6 @@ class GithubEvent(object):
     @property
     def external_id(self):
         if self.event_type in ["check_run"]:
-            logger.info(self.event['check_run']['external_id'])
             return json.loads(self.event['check_run']['external_id'])
         else:
             self._raise_unsupported()
@@ -106,7 +105,6 @@ class GithubEvent(object):
 
     @property
     def event_type(self):
-        print(self.headers)
         return self.headers.get("X-GITHUB-EVENT", "push")
 
     @property
