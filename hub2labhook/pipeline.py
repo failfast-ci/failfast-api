@@ -266,7 +266,7 @@ class Pipeline(object):
                 gevent.target_refname,
             'GITHUB_REPO':
                 gevent.repo
-        })
+        }
 
         content['variables'] = variables
 

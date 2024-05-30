@@ -125,9 +125,10 @@ class GithubEvent(object):
 
     @property
     def label(self):
-        if self.event_type != "pull_request" and self.action != "labeled":
+        if self.event_type != "pull_request" or self.action != "labeled":
             self._raise_unsupported()
-        return self.event['pull_request']['label']['name']
+        logger.info("label: %s", self.event['label']['name'])
+        return self.event['label']['name']
 
     @property
     def pull_request_url(self):
