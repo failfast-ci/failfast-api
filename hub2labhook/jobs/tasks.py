@@ -39,9 +39,18 @@ def istriggered_on_comments(gevent, config=None):
 def istriggered_on_labels(gevent, config=None):
     if config is None:
         config = FFCONFIG
-    return (gevent.event_type == "pull_request" and
-            gevent.action == "labeled" and gevent.label in config.failfast.get(
-                'build', {}).get('on-labels', []))
+
+    triggerlabel =  (gevent.event_type == "pull_request" and
+                     gevent.action == "labeled" and gevent.label in config.failfast.get(
+                         'build', {}).get('on-labels', []))
+    if triggerlabel and gevent.label in config.failfast.get('build', {}).get('on-labels-exclusive', {}):
+        elabels = config.failfast['build']['on-labels-exclusive'][gevent.label]
+        labels = gevent.labels
+        for e in elabels:
+            if e in labels:
+                # if one of the exclusive labels is present, we don't trigger
+                return False
+    return triggerlabel
 
 
 def istriggered_on_branches(gevent, config=None):
