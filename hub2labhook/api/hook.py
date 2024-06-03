@@ -1,4 +1,5 @@
 import hmac
+import re
 import hashlib
 from flask import jsonify, request, Blueprint
 from hub2labhook.api.app import getvalues
@@ -60,11 +61,19 @@ def github_event():
         params['action'] = 'synchronize'
         job = tasks.prep_retry_check_suite.s(params) | tasks.pipeline.s(headers)
         job.delay()
-    # elif gevent.event_type == "issue_comment":
-    #     gevent["body"] == "/retest"
-    #     job = tasks.prep_retry_comment.s(params, link=tasks.pipeline.s(headers))
-    #     job.link_error(tasks.update_github_statuses_failure.s(params, headers))
-    #     job.delay()
+    elif gevent.event_type == "issue_comment" and gevent.action == "created" and "pull_request" in gevent.event['issue']:
+        comment = gevent.event['comment']['body']
+        if re.search("^.*\\/retest-failed( .*|$)", comment)  is not None:
+            pull_url = gevent.event['issue']['pull_request']['url']
+            job = tasks.prep_retry_failed.s(params, pull_url)
+        elif re.search("^.*\\/retest( .*|$)", comment) is not None:
+            headers['X-GITHUB-EVENT'] = "pull_request"
+            headers['X-GITHUB-PREV-EVENT'] = "check_suite"
+            params['prev_action'] = params['action']
+            params['action'] = 'synchronize'
+            job = tasks.prep_retry_comment.s(params) | tasks.pipeline.s(headers)
+        if job is not None:
+            job.delay()
     elif gevent.event_type in ["push", "pull_request"]:
         job = tasks.start_pipeline(params, headers)
         if job is not None:
@@ -80,8 +89,7 @@ def gitlab_event():
     params = getvalues()
     headers = dict(request.headers)
     event = headers.get("X-Gitlab-Event", None)
-
-    if event in "Pipeline Hook":
+    if event == "Pipeline Hook":
         task = tasks.update_github_check
     elif event == "Job Hook":
         task = tasks.update_github_check

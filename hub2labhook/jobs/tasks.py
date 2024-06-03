@@ -79,6 +79,7 @@ def istriggered_on_pr(gevent, config=None):
 
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
 def update_github_check(event):
+    ### From a Gitlab event, update the GitHub check status
     gitlabclient = GitlabClient()
     checkstatus = CheckStatus(event)
     installation_id = gitlabclient.get_variable(
@@ -90,8 +91,8 @@ def update_github_check(event):
     # Skip queued builds as they could be 'manual'
     if checkstatus.status == "queued" and checkstatus.object_kind == "build":
         return None
-
-    if checkstatus.object_kind == "pipeline":
+    if (checkstatus.object_kind == "pipeline" and checkstatus.status == "created"
+        and not checkstatus.ischild()):
         githubclient.post_status(checkstatus.render_pipeline_status(),
                                  github_repo, checkstatus.sha)
     return githubclient.create_check(github_repo, checkstatus.render_check())
@@ -113,6 +114,31 @@ def prep_retry_check_suite(event):
     event['pull_request'] = pull
     return event
 
+
+# @TODO: retry for tags and branches (e.g. main). this code handle only PR
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def prep_retry_comment(event):
+    githubclient = GithubClient(
+        installation_id=event['installation']['id'])
+    comment = event['comment']['body']
+    re.search("^.*/retest.*$", comment)
+    re.search("^.*/retest-failed.*$", comment)
+    # re.search("^.*/ffci skip-failed.*$", comment)
+    if "issue" not in event or "pull_request" in event['issue']:
+        return None
+    pull_url = event['issue']['pull_request']['url']
+    pull = githubclient.get_json(pull_url)
+    event['pull_request'] = pull
+    return event
+
+# @TODO: retry for tags and branches (e.g. main). this code handle only PR
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def prep_retry_failed(event, pull_url):
+    githubclient = GithubClient(
+        installation_id=event['installation']['id'])
+    pull = githubclient.get_json(pull_url)
+    event['pull_request'] = pull
+    return event
 
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
 def pipeline(event, headers):

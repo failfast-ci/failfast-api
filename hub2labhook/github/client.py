@@ -196,6 +196,7 @@ class GithubClient(object):
         resp.raise_for_status()
         return resp.json()
 
+
     def update_check_run(self, github_repo, check_body, check_id):
         path = self._url("/repos/%s/check-runs/%s" % (github_repo, check_id))
         resp = requests.patch(
@@ -205,5 +206,19 @@ class GithubClient(object):
         resp.raise_for_status()
         return resp.json()
 
-    def check_run(self, github_repo, sha):
-        return self._url("/repos/:%s/check-runs" % github_repo)
+    def rerequest_check_run(self, github_repo, check_run_id):
+        path = self._url("/repos/%s/check-runs/%s/rerequest" % (github_repo, check_run_id))
+        resp = requests.post(
+            path, headers=self.headers({
+                'Accept': 'application/vnd.github.antiope-preview+json'
+            }))
+        resp.raise_for_status()
+
+    def rerequest_failed_run(self, github_repo, sha, conclusions=None):
+        if conclusions is None:
+            conclusions = ['failure', 'cancelled', "timed_out", "action_required", 'stale', 'neutral']
+        checks = self.get_checks(github_repo, sha)
+        for check in checks['check_runs']:
+            if check['conclusion'] in ['failure', 'cancelled', "timed_out", "action_required", 'stale', 'neutral']:
+                self.rerequest_check_run(github_repo, check['id'])
+        return None

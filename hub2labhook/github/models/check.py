@@ -71,6 +71,10 @@ class CheckStatus(object):
         return actions
 
     @property
+    def source(self):
+        return self.object['source']
+
+    @property
     def object_kind(self):
         return self.object['object_kind']
 
@@ -154,6 +158,9 @@ class CheckStatus(object):
             'sha': self.sha,
         }
 
+    def ischild(self):
+        return self.source == "parent_pipeline"
+
     @classmethod
     def list_task_actions(cls):
         return list(cls.task_actions().values())
@@ -163,7 +170,11 @@ class CheckStatus(object):
             return "%s - %s" % (FFCONFIG.github['context'],
                                 self.object['build_name'])
         else:
-            return "%s %s" % (FFCONFIG.github['context'], "Pipeline")
+            if self.ischild():
+                return "%s %s" % (FFCONFIG.github['context'], "Pipeline/Child")
+            else:
+                return "%s %s" % (FFCONFIG.github['context'], "Pipeline")
+
 
     def check_output(self):
         if self.object_kind == "build":
