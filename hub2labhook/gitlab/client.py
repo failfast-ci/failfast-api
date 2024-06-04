@@ -157,9 +157,11 @@ class GitlabClient(object):
         resp.raise_for_status()
         return resp.json()
 
-    def new_pipeline(self, project_id, ref, variables=None, cancel_prev=True):
+    def new_pipeline(self, project_id, ref=None, sha=None, variables=None, cancel_prev=True):
+        if ref is None and sha is None:
+            raise ValueError("ref or sha must be provided")
         if cancel_prev:
-            get_pipelines = self.get_pipelines(project_id, ref)
+            get_pipelines = self.get_pipelines(project_id, ref=ref, sha=sha)
             for pipeline in get_pipelines:
                 if pipeline['ref'] == ref:
                     self.cancel_pipeline(project_id, pipeline['id'])

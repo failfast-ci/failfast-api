@@ -189,7 +189,7 @@ class FailFastConfig(object):
 
     def load_conffile(self, confpath):
         with open(confpath, 'r') as conffile:
-            self.load_conf(yaml.load(conffile.read()))
+            self.load_conf(yaml.safe_load(conffile.read()))
 
 
 FFCONFIG = FailFastConfig(confpath=FFCI_CONF_FILE)

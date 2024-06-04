@@ -1,4 +1,5 @@
 import hmac
+import re
 import hashlib
 from flask import jsonify, request, Blueprint
 from hub2labhook.api.app import getvalues
@@ -43,7 +44,7 @@ def github_event():
     if hook_signature:
         verify_signature(request.data, hook_signature)
 
-    headers = dict(request.headers.to_list())
+    headers = dict(request.headers)
     gevent = GithubEvent(params, headers)
     job = None
     if gevent.event_type == "check_run" and gevent.action == "rerequested":
@@ -52,14 +53,31 @@ def github_event():
         job = tasks.request_action(
             gevent.event['requested_action']['identifier'], params)
         if job is not None:
-            job.delay()
+            job = job.delay()
     elif gevent.event_type == "check_suite" and gevent.action == "rerequested":
-        # unsupported: missing external_id and project_id in the event
-        pass
+        headers['X-GITHUB-EVENT'] = "pull_request"
+        headers['X-GITHUB-PREV-EVENT'] = "check_suite"
+        params['prev_action'] = params['action']
+        params['action'] = 'synchronize'
+        job = tasks.prep_retry_check_suite.s(params) | tasks.pipeline.s(headers)
+        job = job.delay()
+    elif gevent.event_type == "issue_comment" and gevent.action == "created" and "pull_request" in gevent.event['issue']:
+        comment = gevent.event['comment']['body']
+        if re.search("^.*\\/retest-failed( .*|$)", comment)  is not None:
+            pull_url = gevent.event['issue']['pull_request']['url']
+            job = tasks.prep_retry_failed.s(params, pull_url)
+        elif re.search("^.*\\/retest( .*|$)", comment) is not None:
+            headers['X-GITHUB-EVENT'] = "pull_request"
+            headers['X-GITHUB-PREV-EVENT'] = "check_suite"
+            params['prev_action'] = params['action']
+            params['action'] = 'synchronize'
+            job = tasks.prep_retry_comment.s(params) | tasks.pipeline.s(headers)
+        if job is not None:
+            job = job.delay()
     elif gevent.event_type in ["push", "pull_request"]:
         job = tasks.start_pipeline(params, headers)
         if job is not None:
-            job.delay()
+            job = job.delay()
     if job is None:
         return jsonify({'ignored': True, 'event': params, 'headers': headers})
     return jsonify({'job_id': job.id, 'params': params})
@@ -69,10 +87,9 @@ def github_event():
                  strict_slashes=False)
 def gitlab_event():
     params = getvalues()
-    headers = dict(request.headers.to_list())
+    headers = dict(request.headers)
     event = headers.get("X-Gitlab-Event", None)
-
-    if event in "Pipeline Hook":
+    if event == "Pipeline Hook":
         task = tasks.update_github_check
     elif event == "Job Hook":
         task = tasks.update_github_check

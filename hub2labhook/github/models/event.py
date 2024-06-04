@@ -16,7 +16,6 @@ class GithubEvent(object):
     @property
     def external_id(self):
         if self.event_type in ["check_run"]:
-            logger.info(self.event['check_run']['external_id'])
             return json.loads(self.event['check_run']['external_id'])
         else:
             self._raise_unsupported()
@@ -26,7 +25,7 @@ class GithubEvent(object):
         if self.event_type == "pull_request":
             labels = [x["name"] for x in self.event['pull_request']['labels']]
         else:
-            self._raise_unsupported()
+            return []
         return labels
 
     @property
@@ -77,8 +76,6 @@ class GithubEvent(object):
 
     @property
     def clone_url(self):
-        if self.event_type not in ["push", "pull_request"]:
-            self._raise_unsupported()
         return self.event['repository']['clone_url']
 
     @property
@@ -128,8 +125,9 @@ class GithubEvent(object):
 
     @property
     def label(self):
-        if self.event_type != "pull_request" and self.action != "labeled":
+        if self.event_type != "pull_request" or self.action != "labeled":
             self._raise_unsupported()
+        logger.info("label: %s", self.event['label']['name'])
         return self.event['label']['name']
 
     @property

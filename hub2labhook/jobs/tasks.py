@@ -18,7 +18,7 @@ from hub2labhook.jobs.job_base import JobBase
 logger = logging.getLogger(__name__)
 
 
-def is_authorized(self, user, group=None, config=None):
+def is_authorized(user, group=None, config=None):
     if config is None:
         config = FFCONFIG
     return ((config.failfast['authorized_users'] == '*' or
@@ -39,9 +39,18 @@ def istriggered_on_comments(gevent, config=None):
 def istriggered_on_labels(gevent, config=None):
     if config is None:
         config = FFCONFIG
-    return (gevent.event_type == "pull_request" and
-            gevent.action == "labeled" and gevent.label in config.failfast.get(
-                'build', {}).get('on-labels', []))
+
+    triggerlabel =  (gevent.event_type == "pull_request" and
+                     gevent.action == "labeled" and gevent.label in config.failfast.get(
+                         'build', {}).get('on-labels', []))
+    if triggerlabel and gevent.label in config.failfast.get('build', {}).get('on-labels-exclusive', {}):
+        elabels = config.failfast['build']['on-labels-exclusive'][gevent.label]
+        labels = gevent.labels
+        for e in elabels:
+            if e in labels:
+                # if one of the exclusive labels is present, we don't trigger
+                return False
+    return triggerlabel
 
 
 def istriggered_on_branches(gevent, config=None):
@@ -68,9 +77,9 @@ def istriggered_on_pr(gevent, config=None):
             gevent.action in ['opened', 'reopened', 'synchronize'] and
             '*' in pr_list)
 
-
 @app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
 def update_github_check(event):
+    ### From a Gitlab event, update the GitHub check status
     gitlabclient = GitlabClient()
     checkstatus = CheckStatus(event)
     installation_id = gitlabclient.get_variable(
@@ -82,23 +91,61 @@ def update_github_check(event):
     # Skip queued builds as they could be 'manual'
     if checkstatus.status == "queued" and checkstatus.object_kind == "build":
         return None
-
-    if checkstatus.object_kind == "pipeline":
+    if (checkstatus.object_kind == "pipeline" and not checkstatus.ischild()):
         githubclient.post_status(checkstatus.render_pipeline_status(),
                                  github_repo, checkstatus.sha)
     return githubclient.create_check(github_repo, checkstatus.render_check())
 
 
-@app.task(bind=True, base=JobBase)
-def pipeline(self, event, headers):
+# @TODO: retry for tags and branches (e.g. main). this code handle only PR
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def prep_retry_check_suite(event):
+    githubclient = GithubClient(
+        installation_id=event['installation']['id'])
+    check_runs = githubclient.get_json(event['check_suite']['check_runs_url'])
+    if check_runs['total_count'] == 0:
+        raise Exception("No check runs found")
+    external_id = json.loads(check_runs['check_runs'][0]['external_id'])
+    pr_id = external_id['gh_prid']
+    pull_url = event['repository']['pulls_url'].replace("{/number}", "/%s" % pr_id)
+    event['number'] = pr_id
+    pull = githubclient.get_json(pull_url)
+    event['pull_request'] = pull
+    return event
+
+
+# @TODO: retry for tags and branches (e.g. main). this code handle only PR
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def prep_retry_comment(event):
+    githubclient = GithubClient(
+        installation_id=event['installation']['id'])
+    pull_url = event['issue']['pull_request']['url']
+    pull = githubclient.get_json(pull_url)
+    event['number'] = pull['number']
+    event['pull_request'] = pull
+    return event
+
+# @TODO: retry for tags and branches (e.g. main). this code handle only PR
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def prep_retry_failed(event, pull_url):
+    githubclient = GithubClient(
+        installation_id=event['installation']['id'])
+    pull = githubclient.get_json(pull_url)
+    event['pull_request'] = pull
+    event['number'] = pull['number']
+    githubclient.rerequest_failed_run(pull['base']['repo']['full_name'], pull['head']['sha'])
+    return event
+
+@app.task(base=JobBase, retry_kwargs={'max_retries': 5}, retry_backoff=True)
+def pipeline(event, headers):
     gevent = GithubEvent(event, headers)
     config = FFCONFIG
     build = Pipeline(gevent, config)
     return build.trigger_pipeline()
 
 
-@app.task(bind=True, base=JobBase)
-def update_github_statuses_failure(self, request, exc, traceback, event,
+@app.task(base=JobBase)
+def update_github_statuses_failure(request, exc, traceback, event,
                                    headers):
     """ The pipeline has failed. Notify GitHub. """
     gevent = GithubEvent(event, headers)
@@ -193,12 +240,14 @@ def retry_build(self, external_id, sha=None):
     project_id = external_id['project_id']
     object_id = external_id['object_id']
     kind = external_id['object_kind']
+    ref = external_id['gh_ref']
     gitlabclient = GitlabClient()
     try:
         if kind == "build":
             return gitlabclient.retry_build(project_id, object_id)
         elif kind == "pipeline":
-            return gitlabclient.retry_pipeline(project_id, object_id)
+            # trigger a new pipeline, canceled the old one
+            return gitlabclient.new_pipeline(project_id, ref=ref, cancel_prev=True)
 
     except requests.exceptions.RequestException as exc:
         logger.error('Error request')
@@ -316,6 +365,7 @@ def resync_action(self, event):
         raise self.retry(countdown=60, exc=exc)
 
 
+
 def start_pipeline(event, headers):
     '''
     start_pipeline is launching the job 'pipeline' if conditions are met.
@@ -332,4 +382,5 @@ def start_pipeline(event, headers):
         task.link_error(update_github_statuses_failure.s(event, headers))
         return task
     else:
+        logger.info("No build triggered", istriggered_on_branches(gevent, config), istriggered_on_pr(gevent, config), istriggered_on_labels(gevent, config))
         return None

@@ -51,14 +51,13 @@ def after_request_log(resp):
         "remote_addr": request.remote_addr,
         "http_method": request.method,
         "original_url": request.url,
-        "headers": dict(request.headers.to_list()),
+        "headers": dict(request.headers),
         "path": request.path,
         "parameters": values,
         "response_time": request.request_time(),
         "json_body": jsonbody,
         "version": "%s/%s" % (hub2labhook.__version__, hub2labhook.__gitsha__),
     }
-
     if request.user_agent is not None:
         extra["user-agent"] = request.user_agent.string
 
