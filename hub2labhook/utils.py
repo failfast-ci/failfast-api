@@ -32,3 +32,10 @@ def pretty_time_delta(seconds):
 
 def clone_url_with_auth(base_url, auth):
     return base_url.replace("https://", "https://%s@" % auth)
+
+
+def strtobool(s):
+    if s in ["yes", "on", "true", "True", "TRUE"]:
+        return True
+    else:
+        return False
