@@ -1,4 +1,5 @@
 import time
+import requests
 from datetime import datetime
 import uuid
 import tempfile
@@ -180,16 +181,21 @@ class Pipeline(object):
     def neutralize_previous_checks(self):
         checks = self.github.get_checks(self.ghevent.repo, self.ghevent.head_sha)
         for check in checks['check_runs']:
-            body = {
-                "name": check['name'],
-                "head_sha": check['head_sha'],
-                "external_id": check['external_id'],
-                "status": "completed",
-                "conclusion": "neutral",
-                "completed_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
-            }
-            logger.info("Cancel check[%s]: %s", check['id'], check['name'])
-            self.github.update_check_run(self.ghevent.repo, body, check['id'])
+            if check['conclusion'] in ['failure', 'cancelled', "timed_out", "action_required", 'stale']:
+                body = {
+                    "name": check['name'],
+                    "head_sha": check['head_sha'],
+                    "external_id": check['external_id'],
+                    "status": "completed",
+                    "conclusion": "neutral",
+                    "completed_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+                logger.info("Cancel check[%s]: %s", check['id'], check['name'])
+                try:
+                    self.github.update_check_run(self.ghevent.repo, body, check['id'])
+                except requests.exceptions.HTTPError as e:
+                    logger.error("Could not cancel check: %s", e)
+                    pass
 
     def _trigger_pipeline(self, logs):
         gevent = self.ghevent
@@ -199,10 +205,13 @@ class Pipeline(object):
 
         check_run = self.github.create_check(gevent.repo, self.create_sync_check_run(gevent))
         self.check_run = check_run
+
         logger.info("Cancelling previous checks...")
+
         self.neutralize_previous_checks()
         self.github.update_check_run(gevent.repo,
                                      self.update_sync_check_run(check_run, "in_progress", "in_progress", logs.getvalue()),  check_run['id'])
+
         logger.info("Cloning repo %s", repo_path)
         gitbin = self._checkout_repo(gevent, repo_path)
         logger.info("...Cloned repo %s", repo_path)

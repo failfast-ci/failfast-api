@@ -72,7 +72,9 @@ class CheckStatus(object):
 
     @property
     def source(self):
-        return self.object['source']
+        if self.object_kind == "pipeline":
+            return self.object['object_attributes']['source']
+        return None
 
     @property
     def object_kind(self):
@@ -159,7 +161,10 @@ class CheckStatus(object):
         }
 
     def ischild(self):
-        return self.source == "parent_pipeline"
+        if self.object_kind == "pipeline":
+            return self.source == "parent_pipeline"
+        else:
+            return False
 
     @classmethod
     def list_task_actions(cls):

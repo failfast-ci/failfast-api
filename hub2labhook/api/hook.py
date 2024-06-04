@@ -53,14 +53,14 @@ def github_event():
         job = tasks.request_action(
             gevent.event['requested_action']['identifier'], params)
         if job is not None:
-            job.delay()
+            job = job.delay()
     elif gevent.event_type == "check_suite" and gevent.action == "rerequested":
         headers['X-GITHUB-EVENT'] = "pull_request"
         headers['X-GITHUB-PREV-EVENT'] = "check_suite"
         params['prev_action'] = params['action']
         params['action'] = 'synchronize'
         job = tasks.prep_retry_check_suite.s(params) | tasks.pipeline.s(headers)
-        job.delay()
+        job = job.delay()
     elif gevent.event_type == "issue_comment" and gevent.action == "created" and "pull_request" in gevent.event['issue']:
         comment = gevent.event['comment']['body']
         if re.search("^.*\\/retest-failed( .*|$)", comment)  is not None:
@@ -73,11 +73,11 @@ def github_event():
             params['action'] = 'synchronize'
             job = tasks.prep_retry_comment.s(params) | tasks.pipeline.s(headers)
         if job is not None:
-            job.delay()
+            job = job.delay()
     elif gevent.event_type in ["push", "pull_request"]:
         job = tasks.start_pipeline(params, headers)
         if job is not None:
-            job.delay()
+            job = job.delay()
     if job is None:
         return jsonify({'ignored': True, 'event': params, 'headers': headers})
     return jsonify({'job_id': job.id, 'params': params})
