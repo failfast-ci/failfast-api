@@ -184,6 +184,14 @@ class GithubEvent(object):
         return "tags" in self.ref
 
     @property
+    def default_branch(self):
+        if self.event_type not in [
+                "push", "pull_request", "check_run", "check_suite"
+        ]:
+            self._raise_unsupported()
+        return self.event['repository']['default_branch']
+
+    @property
     def source_repo(self):
         if self.pr_id == "":
             source_repo = self.repo

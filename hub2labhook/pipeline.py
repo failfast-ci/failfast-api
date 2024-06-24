@@ -261,7 +261,7 @@ class Pipeline(object):
         self.gitlab = GitlabClient(gitlab_endpoint, config=self.config)
 
 
-        ci_project = self.gitlab.initialize_project(reponame, namespace)
+        ci_project = self.gitlab.initialize_project(reponame, namespace, gevent.default_branch)
         logger.info("Initialized project: %s, %s/%s", ci_project['id'], namespace, reponame)
         self.github.update_check_run(gevent.repo,
                                      self.update_sync_check_run(check_run, "in_progress", "in_progress", logs.getvalue()), check_run['id'])

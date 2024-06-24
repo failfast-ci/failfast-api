@@ -313,9 +313,9 @@ class GitlabClient(object):
         resp.raise_for_status()
         return True
 
-    def initialize_project(self, project_name: str, namespace: str = None):
+    def initialize_project(self, project_name: str, namespace: str = None, default_branch: str = "master"):
         project = self.get_or_create_project(project_name, namespace)
-        branch = "master"
+        branch = default_branch
 
         branch_path = self._url("/projects/%s/repository/branches/%s" %
                                 (project['id'], branch))
@@ -326,7 +326,7 @@ class GitlabClient(object):
             self.push_file(project['id'], file_path="README.md",
                            file_content=bytes(
                                ("# %s" % project_name).encode()),
-                           branch="master", message="init readme")
+                           branch=branch, message="init readme")
             time.sleep(2)
             resp = requests.put(branch_path + "/unprotect",
                                 headers=self.headers,
@@ -334,7 +334,7 @@ class GitlabClient(object):
             resp.raise_for_status()
             branch_path = self._url(
                 "/projects/%s/repository/branches" % project['id'])
-            branch_body = {'branch': "_failfastci", 'ref': "master"}
+            branch_body = {'branch': "_failfastci", 'ref': default_branch}
             resp = requests.post(branch_path, params=branch_body,
                                  headers=self.headers,
                                  timeout=self.config.gitlab['timeout'])
