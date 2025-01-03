@@ -109,7 +109,16 @@ FFCI_CONF_FILE = os.getenv("FFCI_CONF_FILE", None)
 class FailFastConfig(object):
     """
     """
-
+        # on-branches: [master, main, production]
+        # on-comments: [/retest, /test]
+        # on-labels: [ok-to-test, lgtm]
+        # on-pullrequests: ['*']
+        # on-labels-exclusive:
+        #   ok-to-test: [lgtm]
+        #   lgtm: [ok-to-test]
+        # on-comments: [/retest, /test]
+        # on-labels: [ok-to-test]
+        # on-pullrequests: ['*']
     def __init__(self, defaults=None, confpath=None):
         self.settings = {
             'failfast': {
@@ -118,13 +127,16 @@ class FailFastConfig(object):
                 'enable_linter': FAILFASTCI_ENABLE_LINTER,
                 'failfast_url': FAILFASTCI_API,
                 'build': {
+                    'required-labels': [
+                        ['ok-to-test', 'lgtm', 'approved'],
+                    ],
                     'on-pullrequests': ['*'],
-                    'on-branches': ['master'],
+                    'on-branches': ['master', 'main', 'production'],
                     'on-labels': [
-                        'ok-to-test'
+                        'ok-to-test', 'lgtm', 'approved'
                     ],  # list branches (regexp) to trigger builds on push events
                     'on-comments': [
-                        '/retest', '/test'
+                        '/retest', '/test', 'retest-failed'
                     ],  # list branches (regexp) to trigger builds on PR events
                 },
                 # https://developer.github.com/v4/reference/enum/commentauthorassociation/

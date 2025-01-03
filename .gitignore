@@ -1,4 +1,6 @@
 # Byte-compiled / optimized / DLL files
+.venv
+mise*
 .env
 report.xml
 .python-version

@@ -27,6 +27,19 @@ def is_authorized(user, group=None, config=None):
                         group in config.failfast['authorized_groups'])))
 
 
+def required_labels(gevent, config=None):
+    if config is None:
+        config = FFCONFIG
+
+    if 'required-labels' not in config.failfast['build'] or not config.failfast['build']['required-labels']:
+        return True
+
+    res = True
+    for orlabels in config.failfast['build']['required-labels']:
+        res = res and any(set(gevent.labels).intersection(set(orlabels)))
+
+    return res
+
 def istriggered_on_comments(gevent, config=None):
     if config is None:
         config = FFCONFIG
@@ -365,7 +378,6 @@ def resync_action(self, event):
         raise self.retry(countdown=60, exc=exc)
 
 
-
 def start_pipeline(event, headers):
     '''
     start_pipeline is launching the job 'pipeline' if conditions are met.
@@ -374,9 +386,13 @@ def start_pipeline(event, headers):
     gevent = GithubEvent(event, headers)
     config = FFCONFIG
     trigger_build = (
-        istriggered_on_branches(gevent, config) or
-        istriggered_on_pr(gevent, config) or
-        istriggered_on_labels(gevent, config))
+        required_labels(gevent, config)
+        and (
+            istriggered_on_branches(gevent, config) or
+            istriggered_on_pr(gevent, config) or
+            istriggered_on_labels(gevent, config)
+            )
+        )
     if trigger_build:
         task = pipeline.s(event, headers)
         task.link_error(update_github_statuses_failure.s(event, headers))
