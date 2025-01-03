@@ -121,9 +121,9 @@ yapf-test: yapf-diff
 	if [ `yapf -r hub2labhook -d | wc -l` -gt 0 ] ; then false ; else true ;fi
 
 
-dockerfile: clean dist
-	tar xvf dist/hub2lab-hook-${VERSION}.tar.gz -C dist
-	git rev-parse HEAD > dist/GIT_HEAD
+dockerfile: clean 
+	# tar xvf dist/hub2lab-hook-${VERSION}.tar.gz -C dist
+	# git rev-parse HEAD > GIT_HEAD
 	docker build --build-arg version=$(VERSION) -f Dockerfile -t quay.io/failfast-ci/failfast:v$(VERSION) .
 
 dockerfile-canary: clean
