@@ -14,14 +14,14 @@ def logfile_path(jsonfmt=False, debug=False):
       - conf/logging_debug.conf      # jsonfmt=false, debug=true
       - conf/logging.conf            # jsonfmt=false, debug=false
     Can be parametrized via envvars: JSONLOG=true, DEBUGLOG=true
-  """
+    """
     _json = ""
     _debug = ""
 
-    if jsonfmt or os.getenv('JSONLOG', 'false').lower() == 'true':
+    if jsonfmt or os.getenv("JSONLOG", "false").lower() == "true":
         _json = "_json"
 
-    if debug or os.getenv('DEBUGLOG', 'false').lower() == 'true':
+    if debug or os.getenv("DEBUGLOG", "false").lower() == "true":
         _debug = "_debug"
 
     return os.path.join(FFCI_CONF_DIR, "logging%s%s.conf" % (_debug, _json))
@@ -49,7 +49,7 @@ def getenv(name, default=None, convert=str):
 
 
 def envbool(value: str):
-    return value and (value.lower() in ('1', 'true'))
+    return value and (value.lower() in ("1", "true"))
 
 
 GITLAB_TIMEOUT = 30
@@ -65,22 +65,26 @@ GITLAB_REPO = getenv("GITLAB_REPO", None)
 GITLAB_USER = getenv("GITLAB_USER", None)
 GITLAB_ENABLE_JOBS = True  # without this, CI is moot.
 
-GITLAB_ENABLE_SHARED_RUNNERS = getenv("GITLAB_SHARED_RUNNERS", default=False,
-                                      convert=envbool)
+GITLAB_ENABLE_SHARED_RUNNERS = getenv(
+    "GITLAB_SHARED_RUNNERS", default=False, convert=envbool
+)
 
-GITLAB_ENABLE_CONTAINER_REGISTRY = getenv("GITLAB_CONTAINER_REGISTRY",
-                                          default=False, convert=envbool)
+GITLAB_ENABLE_CONTAINER_REGISTRY = getenv(
+    "GITLAB_CONTAINER_REGISTRY", default=False, convert=envbool
+)
 
 GITLAB_ENABLE_WIKI = getenv("GITLAB_WIKI", default=False, convert=envbool)
-GITLAB_ENABLE_SNIPPETS = getenv("GITLAB_SNIPPETS", default=False,
-                                convert=envbool)
+GITLAB_ENABLE_SNIPPETS = getenv("GITLAB_SNIPPETS", default=False, convert=envbool)
 
-GITLAB_ENABLE_MERGE_REQUESTS = getenv("GITLAB_MERGE_REQUESTS", default=False,
-                                      convert=envbool)
+GITLAB_ENABLE_MERGE_REQUESTS = getenv(
+    "GITLAB_MERGE_REQUESTS", default=False, convert=envbool
+)
 GITLAB_ENABLE_ISSUES = getenv("GITLAB_ISSUES", default=False, convert=envbool)
 
 GITLAB_REPO_PRIVACY = getenv("GITLAB_REPO_PRIVACY", default="internal")
-GITLAB_WEBHOOK_URL = getenv("GITLAB_WEBHOOK_URL", default="https://jobs.failfast-ci.com/api/v1/gitlab_event")
+GITLAB_WEBHOOK_URL = getenv(
+    "GITLAB_WEBHOOK_URL", default="https://jobs.failfast-ci.com/api/v1/gitlab_event"
+)
 if GITLAB_REPO_PRIVACY not in ("private", "internal", "public"):
     GITLAB_REPO_PRIVACY = "private"
 
@@ -90,83 +94,87 @@ GITHUB_SECRET_TOKEN = getenv("GITHUB_SECRET_TOKEN", None)
 
 FAILFASTCI_NAMESPACE = getenv("FAILFASTCI_NAMESPACE", "failfast-ci")
 FAILFASTCI_API = getenv("FAILFAST_CI_API", "https://jobs.failfast-ci.com")
-FAILFASTCI_ENABLE_LINTER = getenv("FAILFASTCI_ENABLE_LINTER", default=True,
-                                  convert=envbool)
+FAILFASTCI_ENABLE_LINTER = getenv(
+    "FAILFASTCI_ENABLE_LINTER", default=True, convert=envbool
+)
 # The GitLab runner tag to require on CI jobs introduced by failfast
 FAILFASTCI_REQUIRE_RUNNER_TAG = getenv("FAILFASTCI_RUNNER_TAG", "failfast-ci")
 
-if FAILFASTCI_REQUIRE_RUNNER_TAG.lower() in ('none', ):
+if FAILFASTCI_REQUIRE_RUNNER_TAG.lower() in ("none",):
     FAILFASTCI_REQUIRE_RUNNER_TAG = None
 
 FFCI_SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
 FFCI_ROOT_DIR = os.path.abspath(os.path.join(FFCI_SOURCE_DIR, "../"))
-FFCI_CONF_DIR = os.getenv("FFCI_CONF_DIR", os.path.join(
-    FFCI_ROOT_DIR, "conf/"))
+FFCI_CONF_DIR = os.getenv("FFCI_CONF_DIR", os.path.join(FFCI_ROOT_DIR, "conf/"))
 
 FFCI_CONF_FILE = os.getenv("FFCI_CONF_FILE", None)
 
 
 class FailFastConfig(object):
-    """
-    """
-        # on-branches: [master, main, production]
-        # on-comments: [/retest, /test]
-        # on-labels: [ok-to-test, lgtm]
-        # on-pullrequests: ['*']
-        # on-labels-exclusive:
-        #   ok-to-test: [lgtm]
-        #   lgtm: [ok-to-test]
-        # on-comments: [/retest, /test]
-        # on-labels: [ok-to-test]
-        # on-pullrequests: ['*']
+    """ """
+
+    # on-branches: [master, main, production]
+    # on-comments: [/retest, /test]
+    # on-labels: [ok-to-test, lgtm]
+    # on-pullrequests: ['*']
+    # on-labels-exclusive:
+    #   ok-to-test: [lgtm]
+    #   lgtm: [ok-to-test]
+    # on-comments: [/retest, /test]
+    # on-labels: [ok-to-test]
+    # on-pullrequests: ['*']
     def __init__(self, defaults=None, confpath=None):
         self.settings = {
-            'failfast': {
-                'debug': False,
-                'env': APP_ENVIRON,
-                'enable_linter': FAILFASTCI_ENABLE_LINTER,
-                'failfast_url': FAILFASTCI_API,
-                'build': {
-                    'required-labels': [
-                        ['ok-to-test', 'lgtm', 'approved'],
+            "failfast": {
+                "debug": False,
+                "env": APP_ENVIRON,
+                "enable_linter": FAILFASTCI_ENABLE_LINTER,
+                "failfast_url": FAILFASTCI_API,
+                "build": {
+                    "required-labels": [
+                        ["ok-to-test", "lgtm", "approved"],
                     ],
-                    'on-pullrequests': ['*'],
-                    'on-branches': ['master', 'main', 'production'],
-                    'on-labels': [
-                        'ok-to-test', 'lgtm', 'approved'
+                    "on-pullrequests": ["*"],
+                    "on-branches": ["master", "main", "production"],
+                    "on-labels": [
+                        "ok-to-test",
+                        "lgtm",
+                        "approved",
                     ],  # list branches (regexp) to trigger builds on push events
-                    'on-comments': [
-                        '/retest', '/test', 'retest-failed'
+                    "on-comments": [
+                        "/retest",
+                        "/test",
+                        "retest-failed",
                     ],  # list branches (regexp) to trigger builds on PR events
                 },
                 # https://developer.github.com/v4/reference/enum/commentauthorassociation/
-                'authorized_groups': ['COLLABORATOR', 'MEMBER', 'OWNER'],
-                'authorized_users': [],
+                "authorized_groups": ["COLLABORATOR", "MEMBER", "OWNER"],
+                "authorized_users": [],
             },
-            'github': {
-                'context': GITHUB_CONTEXT,
-                'context-status': GITHUB_CONTEXT,
-                'secret_token': GITHUB_SECRET_TOKEN,
-                'integration_id': GITHUB_INTEGRATION_ID,
+            "github": {
+                "context": GITHUB_CONTEXT,
+                "context-status": GITHUB_CONTEXT,
+                "secret_token": GITHUB_SECRET_TOKEN,
+                "integration_id": GITHUB_INTEGRATION_ID,
             },
-            'gitlab': {
-                'repo': GITLAB_REPO,
-                'timeout': GITLAB_TIMEOUT,
-                'secret_token': GITLAB_SECRET_TOKEN,
-                'gitlab_url': GITLAB_API,
-                'privacy': GITLAB_REPO_PRIVACY,
-                'namespace': FAILFASTCI_NAMESPACE,
-                'robot-user': GITLAB_USER,
-                'runner_tags': [FAILFASTCI_REQUIRE_RUNNER_TAG],
-                'enable_shared_runners': GITLAB_ENABLE_SHARED_RUNNERS,
-                'enable_jobs': GITLAB_ENABLE_JOBS,
-                'enable_container_registry': GITLAB_ENABLE_CONTAINER_REGISTRY,
-                'enable_wiki': GITLAB_ENABLE_WIKI,
-                'enable_snippets': GITLAB_ENABLE_SNIPPETS,
-                'enable_issues': GITLAB_ENABLE_ISSUES,
-                'enable_merge_requests': GITLAB_ENABLE_MERGE_REQUESTS,
-                'webhook_url': GITLAB_WEBHOOK_URL
-            }
+            "gitlab": {
+                "repo": GITLAB_REPO,
+                "timeout": GITLAB_TIMEOUT,
+                "secret_token": GITLAB_SECRET_TOKEN,
+                "gitlab_url": GITLAB_API,
+                "privacy": GITLAB_REPO_PRIVACY,
+                "namespace": FAILFASTCI_NAMESPACE,
+                "robot-user": GITLAB_USER,
+                "runner_tags": [FAILFASTCI_REQUIRE_RUNNER_TAG],
+                "enable_shared_runners": GITLAB_ENABLE_SHARED_RUNNERS,
+                "enable_jobs": GITLAB_ENABLE_JOBS,
+                "enable_container_registry": GITLAB_ENABLE_CONTAINER_REGISTRY,
+                "enable_wiki": GITLAB_ENABLE_WIKI,
+                "enable_snippets": GITLAB_ENABLE_SNIPPETS,
+                "enable_issues": GITLAB_ENABLE_ISSUES,
+                "enable_merge_requests": GITLAB_ENABLE_MERGE_REQUESTS,
+                "webhook_url": GITLAB_WEBHOOK_URL,
+            },
         }
         if defaults:
             self.load_conf(defaults)
@@ -176,23 +184,22 @@ class FailFastConfig(object):
 
     @property
     def gitlab(self):
-        return self.settings['gitlab']
+        return self.settings["gitlab"]
 
     @property
     def github(self):
-        return self.settings['github']
+        return self.settings["github"]
 
     @property
     def failfast(self):
-        return self.settings['failfast']
+        return self.settings["failfast"]
 
     def reload(self, confpath, inplace=False):
         if inplace:
             instance = self
             instance.load_conffile(confpath)
         else:
-            instance = FailFastConfig(defaults=self.settings,
-                                      confpath=confpath)
+            instance = FailFastConfig(defaults=self.settings, confpath=confpath)
         return instance
 
     def load_conf(self, conf):
@@ -200,7 +207,7 @@ class FailFastConfig(object):
             self.settings[key].update(v)
 
     def load_conffile(self, confpath):
-        with open(confpath, 'r') as conffile:
+        with open(confpath, "r") as conffile:
             self.load_conf(yaml.safe_load(conffile.read()))
 
 

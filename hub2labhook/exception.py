@@ -11,7 +11,7 @@ class Hub2LabException(Exception):
         return {
             "code": self.errorcode,
             "message": self.message,
-            "details": self.payload
+            "details": self.payload,
         }
 
     def __str__(self):

@@ -4,8 +4,10 @@ from hub2labhook.exception import Unsupported
 
 logger = logging.getLogger(__name__)
 
+
 def target_refname(pr_id, refname):
     return "pr-%s-%s" % (pr_id, refname)
+
 
 class GithubEvent(object):
     def __init__(self, event, headers):
@@ -16,14 +18,14 @@ class GithubEvent(object):
     @property
     def external_id(self):
         if self.event_type in ["check_run"]:
-            return json.loads(self.event['check_run']['external_id'])
+            return json.loads(self.event["check_run"]["external_id"])
         else:
             self._raise_unsupported()
 
     @property
     def labels(self):
         if self.event_type == "pull_request":
-            labels = [x["name"] for x in self.event['pull_request']['labels']]
+            labels = [x["name"] for x in self.event["pull_request"]["labels"]]
         else:
             return []
         return labels
@@ -31,9 +33,9 @@ class GithubEvent(object):
     @property
     def ref(self):
         if self.event_type == "push":
-            ref = self.event['ref']
+            ref = self.event["ref"]
         elif self.event_type == "pull_request":
-            ref = self.event['pull_request']['head']['ref']
+            ref = self.event["pull_request"]["head"]["ref"]
         elif self.event_type == "check_run":
             ref = self.event["check_run"]["pull_requests"][0]["ref"]
         elif self.event_type == "check_suite":
@@ -52,14 +54,14 @@ class GithubEvent(object):
     def pr_id(self):
         if self.event_type != "pull_request":
             return ""
-        return self.event['number']
+        return self.event["number"]
 
     @property
     def commit_message(self):
         if self.event_type == "push":
-            ref = self.event['head_commit']['message']
+            ref = self.event["head_commit"]["message"]
         elif self.event_type == "pull_request":
-            ref = self.event['pull_request']['title']
+            ref = self.event["pull_request"]["title"]
         else:
             self._raise_unsupported()
         return ref
@@ -67,26 +69,24 @@ class GithubEvent(object):
     @property
     def commit_url(self):
         if self.event_type == "push":
-            ref = self.event['head_commit']['url']
+            ref = self.event["head_commit"]["url"]
         elif self.event_type == "pull_request":
-            ref = self.event['pull_request']['html_url']
+            ref = self.event["pull_request"]["html_url"]
         else:
             self._raise_unsupported()
         return ref
 
     @property
     def clone_url(self):
-        return self.event['repository']['clone_url']
+        return self.event["repository"]["clone_url"]
 
     @property
     def installation_id(self):
-        return self.event['installation']['id']
+        return self.event["installation"]["id"]
 
     @property
     def refname(self):
-        if self.event_type not in [
-                "push", "pull_request", "check_suite", "check_run"
-        ]:
+        if self.event_type not in ["push", "pull_request", "check_suite", "check_run"]:
             self._raise_unsupported()
 
         if not self._refname:
@@ -110,36 +110,36 @@ class GithubEvent(object):
     @property
     def comment(self):
         if self.event_type == "issue_comment":
-            return self.event['issue']['comment']['body']
+            return self.event["issue"]["comment"]["body"]
         else:
             self._raise_unsupported()
         return None
 
     @property
     def author_association(self):
-        return self.event['issue']['comment']['author_association']
+        return self.event["issue"]["comment"]["author_association"]
 
     @property
     def action(self):
-        return self.event['action']
+        return self.event["action"]
 
     @property
     def label(self):
         if self.event_type != "pull_request" or self.action != "labeled":
             self._raise_unsupported()
-        logger.info("label: %s", self.event['label']['name'])
-        return self.event['label']['name']
+        logger.info("label: %s", self.event["label"]["name"])
+        return self.event["label"]["name"]
 
     @property
     def pull_request_url(self):
-        return self.event['issue']['pull_request']['url']
+        return self.event["issue"]["pull_request"]["url"]
 
     @property
     def head_sha(self):
         if self.event_type == "push":
-            sha = self.event['head_commit']['id']
+            sha = self.event["head_commit"]["id"]
         elif self.event_type == "pull_request":
-            sha = self.event['pull_request']['head']['sha']
+            sha = self.event["pull_request"]["head"]["sha"]
         elif self.event_type == "check_run":
             sha = self.event["check_run"]["head_sha"]
         elif self.event_type == "check_suite":
@@ -149,33 +149,31 @@ class GithubEvent(object):
         return sha
 
     def _raise_unsupported(self):
-        raise Unsupported("unsupported event: %s" % self.event_type, {
-            "event": self.event_type
-        })
+        raise Unsupported(
+            "unsupported event: %s" % self.event_type, {"event": self.event_type}
+        )
 
     @property
     def repo(self):
-        if self.event_type not in [
-                "push", "pull_request", "check_run", "check_suite"
-        ]:
+        if self.event_type not in ["push", "pull_request", "check_run", "check_suite"]:
             self._raise_unsupported()
 
-        return self.event['repository']['full_name']
+        return self.event["repository"]["full_name"]
 
     @property
     def pr_repo(self):
         if self.event_type not in ["pull_request"]:
             self._raise_unsupported()
-        return self.event['pull_request']['head']['repo']['full_name']
+        return self.event["pull_request"]["head"]["repo"]["full_name"]
 
     @property
     def user(self):
         if self.event_type == "push":
-            user = self.event['pusher']['name']
+            user = self.event["pusher"]["name"]
         elif self.event_type == "pull_request":
-            user = self.event['pull_request']['user']['login']
+            user = self.event["pull_request"]["user"]["login"]
         elif self.event_type == "issue_comment":
-            user = self.event['issue']['comment']['user']['login']
+            user = self.event["issue"]["comment"]["user"]["login"]
         else:
             self._raise_unsupported()
         return user

@@ -10,38 +10,39 @@ from hub2labhook.exception import ResourceNotFound
 
 from hub2labhook.config import FFCONFIG
 
-INTEGRATION_ID = int(FFCONFIG.github['integration_id'])
+INTEGRATION_ID = int(FFCONFIG.github["integration_id"])
 
 GITHUB_STATUS_MAP = {
     "failed": "failure",
     "success": "success",
     "skipped": "success",
     "unknown": "error",
-    'manual': 'success',
+    "manual": "success",
     "canceled": "error",
     "pending": "pending",
     "created": "pending",
     "running": "pending",
-    "warning": "success"
+    "warning": "success",
 }
 # success, failure, neutral, cancelled, timed_out, or action_required. When the conclusion is action_required
 GITHUB_CHECK_MAP = {
-    'allow_failure': 'neutral',
+    "allow_failure": "neutral",
     "failed": "failure",
     "success": "success",
     "skipped": "success",
     "unknown": "failure",
-    'manual': 'action_required',
+    "manual": "action_required",
     "canceled": "cancelled",
     "pending": "queued",
     "created": None,  # manual -> ignore
     "running": "in_progress",
-    "warning": "neutral"
+    "warning": "neutral",
 }
 
 
 def icon_url(icon):
     return f"https://ffci-pub.s3.eu-central-1.amazonaws.com/icons/{icon}.png"
+
 
 def random_icon(name, max):
     return f"{name}{random.randint(1, max)}"
@@ -57,31 +58,33 @@ class Icons(dict):
             return item
         return item()
 
-GITHUB_CHECK_ICONS = Icons({
-    'allow_failure': icon_url("warning"),
-    "failed": icon_url("siren"),
-    "success": lambda: icon_url(random_icon("happy", 11)),
-    "success_check": icon_url("check"),
-    "skipped": icon_url("portal"),
-    "unknown": icon_url("siren"),
-    'manual': icon_url('play'),
-    "canceled": icon_url("cancelled"),
-    "pending": icon_url("pending2"),
-    "created": icon_url("pending2"),
-    "running": icon_url("run"),
-    "warning": icon_url("warning"),
-})
+
+GITHUB_CHECK_ICONS = Icons(
+    {
+        "allow_failure": icon_url("warning"),
+        "failed": icon_url("siren"),
+        "success": lambda: icon_url(random_icon("happy", 11)),
+        "success_check": icon_url("check"),
+        "skipped": icon_url("portal"),
+        "unknown": icon_url("siren"),
+        "manual": icon_url("play"),
+        "canceled": icon_url("cancelled"),
+        "pending": icon_url("pending2"),
+        "created": icon_url("pending2"),
+        "running": icon_url("run"),
+        "warning": icon_url("warning"),
+    }
+)
 
 
 def jwt_token(integration_id, integration_pem):
     payload = {
         "iat": datetime.datetime.utcnow(),
         "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=60)),
-        "iss": integration_id
+        "iss": integration_id,
     }
 
-    return jwt.encode(payload, integration_pem,
-                      algorithm='RS256')
+    return jwt.encode(payload, integration_pem, algorithm="RS256")
 
 
 class GithubClient(object):
@@ -95,22 +98,23 @@ class GithubClient(object):
     def integration_pem(self):
         if self._integration_pem is None:
             self._integration_pem = base64.b64decode(
-                os.environ['GITHUB_INTEGRATION_PEM'])
+                os.environ["GITHUB_INTEGRATION_PEM"]
+            )
         return self._integration_pem
 
     def headers(self, extra=None):
         headers = {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             "Accept": "application/vnd.github.machine-man-preview+json",
-            'User-Agent': "hub2lab: %s" % hub2labhook.__version__,
-            'Authorization': "token %s" % self.token
+            "User-Agent": "hub2lab: %s" % hub2labhook.__version__,
+            "Authorization": "token %s" % self.token,
         }
         if extra:
             headers.update(extra)
         return headers
 
     def _url(self, path):
-        """ Construct the url from a relative path """
+        """Construct the url from a relative path"""
         return self.endpoint + path
 
     def get_pr(self, github_repo, pr_id):
@@ -124,39 +128,38 @@ class GithubClient(object):
     def token(self):
         if not self._token:
             headers = {
-                'Content-Type':
-                    'application/json',
-                "Accept":
-                    'application/vnd.github.machine-man-preview+json',
-                'User-Agent':
-                    "hub2lab: %s" % hub2labhook.__version__,
-                'Authorization':
-                    "Bearer %s" % jwt_token(INTEGRATION_ID,
-                                            self.integration_pem)
+                "Content-Type": "application/json",
+                "Accept": "application/vnd.github.machine-man-preview+json",
+                "User-Agent": "hub2lab: %s" % hub2labhook.__version__,
+                "Authorization": "Bearer %s"
+                % jwt_token(INTEGRATION_ID, self.integration_pem),
             }
             path = self._url(
-                "/app/installations/%s/access_tokens" % self.installation_id)
+                "/app/installations/%s/access_tokens" % self.installation_id
+            )
 
             resp = requests.post(path, headers=headers)
             resp.raise_for_status()
-            self._token = resp.json()['token']
+            self._token = resp.json()["token"]
         return self._token
 
     def post_status(self, body, github_repo, sha):
         path = self._url("/repos/%s/commits/%s/statuses" % (github_repo, sha))
-        resp = requests.post(path, data=json.dumps(body),
-                             headers=self.headers(), timeout=5)
+        resp = requests.post(
+            path, data=json.dumps(body), headers=self.headers(), timeout=5
+        )
         resp.raise_for_status()
         return resp.json()
 
     def fetch_file(self, repo, file_path, ref="master"):
         path = self._url("/repos/%s/contents/%s" % (repo, file_path))
-        resp = requests.get(path, headers=self.headers(), params={'ref': ref},
-                            timeout=30)
+        resp = requests.get(
+            path, headers=self.headers(), params={"ref": ref}, timeout=30
+        )
         resp.raise_for_status()
         content = resp.json()
-        filecontent = content['content']
-        if content['encoding'] == "base64":
+        filecontent = content["content"]
+        if content["encoding"] == "base64":
             filecontent = base64.b64decode(filecontent)
         return filecontent
 
@@ -178,47 +181,73 @@ class GithubClient(object):
             raise ResourceNotFound("no .gitlab-ci.yml or .failfail-ci.jsonnet")
 
     def get_checks(self, github_repo, sha):
-        path = self._url("/repos/%s/commits/%s/check-runs" % (github_repo,
-                                                              sha))
-        resp = requests.get(path, headers=self.headers({
-            'Accept': 'application/vnd.github.antiope-preview+json'
-        }), params={})
+        path = self._url("/repos/%s/commits/%s/check-runs" % (github_repo, sha))
+        resp = requests.get(
+            path,
+            headers=self.headers(
+                {"Accept": "application/vnd.github.antiope-preview+json"}
+            ),
+            params={},
+        )
         resp.raise_for_status()
         return resp.json()
 
     def create_check(self, github_repo, check_body):
         path = self._url("/repos/%s/check-runs" % github_repo)
         resp = requests.post(
-            path, data=json.dumps(check_body), headers=self.headers({
-                'Accept': 'application/vnd.github.antiope-preview+json'
-            }))
+            path,
+            data=json.dumps(check_body),
+            headers=self.headers(
+                {"Accept": "application/vnd.github.antiope-preview+json"}
+            ),
+        )
 
         resp.raise_for_status()
         return resp.json()
-
 
     def update_check_run(self, github_repo, check_body, check_id):
         path = self._url("/repos/%s/check-runs/%s" % (github_repo, check_id))
         resp = requests.patch(
-            path, data=json.dumps(check_body), headers=self.headers({
-                'Accept': 'application/vnd.github.antiope-preview+json'
-            }))
+            path,
+            data=json.dumps(check_body),
+            headers=self.headers(
+                {"Accept": "application/vnd.github.antiope-preview+json"}
+            ),
+        )
         resp.raise_for_status()
         return resp.json()
 
     def rerequest_check_run(self, github_repo, check_run_id):
-        path = self._url("/repos/%s/check-runs/%s/rerequest" % (github_repo, check_run_id))
+        path = self._url(
+            "/repos/%s/check-runs/%s/rerequest" % (github_repo, check_run_id)
+        )
         resp = requests.post(
-            path, headers=self.headers({
-                'Accept': 'application/vnd.github.antiope-preview+json'
-            }))
+            path,
+            headers=self.headers(
+                {"Accept": "application/vnd.github.antiope-preview+json"}
+            ),
+        )
         resp.raise_for_status()
 
     def rerequest_failed_run(self, github_repo, sha, conclusions=None):
         if conclusions is None:
-            conclusions = ['failure', 'cancelled', "timed_out", "action_required", 'stale', 'neutral']
+            conclusions = [
+                "failure",
+                "cancelled",
+                "timed_out",
+                "action_required",
+                "stale",
+                "neutral",
+            ]
         checks = self.get_checks(github_repo, sha)
-        for check in checks['check_runs']:
-            if check['conclusion'] in ['failure', 'cancelled', "timed_out", "action_required", 'stale', 'neutral']:
-                self.rerequest_check_run(github_repo, check['id'])
+        for check in checks["check_runs"]:
+            if check["conclusion"] in [
+                "failure",
+                "cancelled",
+                "timed_out",
+                "action_required",
+                "stale",
+                "neutral",
+            ]:
+                self.rerequest_check_run(github_repo, check["id"])
         return None

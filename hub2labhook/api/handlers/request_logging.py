@@ -5,10 +5,10 @@ import hub2labhook
 
 
 def default_filter(_):
-    return '[FILTERED]'
+    return "[FILTERED]"
 
 
-FILTERED_VALUES = [{'key': ['password'], 'fn': default_filter}]
+FILTERED_VALUES = [{"key": ["password"], "fn": default_filter}]
 logger = logging.getLogger(__name__)
 
 
@@ -22,18 +22,18 @@ def filter_logs(values, filtered_fields):
        {'k1': {'k2': 'some-secret'}, 'k3': 'some-value'}
     the returned dict is:
       {'k1': {k2: 'filtered'}, 'k3': 'some-value'}
-  """
+    """
     for field in filtered_fields:
         cdict = values
 
-        for key in field['key'][:-1]:
+        for key in field["key"][:-1]:
             if key in cdict:
                 cdict = cdict[key]
 
-        last_key = field['key'][-1]
+        last_key = field["key"][-1]
 
         if last_key in cdict and cdict[last_key]:
-            cdict[last_key] = field['fn'](cdict[last_key])
+            cdict[last_key] = field["fn"](cdict[last_key])
 
 
 def after_request_log(resp):
@@ -41,7 +41,7 @@ def after_request_log(resp):
     values = request.values.to_dict()
 
     if jsonbody and not isinstance(jsonbody, dict):
-        jsonbody = {'_parsererror': jsonbody}
+        jsonbody = {"_parsererror": jsonbody}
 
     if isinstance(values, dict):
         filter_logs(values, FILTERED_VALUES)
@@ -63,11 +63,12 @@ def after_request_log(resp):
 
     logger.info("request-end", extra=extra)
 
-    logger.debug('Ending request: %s', request.path)
+    logger.debug("Ending request: %s", request.path)
     return resp
 
 
 def before_request_log():
     request.request_start_time = time.time()
-    request.request_time = lambda: "%.3f" % ((time.time() - request.
-                                              request_start_time) * 1000)
+    request.request_time = lambda: "%.3f" % (
+        (time.time() - request.request_start_time) * 1000
+    )

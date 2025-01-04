@@ -2,9 +2,9 @@
 import os
 import subprocess
 
-__author__ = 'Antoine Legrand'
-__email__ = '2t.antoine@gmail.com'
-__version__ = '0.9.0'
+__author__ = "Antoine Legrand"
+__email__ = "2t.antoine@gmail.com"
+__version__ = "0.9.0"
 
 
 def _get_git_sha():
@@ -13,8 +13,11 @@ def _get_git_sha():
             return f.read()
     else:
         try:
-            return subprocess.check_output(["git", "rev-parse",
-                                            "HEAD"]).strip()[0:8].decode()
+            return (
+                subprocess.check_output(["git", "rev-parse", "HEAD"])
+                .strip()[0:8]
+                .decode()
+            )
         except (OSError, subprocess.CalledProcessError):
             pass
     return "unknown"

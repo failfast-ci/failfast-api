@@ -11,7 +11,7 @@ DEFAULT_ENV = os.getenv("HUB2LAB_ENV", "development")
 default_conf = {
     "envvar_name": "HUB2LAB_SETTINGS_FILE",
     "settings_file": LOCAL_DIR + "/../conf/" + DEFAULT_ENV + ".yaml",
-    "callback": None
+    "callback": None,
 }
 
 options = Iziconf(default_conf)
