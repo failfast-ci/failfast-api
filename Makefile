@@ -124,7 +124,7 @@ yapf-test: yapf-diff
 dockerfile: clean 
 	# tar xvf dist/hub2lab-hook-${VERSION}.tar.gz -C dist
 	# git rev-parse HEAD > GIT_HEAD
-	docker build --build-arg version=$(VERSION) -f Dockerfile -t quay.io/failfast-ci/failfast:v$(VERSION) .
+	docker build --network host --build-arg version=$(VERSION) -f Dockerfile -t quay.io/failfast-ci/failfast:v$(VERSION) .
 
 dockerfile-canary: clean
 	docker build -t quay.io/failfast-ci/failfast:master .
