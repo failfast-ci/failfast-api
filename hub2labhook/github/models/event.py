@@ -104,6 +104,14 @@ class GithubEvent(object):
             self._raise_unsupported()
 
     @property
+    def base_ref(self):
+        if self.event_type == "pull_request":
+            return self.event["pull_request"]["base"]["ref"]
+        elif self.event_type == "push":
+            return self.refname
+        self._raise_unsupported()
+
+    @property
     def event_type(self):
         return self.headers.get("X-GITHUB-EVENT", "push")
 
