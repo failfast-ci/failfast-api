@@ -5,10 +5,8 @@ WORKDIR $workdir
 RUN apt-get update
 RUN apt-get install -y openssl ca-certificates git libssl-dev
 RUN apt-get install -y rustc cargo
-RUN pip install pip -U
-COPY requirements.txt $workdir
-RUN pip install -r requirements.txt -U
-run pip install gunicorn -U
+COPY requirements.txt $workdir/
+RUN python -m pip install --no-cache-dir -r requirements.txt
 RUN apt-get remove --purge -y libffi-dev build-essential libssl-dev rustc cargo
 RUN rm -rf /root/.cargo
 
