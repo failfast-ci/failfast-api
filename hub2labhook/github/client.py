@@ -81,7 +81,7 @@ def jwt_token(integration_id, integration_pem):
     payload = {
         "iat": datetime.datetime.utcnow(),
         "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=60)),
-        "iss": integration_id,
+        "iss": str(integration_id),
     }
 
     return jwt.encode(payload, integration_pem, algorithm="RS256")
