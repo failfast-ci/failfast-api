@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import re
 import json
+import time
 
 import requests
 from hub2labhook.github.models.event import GithubEvent
@@ -108,22 +109,35 @@ def istriggered_on_pr(gevent, config=None):
     )
 
 
+GITHUB_TARGET_TTL = 3600
+_github_targets = {}
+
+
+def get_github_target(project_id):
+    """Return (installation_id, github_repo) of a GitLab project.
+    Keep them for GITHUB_TARGET_TTL seconds to send fewer GitLab API requests."""
+    cached = _github_targets.get(project_id)
+    if cached and time.monotonic() - cached[0] < GITHUB_TARGET_TTL:
+        return cached[1]
+    gitlabclient = GitlabClient()
+    target = (
+        gitlabclient.get_variable(project_id, "GITHUB_INSTALLATION_ID")["value"],
+        gitlabclient.get_variable(project_id, "GITHUB_REPO")["value"],
+    )
+    _github_targets[project_id] = (time.monotonic(), target)
+    return target
+
+
 @app.task(base=JobBase, retry_kwargs={"max_retries": 5}, retry_backoff=True)
 def update_github_check(event):
     ### From a Gitlab event, update the GitHub check status
-    gitlabclient = GitlabClient()
     checkstatus = CheckStatus(event)
-    installation_id = gitlabclient.get_variable(
-        checkstatus.project_id, "GITHUB_INSTALLATION_ID"
-    )["value"]
-    github_repo = gitlabclient.get_variable(checkstatus.project_id, "GITHUB_REPO")[
-        "value"
-    ]
-    githubclient = GithubClient(installation_id=installation_id)
-
     # Skip queued builds as they could be 'manual'
     if checkstatus.status == "queued" and checkstatus.object_kind == "build":
         return None
+
+    installation_id, github_repo = get_github_target(checkstatus.project_id)
+    githubclient = GithubClient(installation_id=installation_id)
     if checkstatus.object_kind == "pipeline" and not checkstatus.ischild():
         githubclient.post_status(
             checkstatus.render_pipeline_status(), github_repo, checkstatus.sha
@@ -221,11 +235,7 @@ def post_pipeline_status(project, pipeline_attr):
         "error": "Pipeline in error or canceled",
         "failure": "Pipeline failed",
     }
-    gitlabclient = GitlabClient()
-    installation_id = gitlabclient.get_variable(
-        project["id"], "GITHUB_INSTALLATION_ID"
-    )["value"]
-    github_repo = gitlabclient.get_variable(project["id"], "GITHUB_REPO")["value"]
+    installation_id, github_repo = get_github_target(project["id"])
 
     githubclient = GithubClient(installation_id=installation_id)
     sha = pipeline_attr["sha"]
